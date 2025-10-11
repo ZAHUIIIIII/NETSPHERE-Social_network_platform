@@ -14,6 +14,8 @@ import authRoutes from './routes/auth.route.js';
 import messageRoutes from './routes/message.route.js';
 import postRoutes from './routes/post.route.js';
 import { app, server } from './lib/socket.js';
+import searchRoutes from './routes/search.route.js';
+
 
 const PORT = process.env.PORT || 5001;
 
@@ -64,4 +66,9 @@ app.use("/api/posts", postRoutes);
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   connectDB();
+
+  // Search routes
+  app.use('/api/search', searchRoutes);
+
+
 });

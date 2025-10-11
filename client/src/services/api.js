@@ -48,3 +48,42 @@ export const uploadPostImages = async (files, onProgress) => {
     throw error;
   }
 };
+
+
+// Search functions
+export const searchAll = async (query, filters = {}) => {
+  try {
+    const params = new URLSearchParams({
+      q: query,
+      ...filters
+    });
+    const response = await axiosInstance.get(`/search?${params}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error searching:', error);
+    throw error;
+  }
+};
+
+
+// Fetch trending topics and search suggestions
+export const getTrending = async () => {
+  try {
+    const response = await axiosInstance.get('/search/trending');
+    return response.data;
+  } catch (error) {
+    console.error('Error getting trending:', error);
+    throw error;
+  }
+};
+
+export const getSearchSuggestions = async (query) => {
+  try {
+    const response = await axiosInstance.get(`/search/suggestions?q=${query}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error getting suggestions:', error);
+    throw error;
+  }
+};
+

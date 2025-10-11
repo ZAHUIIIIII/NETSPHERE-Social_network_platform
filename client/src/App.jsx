@@ -6,6 +6,8 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import ChatPage from './pages/ChatPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingPage from './pages/SettingPage';
+import SearchPage from './pages/SearchPage';  
+
 
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
@@ -83,6 +85,8 @@ const App = () => {
             <Route path='/chat' element={authUser ? <ChatPage /> : <Navigate to="/login" />} />
             <Route path='/profile' element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />
             <Route path='/settings' element={authUser ? <SettingPage /> : <Navigate to="/login" />} />
+            <Route path='/search' element={authUser ? <SearchPage /> : <Navigate to="/login" />} />
+
           </Routes>
         </div>
 
