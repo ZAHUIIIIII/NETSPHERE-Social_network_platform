@@ -1,3 +1,4 @@
+// client/src/services/profileApi.js
 import axiosInstance from '../lib/axios';
 
 // Get user profile by username
@@ -21,7 +22,6 @@ export const getUserPosts = async (userId, skip = 0, limit = 20) => {
     throw error;
   }
 };
-
 
 // Follow user
 export const followUser = async (userId) => {
@@ -94,16 +94,13 @@ export const uploadProfilePicture = async (imageFile) => {
   }
 };
 
-
 // Get saved posts
 export const getSavedPosts = async (userId) => {
   try {
-    const response = await axiosInstance.get(`/posts/saved`); // This is correct now
+    const response = await axiosInstance.get(`/posts/saved`);
     return response.data.posts || response.data;
   } catch (error) {
     console.error('Error fetching saved posts:', error);
     throw error;
   }
 };
-
-

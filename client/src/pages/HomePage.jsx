@@ -1,4 +1,3 @@
-// client/src/pages/HomePage.jsx - Complete Enhanced Version
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { 
   Heart, MessageCircle, Share2, Send, Image as ImageIcon, X, 
@@ -11,6 +10,10 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getPosts, createPost, uploadPostImages } from "../services/api";
 import axiosInstance from "../lib/axios";
+
+import SuggestedUsers from '../components/common/SuggestedUsers';
+
+
 
 // API helper functions
 const likePost = async (postId) => {
@@ -953,6 +956,8 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
   );
 };
 
+
+
 // Main HomePage Component
 export default function HomePage() {
   const { authUser: user, isCheckingAuth: loading } = useAuthStore();
@@ -1106,7 +1111,7 @@ export default function HomePage() {
       `}</style>
 
       <div className="max-w-7xl mx-auto flex gap-6 p-4">
-        Left Sidebar - User Info
+        {/* Left Sidebar - User Info */}
         <div className="hidden xl:block w-72 flex-shrink-0">
           <div className="sticky top-4 space-y-4">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 animate-fadeIn">
@@ -1229,9 +1234,13 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Right Sidebar - Trending */}
+        {/* Right Sidebar - Suggested Users + Trending */}
         <div className="hidden lg:block w-80 flex-shrink-0">
           <div className="sticky top-4 space-y-4">
+            {/* Suggested Users - FIRST */}
+            <SuggestedUsers limit={5} />
+
+            {/* Trending Now - SECOND */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 animate-fadeIn">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="h-5 w-5 text-orange-500" />
@@ -1265,6 +1274,7 @@ export default function HomePage() {
               </div>
             </div>
 
+            {/* Premium Features - THIRD */}
             <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white animate-fadeIn">
               <h3 className="font-bold text-xl mb-2">Premium Features</h3>
               <p className="text-sm text-blue-100 mb-4">Unlock advanced features and grow your network faster</p>

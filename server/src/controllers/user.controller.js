@@ -1,3 +1,4 @@
+// server/src/controllers/user.controller.js
 import User from '../models/user.model.js';
 import Post from '../models/post.model.js';
 import cloudinary from '../lib/cloudinary.js';
@@ -19,9 +20,15 @@ export const getUserProfile = async (req, res) => {
     // Get post count
     const postCount = await Post.countDocuments({ author: user._id });
 
+    // Check if current user is following this profile
+    const isFollowing = req.user && user.followers.some(
+      follower => follower._id.toString() === req.user._id.toString()
+    );
+
     res.json({
       ...user.toObject(),
-      postCount
+      postCount,
+      isFollowing
     });
   } catch (error) {
     console.error('Error in getUserProfile:', error);
@@ -65,8 +72,8 @@ export const followUser = async (req, res) => {
       return res.status(400).json({ message: "You can't follow yourself" });
     }
 
-    const userToFollow = await User.findById(userId);
-    const currentUser = await User.findById(currentUserId);
+    const userToFollow = await User.findById(userId).select('-password');
+    const currentUser = await User.findById(currentUserId).select('-password');
 
     if (!userToFollow) {
       return res.status(404).json({ message: 'User not found' });
@@ -87,7 +94,13 @@ export const followUser = async (req, res) => {
     res.json({ 
       message: 'User followed successfully',
       isFollowing: true,
-      followers: userToFollow.followers.length
+      followersCount: userToFollow.followers.length,
+      followingCount: currentUser.following.length,
+      user: {
+        _id: userToFollow._id,
+        username: userToFollow.username,
+        avatar: userToFollow.avatar
+      }
     });
   } catch (error) {
     console.error('Error in followUser:', error);
@@ -105,8 +118,8 @@ export const unfollowUser = async (req, res) => {
       return res.status(400).json({ message: "You can't unfollow yourself" });
     }
 
-    const userToUnfollow = await User.findById(userId);
-    const currentUser = await User.findById(currentUserId);
+    const userToUnfollow = await User.findById(userId).select('-password');
+    const currentUser = await User.findById(currentUserId).select('-password');
 
     if (!userToUnfollow) {
       return res.status(404).json({ message: 'User not found' });
@@ -126,7 +139,13 @@ export const unfollowUser = async (req, res) => {
     res.json({ 
       message: 'User unfollowed successfully',
       isFollowing: false,
-      followers: userToUnfollow.followers.length
+      followersCount: userToUnfollow.followers.length,
+      followingCount: currentUser.following.length,
+      user: {
+        _id: userToUnfollow._id,
+        username: userToUnfollow.username,
+        avatar: userToUnfollow.avatar
+      }
     });
   } catch (error) {
     console.error('Error in unfollowUser:', error);
@@ -203,7 +222,6 @@ export const uploadAvatar = async (req, res) => {
   }
 };
 
-
 // Get saved posts
 export const getSavedPosts = async (req, res) => {
   try {
@@ -221,5 +239,45 @@ export const getSavedPosts = async (req, res) => {
   } catch (error) {
     console.error('Error in getSavedPosts:', error);
     res.status(500).json({ message: 'Error fetching saved posts' });
+  }
+};
+
+
+// Get suggested users (users not followed by current user)
+export const getSuggestedUsers = async (req, res) => {
+  try {
+    const currentUserId = req.user._id;
+    const limit = parseInt(req.query.limit) || 5;
+
+    const currentUser = await User.findById(currentUserId).select('following');
+    
+    // Find users that current user is not following and exclude self
+    const suggestedUsers = await User.find({
+      _id: { 
+        $nin: [...currentUser.following, currentUserId] 
+      }
+    })
+    .select('username avatar bio')
+    .limit(limit)
+    .sort({ createdAt: -1 }); // Or use followers count for popularity
+
+    // Add follower count to each user
+    const usersWithFollowerCount = await Promise.all(
+      suggestedUsers.map(async (user) => {
+        const followerCount = await User.countDocuments({
+          following: user._id
+        });
+        return {
+          ...user.toObject(),
+          followersCount: followerCount,
+          isFollowing: false
+        };
+      })
+    );
+
+    res.json({ users: usersWithFollowerCount });
+  } catch (error) {
+    console.error('Error in getSuggestedUsers:', error);
+    res.status(500).json({ message: 'Error fetching suggested users' });
   }
 };

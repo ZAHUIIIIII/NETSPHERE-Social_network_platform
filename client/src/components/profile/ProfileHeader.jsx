@@ -1,12 +1,20 @@
 // client/src/components/profile/ProfileHeader.jsx
 import React, { useState } from 'react';
-import { Camera, MoreHorizontal, Edit, MapPin, Link as LinkIcon, Calendar } from 'lucide-react';
+import { Camera, MoreHorizontal, Edit, MapPin, Link as LinkIcon, Calendar, MessageCircle } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import FollowButton from './FollowButton';
+import FollowersModal from './FollowersModal';
 
-const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [] }) => {
+const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowChange }) => {
   const { updateProfile, isUpdatingProfile } = useAuthStore();
+  const navigate = useNavigate();
   const [selectedImg, setSelectedImg] = useState(null);
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [followersCount, setFollowersCount] = useState(user?.followers?.length || 0);
+  const [isFollowing, setIsFollowing] = useState(user?.isFollowing || false);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -70,13 +78,26 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [] }) => {
     });
   };
 
+  const handleFollowChange = (data) => {
+    setIsFollowing(data.isFollowing);
+    if (data.followersCount !== undefined) {
+      setFollowersCount(data.followersCount);
+    }
+    onFollowChange?.(data);
+  };
+
+  const handleMessage = () => {
+    // Navigate to chat page with this user
+    navigate(`/messages?user=${user._id}`);
+  };
+
   return (
     <div className="bg-white border-b border-gray-200">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row gap-6">
           {/* Avatar */}
           <div className="relative flex-shrink-0">
-            <div className="w-36 h-36 rounded-full overflow-hidden bg-gray-100 ring-1 ring-gray-200">
+            <div className="w-36 h-36 rounded-full overflow-hidden bg-gray-100 ring-4 ring-gray-200">
               {(selectedImg || user?.avatar) ? (
                 <img
                   src={selectedImg || user.avatar}
@@ -103,10 +124,10 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [] }) => {
                   disabled={isUpdatingProfile}
                 />
                 <label htmlFor="avatar-upload" className="cursor-pointer">
-                  <div className={`w-9 h-9 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center shadow-md transition-all border border-gray-200 ${
+                  <div className={`w-10 h-10 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center shadow-lg transition-all border-2 border-gray-200 ${
                     isUpdatingProfile ? 'animate-pulse' : ''
                   }`}>
-                    <Camera className="h-4 w-4 text-gray-700" />
+                    <Camera className="h-5 w-5 text-gray-700" />
                   </div>
                 </label>
               </div>
@@ -121,7 +142,7 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [] }) => {
                 <h1 className="text-3xl font-bold text-gray-900 mb-1">
                   {user?.username || 'User'}
                 </h1>
-                <p className="text-gray-600 text-base">@{user?.email || 'usermail'}</p>
+                <p className="text-gray-600 text-base">@{user?.email?.split('@')[0] || 'user'}</p>
               </div>
 
               {/* Action Buttons */}
@@ -141,10 +162,16 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [] }) => {
                   </>
                 ) : (
                   <>
-                    <button className="px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all font-medium text-sm">
-                      Follow
-                    </button>
-                    <button className="px-5 py-2 bg-white border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 transition-all font-medium text-sm">
+                    <FollowButton
+                      userId={user?._id}
+                      initialIsFollowing={isFollowing}
+                      onFollowChange={handleFollowChange}
+                    />
+                    <button 
+                      onClick={handleMessage}
+                      className="px-5 py-2 bg-white border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 transition-all font-medium text-sm flex items-center gap-2"
+                    >
+                      <MessageCircle size={16} />
                       Message
                     </button>
                     <button className="p-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors">
@@ -163,23 +190,23 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [] }) => {
                 </span>
                 <span className="text-gray-600 text-base">Posts</span>
               </div>
-              <button 
-                className="flex items-center gap-1 hover:text-gray-900 transition-colors"
-                onClick={() => {/* Handle followers modal */}}
+              <button
+                className="flex items-center gap-1 hover:text-gray-900 transition-colors group"
+                onClick={() => setShowFollowersModal(true)}
               >
-                <span className="font-bold text-gray-900 text-base">
-                  {user?.followers?.length || 0}
+                <span className="font-bold text-gray-900 text-base group-hover:underline">
+                  {followersCount}
                 </span>
-                <span className="text-gray-600 text-base">Followers</span>
+                <span className="text-gray-600 text-base group-hover:underline">Followers</span>
               </button>
-              <button 
-                className="flex items-center gap-1 hover:text-gray-900 transition-colors"
-                onClick={() => {/* Handle following modal */}}
+              <button
+                className="flex items-center gap-1 hover:text-gray-900 transition-colors group"
+                onClick={() => setShowFollowingModal(true)}
               >
-                <span className="font-bold text-gray-900 text-base">
+                <span className="font-bold text-gray-900 text-base group-hover:underline">
                   {user?.following?.length || 0}
                 </span>
-                <span className="text-gray-600 text-base">Following</span>
+                <span className="text-gray-600 text-base group-hover:underline">Following</span>
               </button>
             </div>
 
@@ -192,6 +219,12 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [] }) => {
 
             {/* Additional Info */}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm mb-3">
+              {user?.work && (
+                <div className="flex items-center gap-1.5 text-gray-600">
+                  <span className="font-medium">{user.work}</span>
+                </div>
+              )}
+
               {user?.location && (
                 <div className="flex items-center gap-1.5 text-gray-600">
                   <MapPin size={16} className="text-gray-500" />
@@ -200,9 +233,9 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [] }) => {
               )}
 
               {user?.website && (
-                <a 
-                  href={user.website} 
-                  target="_blank" 
+                <a
+                  href={user.website}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 text-blue-600 hover:underline"
                 >
@@ -215,25 +248,38 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [] }) => {
                 <div className="flex items-center gap-1.5 text-gray-600">
                   <Calendar size={16} className="text-gray-500" />
                   <span>
-                    Joined {new Date(user.createdAt).toLocaleDateString('en-US', { 
-                      month: 'long', 
-                      year: 'numeric' 
+                    Joined {new Date(user.createdAt).toLocaleDateString('en-US', {
+                      month: 'long',
+                      year: 'numeric'
                     })}
                   </span>
                 </div>
               )}
             </div>
-
-            {/* Hashtags/Interests */}
-            <div className="flex flex-wrap gap-3">
-              <span className="text-sm font-medium text-gray-900">#WebDevelopment</span>
-              <span className="text-sm font-medium text-gray-900">#React</span>
-              <span className="text-sm font-medium text-gray-900">#Design</span>
-              <span className="text-sm font-medium text-gray-900">#UI/UX</span>
-            </div>
           </div>
         </div>
       </div>
+
+      {/* Followers Modal */}
+      {showFollowersModal && (
+        <FollowersModal
+          userId={user._id}
+          type="followers"
+          userName={user.username}
+          onClose={() => setShowFollowersModal(false)}
+        />
+      )}
+
+      {/* Following Modal */}
+      {showFollowingModal && (
+        <FollowersModal
+          userId={user._id}
+          type="following"
+          userName={user.username}
+          onClose={() => setShowFollowingModal(false)}
+        />
+      )}
+
     </div>
   );
 };

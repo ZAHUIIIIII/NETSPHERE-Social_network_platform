@@ -9,7 +9,7 @@ import ProfileSaved from '../components/profile/ProfileSaved';
 import EditProfileModal from '../components/profile/EditProfileModal';
 import { getUserProfile, getUserPosts } from '../services/profileApi';
 import toast from 'react-hot-toast';
-import { Loader, ArrowLeft, Settings } from 'lucide-react';
+import { Loader, ArrowLeft } from 'lucide-react';
 
 const ProfilePage = () => {
   const { username } = useParams();
@@ -58,6 +58,17 @@ const ProfilePage = () => {
     fetchProfile(); // Refresh to get latest data
   };
 
+  const handleFollowChange = (data) => {
+    // Update local state when follow status changes
+    if (data.followersCount !== undefined) {
+      setProfileUser(prev => ({
+        ...prev,
+        followers: Array(data.followersCount).fill({}), // Update count
+        isFollowing: data.isFollowing
+      }));
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -98,6 +109,7 @@ const ProfilePage = () => {
         posts={posts}
         isOwnProfile={isOwnProfile}
         onEditClick={() => setShowEditModal(true)}
+        onFollowChange={handleFollowChange}
       />
 
       {/* Tabs */}
