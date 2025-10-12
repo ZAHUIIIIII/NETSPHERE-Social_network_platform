@@ -158,7 +158,7 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick }) => {
             {/* Stats */}
             <div className="flex items-center gap-8 mb-5">
               <div className="flex items-center gap-1">
-                <span className="font-bold text-gray-900 text-base">{posts.filter(p => p.author?._id === user?._id).length}</span>
+                <span className="font-bold text-gray-900 text-base">8</span>
                 <span className="text-gray-600 text-base">Posts</span>
               </div>
               <div className="flex items-center gap-1">

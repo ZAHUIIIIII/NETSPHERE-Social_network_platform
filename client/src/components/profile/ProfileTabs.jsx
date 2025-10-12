@@ -14,25 +14,22 @@ const ProfileTabs = ({ activeTab, onTabChange, isOwnProfile }) => {
 
   return (
     <div className="bg-white border-b border-gray-200">
-      <div className="max-w-5xl mx-auto px-4 md:px-6">
-        <div className="flex">
+      <div className="max-w-5xl mx-auto">
+        <div className={`grid ${isOwnProfile ? 'grid-cols-2' : 'grid-cols-1'} w-full`}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.key}
                 onClick={() => onTabChange(tab.key)}
-                className={`flex items-center justify-center gap-2 py-4 px-8 text-sm font-semibold transition-all relative ${
+                className={`flex items-center justify-center gap-2 py-4 text-sm font-medium transition-all relative border-b-2 ${
                   activeTab === tab.key
-                    ? 'text-gray-900'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'text-gray-900 border-gray-900'
+                    : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <Icon size={18} />
+                <Icon className="h-4 w-4" />
                 <span>{tab.label}</span>
-                {activeTab === tab.key && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-900"></div>
-                )}
               </button>
             );
           })}

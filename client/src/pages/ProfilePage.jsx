@@ -105,17 +105,19 @@ const ProfilePage = () => {
       />
 
       {/* Tab Content */}
-      <div className="max-w-5xl mx-auto px-4 md:px-6 py-6">
-        {activeTab === 'posts' && (
-          <ProfilePosts 
-            posts={posts}
-            isOwnProfile={isOwnProfile}
-            onPostsUpdate={fetchProfile}
-          />
-        )}
-        {activeTab === 'saved' && isOwnProfile && (
-          <ProfileSaved userId={profileUser._id} />
-        )}
+      <div className="max-w-5xl mx-auto p-4">
+        <div className="mt-6">
+          {activeTab === 'posts' && (
+            <ProfilePosts 
+              posts={posts}
+              isOwnProfile={isOwnProfile}
+              onPostsUpdate={fetchProfile}
+            />
+          )}
+          {activeTab === 'saved' && isOwnProfile && (
+            <ProfileSaved userId={profileUser._id} />
+          )}
+        </div>
       </div>
 
       {/* Edit Profile Modal */}
