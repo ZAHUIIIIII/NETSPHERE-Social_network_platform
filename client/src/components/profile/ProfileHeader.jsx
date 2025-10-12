@@ -4,7 +4,7 @@ import { Camera, MoreHorizontal, Edit, MapPin, Link as LinkIcon, Calendar } from
 import { useAuthStore } from '../../store/useAuthStore';
 import toast from 'react-hot-toast';
 
-const ProfileHeader = ({ user, isOwnProfile, onEditClick }) => {
+const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [] }) => {
   const { updateProfile, isUpdatingProfile } = useAuthStore();
   const [selectedImg, setSelectedImg] = useState(null);
 
@@ -158,17 +158,29 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick }) => {
             {/* Stats */}
             <div className="flex items-center gap-8 mb-5">
               <div className="flex items-center gap-1">
-                <span className="font-bold text-gray-900 text-base">8</span>
+                <span className="font-bold text-gray-900 text-base">
+                  {user?.postCount || posts?.length || 0}
+                </span>
                 <span className="text-gray-600 text-base">Posts</span>
               </div>
-              <div className="flex items-center gap-1">
-                <span className="font-bold text-gray-900 text-base">2.1k</span>
+              <button 
+                className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+                onClick={() => {/* Handle followers modal */}}
+              >
+                <span className="font-bold text-gray-900 text-base">
+                  {user?.followers?.length || 0}
+                </span>
                 <span className="text-gray-600 text-base">Followers</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span className="font-bold text-gray-900 text-base">543</span>
+              </button>
+              <button 
+                className="flex items-center gap-1 hover:text-gray-900 transition-colors"
+                onClick={() => {/* Handle following modal */}}
+              >
+                <span className="font-bold text-gray-900 text-base">
+                  {user?.following?.length || 0}
+                </span>
                 <span className="text-gray-600 text-base">Following</span>
-              </div>
+              </button>
             </div>
 
             {/* Bio */}

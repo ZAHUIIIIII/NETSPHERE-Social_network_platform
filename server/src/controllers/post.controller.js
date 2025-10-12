@@ -1,4 +1,5 @@
 import Post from '../models/post.model.js';
+import User from '../models/user.model.js'; // ADD THIS LINE
 import cloudinary from '../lib/cloudinary.js';
 import { promises as fs } from 'fs';
 
@@ -279,5 +280,33 @@ export const savePost = async (req, res) => {
   } catch (error) {
     console.error('Error in savePost:', error);
     res.status(500).json({ message: 'Error saving post' });
+  }
+};
+
+
+// Get saved posts for current user
+export const getSavedPosts = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const user = await User.findById(userId).populate({
+      path: 'savedPosts',
+      populate: {
+        path: 'author',
+        select: 'username avatar'
+      },
+      options: {
+        sort: { createdAt: -1 }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ posts: user.savedPosts || [] });
+  } catch (error) {
+    console.error('Error in getSavedPosts:', error);
+    res.status(500).json({ message: 'Error fetching saved posts' });
   }
 };

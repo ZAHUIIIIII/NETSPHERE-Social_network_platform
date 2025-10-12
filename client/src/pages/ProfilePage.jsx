@@ -3,14 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuthStore } from "../store/useAuthStore";
 import { useParams, useNavigate } from 'react-router-dom';
 import ProfileHeader from '../components/profile/ProfileHeader';
-import ProfileBio from '../components/profile/ProfileBio';
 import ProfileTabs from '../components/profile/ProfileTabs';
 import ProfilePosts from '../components/profile/ProfilePosts';
 import ProfileSaved from '../components/profile/ProfileSaved';
 import EditProfileModal from '../components/profile/EditProfileModal';
 import { getUserProfile, getUserPosts } from '../services/profileApi';
 import toast from 'react-hot-toast';
-import { Loader, ArrowLeft } from 'lucide-react';
+import { Loader, ArrowLeft, Settings } from 'lucide-react';
 
 const ProfilePage = () => {
   const { username } = useParams();
@@ -41,7 +40,6 @@ const ProfilePage = () => {
         setProfileUser(userData);
       }
       
-      // Fetch user posts
       if (userData?._id) {
         const userPosts = await getUserPosts(userData._id);
         setPosts(userPosts || []);
@@ -57,6 +55,7 @@ const ProfilePage = () => {
   const handleProfileUpdate = (updatedData) => {
     setProfileUser({ ...profileUser, ...updatedData });
     setShowEditModal(false);
+    fetchProfile(); // Refresh to get latest data
   };
 
   if (loading) {
@@ -64,7 +63,7 @@ const ProfilePage = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <Loader className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
-          <p className="text-gray-600">Loading profile...</p>
+          <p className="text-gray-600 font-medium">Loading profile...</p>
         </div>
       </div>
     );
@@ -73,14 +72,17 @@ const ProfilePage = () => {
   if (!profileUser) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="text-6xl mb-4">😕</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">User not found</h2>
-          <p className="text-gray-600 mb-6">The profile you're looking for doesn't exist.</p>
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-6">😕</div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-3">User not found</h2>
+          <p className="text-gray-600 mb-8 text-lg">
+            The profile you're looking for doesn't exist or has been removed.
+          </p>
           <button
             onClick={() => navigate('/')}
-            className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all font-semibold"
+            className="inline-flex items-center gap-2 px-8 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all font-semibold shadow-lg hover:shadow-xl"
           >
+            <ArrowLeft size={20} />
             Go to Home
           </button>
         </div>
@@ -93,6 +95,7 @@ const ProfilePage = () => {
       {/* Profile Header */}
       <ProfileHeader 
         user={profileUser}
+        posts={posts}
         isOwnProfile={isOwnProfile}
         onEditClick={() => setShowEditModal(true)}
       />
@@ -105,7 +108,7 @@ const ProfilePage = () => {
       />
 
       {/* Tab Content */}
-      <div className="max-w-5xl mx-auto p-4">
+      <div className="max-w-5xl mx-auto p-4 pb-8">
         <div className="mt-6">
           {activeTab === 'posts' && (
             <ProfilePosts 

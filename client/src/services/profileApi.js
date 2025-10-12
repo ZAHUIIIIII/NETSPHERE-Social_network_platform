@@ -22,16 +22,6 @@ export const getUserPosts = async (userId, skip = 0, limit = 20) => {
   }
 };
 
-// Get saved posts
-export const getSavedPosts = async (userId) => {
-  try {
-    const response = await axiosInstance.get(`/posts/saved`);
-    return response.data.posts || response.data;
-  } catch (error) {
-    console.error('Error fetching saved posts:', error);
-    throw error;
-  }
-};
 
 // Follow user
 export const followUser = async (userId) => {
@@ -103,4 +93,17 @@ export const uploadProfilePicture = async (imageFile) => {
     throw error;
   }
 };
+
+
+// Get saved posts
+export const getSavedPosts = async (userId) => {
+  try {
+    const response = await axiosInstance.get(`/posts/saved`); // This is correct now
+    return response.data.posts || response.data;
+  } catch (error) {
+    console.error('Error fetching saved posts:', error);
+    throw error;
+  }
+};
+
 
