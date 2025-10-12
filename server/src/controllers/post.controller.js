@@ -249,3 +249,35 @@ export const deleteComment = async (req, res) => {
     res.status(500).json({ message: 'Error deleting comment' });
   }
 };
+
+
+// Save/Unsave a post
+export const savePost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user._id;
+
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    const user = await User.findById(userId);
+    const savedIndex = user.savedPosts.indexOf(postId);
+
+    if (savedIndex === -1) {
+      // Save the post
+      user.savedPosts.push(postId);
+      await user.save();
+      res.json({ message: 'Post saved', isSaved: true });
+    } else {
+      // Unsave the post
+      user.savedPosts.splice(savedIndex, 1);
+      await user.save();
+      res.json({ message: 'Post unsaved', isSaved: false });
+    }
+  } catch (error) {
+    console.error('Error in savePost:', error);
+    res.status(500).json({ message: 'Error saving post' });
+  }
+};

@@ -15,6 +15,8 @@ import messageRoutes from './routes/message.route.js';
 import postRoutes from './routes/post.route.js';
 import { app, server } from './lib/socket.js';
 import searchRoutes from './routes/search.route.js';
+import userRoutes from './routes/user.route.js';
+
 
 
 const PORT = process.env.PORT || 5001;
@@ -62,6 +64,8 @@ app.use(passport.session());
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/posts", postRoutes);
+app.use("/api/users", userRoutes);
+
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

@@ -86,7 +86,7 @@ const App = () => {
             <Route path='/profile' element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />
             <Route path='/settings' element={authUser ? <SettingPage /> : <Navigate to="/login" />} />
             <Route path='/search' element={authUser ? <SearchPage /> : <Navigate to="/login" />} />
-
+            <Route path='/profile/:username?' element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />
           </Routes>
         </div>
 

@@ -1,17 +1,17 @@
-// Controllers for search functionality
+// server/src/controllers/search.controller.js
 import Post from '../models/post.model.js';
 import User from '../models/user.model.js';
+import mongoose from 'mongoose';
 
-// server/src/controllers/search.controller.js
 export const search = async (req, res) => {
   try {
     const { q, type, sortBy, skip = 0, limit = 20 } = req.query;
     
-    console.log('=== SEARCH DEBUG ===');
+    console.log('=== SEARCH REQUEST ===');
     console.log('Query:', q);
     console.log('Type:', type);
     console.log('SortBy:', sortBy);
-    console.log('User:', req.user?._id);
+    console.log('Skip:', skip, 'Limit:', limit);
 
     if (!q || q.trim().length === 0) {
       return res.status(400).json({ message: 'Search query is required' });
@@ -24,73 +24,140 @@ export const search = async (req, res) => {
       hashtags: []
     };
 
-    // Create search patterns
-    const searchRegex = new RegExp(searchQuery, 'i');
+    // Enhanced search patterns
+    const exactMatch = new RegExp(`^${searchQuery}$`, 'i');
     const startsWithRegex = new RegExp(`^${searchQuery}`, 'i');
+    const containsRegex = new RegExp(searchQuery, 'i');
+    const wordsRegex = new RegExp(searchQuery.split(' ').join('|'), 'i');
 
-    // Search Users
-    if (!type || type === 'users') {
-      const users = await User.find({
+    // Search Users with priority scoring
+    if (!type || type === 'users' || type === 'all') {
+      const userSearchQuery = {
         $or: [
-          { username: startsWithRegex }, // First priority: starts with
-          { username: searchRegex },      // Second priority: contains
-          { email: searchRegex },
-          { bio: searchRegex }
+          { username: exactMatch },      // Highest priority
+          { username: startsWithRegex }, // High priority
+          { username: containsRegex },   // Medium priority
+          { email: containsRegex },
+          { bio: containsRegex }
         ]
-      })
-        .select('username email bio avatar')
-        .limit(Number(limit))
-        .skip(Number(skip));
-
-      console.log('Found users:', users.length);
-      results.users = users.map(user => ({
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-        bio: user.bio,
-        avatar: user.avatar
-      }));
-    }
-
-    // Search Posts
-    if (!type || type === 'posts') {
-      let postQuery = {
-        $or: [
-          { content: searchRegex }
-        ],
-        privacy: 'public'
       };
 
-      let sortOptions = { createdAt: -1 };
+      let users = await User.find(userSearchQuery)
+        .select('username email bio avatar createdAt')
+        .limit(Number(limit) * 2) // Get more for sorting
+        .lean();
+
+      // Score and sort users by relevance
+      users = users.map(user => {
+        let score = 0;
+        if (exactMatch.test(user.username)) score += 100;
+        else if (startsWithRegex.test(user.username)) score += 50;
+        else if (containsRegex.test(user.username)) score += 25;
+        if (containsRegex.test(user.bio)) score += 10;
+        if (containsRegex.test(user.email)) score += 5;
+        
+        return { ...user, relevanceScore: score };
+      });
+
+      users.sort((a, b) => b.relevanceScore - a.relevanceScore);
+      users = users.slice(Number(skip), Number(skip) + Number(limit));
+
+      console.log(`Found ${users.length} users`);
+      results.users = users.map(({ relevanceScore, ...user }) => user);
+    }
+
+    // Search Posts with advanced filtering
+    if (!type || type === 'posts' || type === 'all') {
+      const postSearchQuery = {
+        $and: [
+          {
+            $or: [
+              { content: containsRegex },
+              { content: wordsRegex }
+            ]
+          },
+          { privacy: 'public' }
+        ]
+      };
+
+      // Sorting options
+      let sortOptions = {};
       switch (sortBy) {
         case 'Most Recent':
           sortOptions = { createdAt: -1 };
           break;
         case 'Most Popular':
-          sortOptions = { likes: -1 };
+          // Sort by engagement (likes + comments)
+          sortOptions = { likesCount: -1, commentsCount: -1, createdAt: -1 };
           break;
         case 'Oldest First':
           sortOptions = { createdAt: 1 };
           break;
-        default:
+        default: // Most Relevant
           sortOptions = { createdAt: -1 };
       }
 
-      const posts = await Post.find(postQuery)
-        .populate('author', 'username name avatar')
-        .populate({
-          path: 'comments',
-          populate: {
-            path: 'author',
-            select: 'username name avatar'
+      const posts = await Post.aggregate([
+        { $match: postSearchQuery },
+        {
+          $addFields: {
+            likesCount: { $size: { $ifNull: ['$likes', []] } },
+            commentsCount: { $size: { $ifNull: ['$comments', []] } }
           }
-        })
-        .sort(sortOptions)
-        .limit(Number(limit))
-        .skip(Number(skip));
+        },
+        { $sort: sortOptions },
+        { $skip: Number(skip) },
+        { $limit: Number(limit) },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'author',
+            foreignField: '_id',
+            as: 'author'
+          }
+        },
+        { $unwind: '$author' },
+        {
+          $project: {
+            content: 1,
+            images: 1,
+            likes: 1,
+            comments: 1,
+            privacy: 1,
+            createdAt: 1,
+            likesCount: 1,
+            commentsCount: 1,
+            'author._id': 1,
+            'author.username': 1,
+            'author.avatar': 1
+          }
+        }
+      ]);
 
-      console.log('Found posts:', posts.length);
+      console.log(`Found ${posts.length} posts`);
       results.posts = posts;
+    }
+
+    // Search Hashtags
+    if (searchQuery.startsWith('#')) {
+      const hashtag = searchQuery.substring(1);
+      const hashtagRegex = new RegExp(`#${hashtag}\\b`, 'i');
+      
+      const hashtagPosts = await Post.find({
+        content: hashtagRegex,
+        privacy: 'public'
+      })
+        .populate('author', 'username avatar')
+        .sort({ createdAt: -1 })
+        .limit(Number(limit))
+        .skip(Number(skip))
+        .lean();
+
+      results.hashtags = [{
+        tag: hashtag,
+        posts: hashtagPosts,
+        count: hashtagPosts.length
+      }];
     }
 
     const totalCounts = {
@@ -99,7 +166,7 @@ export const search = async (req, res) => {
       hashtags: results.hashtags.length
     };
 
-    console.log('Total counts:', totalCounts);
+    console.log('Results:', totalCounts);
 
     res.json({
       query: searchQuery,
@@ -109,90 +176,109 @@ export const search = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error in search:', error);
-    res.status(500).json({ message: 'Error performing search', error: error.message });
+    console.error('❌ Search error:', error);
+    res.status(500).json({ 
+      message: 'Error performing search', 
+      error: error.message 
+    });
   }
 };
 
-// Get trending topics
 export const getTrending = async (req, res) => {
   try {
-    // Get posts from last 7 days
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    const posts = await Post.find({
-      createdAt: { $gte: sevenDaysAgo },
-      privacy: 'public'
-    }).select('content');
+    // Use aggregation for better performance
+    const hashtagStats = await Post.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: sevenDaysAgo },
+          privacy: 'public'
+        }
+      },
+      {
+        $project: {
+          hashtags: {
+            $regexFindAll: {
+              input: '$content',
+              regex: /#(\w+)/
+            }
+          }
+        }
+      },
+      { $unwind: '$hashtags' },
+      {
+        $group: {
+          _id: { $toLower: { $arrayElemAt: ['$hashtags.captures', 0] } },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } },
+      { $limit: 10 }
+    ]);
 
-    // Extract hashtags
-    const hashtagCounts = {};
-    posts.forEach(post => {
-      const hashtags = post.content.match(/#\w+/g) || [];
-      hashtags.forEach(tag => {
-        const cleanTag = tag.substring(1).toLowerCase();
-        hashtagCounts[cleanTag] = (hashtagCounts[cleanTag] || 0) + 1;
-      });
-    });
-
-    // Convert to array and sort
-    const trending = Object.entries(hashtagCounts)
-      .map(([tag, count]) => ({
-        hashtag: tag,
-        posts: count,
-        trending: count > 10 // Mark as trending if more than 10 posts
-      }))
-      .sort((a, b) => b.posts - a.posts)
-      .slice(0, 10);
+    const trending = hashtagStats.map(item => ({
+      hashtag: item._id,
+      posts: item.count,
+      trending: item.count > 5
+    }));
 
     res.json({ trending });
   } catch (error) {
-    console.error('Error getting trending:', error);
+    console.error('❌ Trending error:', error);
     res.status(500).json({ message: 'Error fetching trending topics' });
   }
 };
 
-// Search suggestions (autocomplete)
 export const searchSuggestions = async (req, res) => {
   try {
     const { q } = req.query;
 
-    if (!q || q.trim().length === 0) {
-      return res.json({ suggestions: [] });
+    if (!q || q.trim().length < 2) {
+      return res.json({ suggestions: { users: [], hashtags: [] } });
     }
 
     const query = q.trim();
-    const searchRegex = new RegExp(query, 'i');
     const startsWithRegex = new RegExp(`^${query}`, 'i');
 
-    // Get user suggestions
-    const users = await User.find({
-      $or: [
-        { username: startsWithRegex }, // First priority: starts with
-        { username: searchRegex }      // Second priority: contains
-      ]
-    })
-      .select('username avatar')
-      .limit(5);
-
-    // Get hashtag suggestions from recent posts
-    const posts = await Post.find({
-      content: new RegExp(`#${q.trim()}`, 'i'),
-      privacy: 'public'
-    })
-      .select('content')
-      .limit(20);
-
-    const hashtags = new Set();
-    posts.forEach(post => {
-      const tags = post.content.match(/#\w+/g) || [];
-      tags.forEach(tag => {
-        if (tag.toLowerCase().startsWith(`#${q.toLowerCase()}`)) {
-          hashtags.add(tag.substring(1));
-        }
-      });
-    });
+    // Parallel execution for better performance
+    const [users, hashtagPosts] = await Promise.all([
+      // User suggestions
+      User.find({ username: startsWithRegex })
+        .select('username avatar')
+        .limit(5)
+        .lean(),
+      
+      // Hashtag suggestions
+      Post.aggregate([
+        {
+          $match: {
+            content: new RegExp(`#${query}`, 'i'),
+            privacy: 'public'
+          }
+        },
+        {
+          $project: {
+            hashtags: {
+              $regexFindAll: {
+                input: '$content',
+                regex: new RegExp(`#(${query}\\w*)`, 'i')
+              }
+            }
+          }
+        },
+        { $unwind: '$hashtags' },
+        {
+          $group: {
+            _id: { $toLower: { $arrayElemAt: ['$hashtags.captures', 0] } },
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { count: -1 } },
+        { $limit: 5 }
+      ])
+    ]);
 
     const suggestions = {
       users: users.map(u => ({
@@ -200,69 +286,77 @@ export const searchSuggestions = async (req, res) => {
         value: u.username,
         avatar: u.avatar
       })),
-      hashtags: Array.from(hashtags).slice(0, 5).map(tag => ({
+      hashtags: hashtagPosts.map(item => ({
         type: 'hashtag',
-        value: tag
+        value: item._id,
+        count: item.count
       }))
     };
 
     res.json({ suggestions });
   } catch (error) {
-    console.error('Error getting suggestions:', error);
+    console.error('❌ Suggestions error:', error);
     res.status(500).json({ message: 'Error fetching suggestions' });
   }
 };
 
-
-// Track search history
-  export const trackSearch = async (req, res) => {
+// New: Get search history for user
+export const getSearchHistory = async (req, res) => {
   try {
-    const { query, resultCount } = req.body;
+    const userId = req.user._id;
     
-    // Save to SearchHistory collection
-    await SearchHistory.create({
-      user: req.user._id,
-      query,
-      resultCount,
-      timestamp: new Date()
-    });
-
-    res.json({ success: true });
+    // This would require a SearchHistory model
+    // For now, return empty array
+    res.json({ history: [] });
   } catch (error) {
-    console.error('Error tracking search:', error);
-    res.status(500).json({ message: 'Error tracking search' });
+    console.error('❌ History error:', error);
+    res.status(500).json({ message: 'Error fetching search history' });
   }
 };
 
-// Advanced search with multiple filters
-export const advancedSearch = async (req, res) => {
+// New: Popular searches
+export const getPopularSearches = async (req, res) => {
   try {
-    const { 
-      q, 
-      type, 
-      dateFrom, 
-      dateTo, 
-      hasImages, 
-      minLikes,
-      location 
-    } = req.query;
+    // Get most searched hashtags in last 30 days
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    let postQuery = { content: new RegExp(q, 'i'), privacy: 'public' };
+    const popular = await Post.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: thirtyDaysAgo },
+          privacy: 'public'
+        }
+      },
+      {
+        $project: {
+          hashtags: {
+            $regexFindAll: {
+              input: '$content',
+              regex: /#(\w+)/
+            }
+          }
+        }
+      },
+      { $unwind: '$hashtags' },
+      {
+        $group: {
+          _id: { $toLower: { $arrayElemAt: ['$hashtags.captures', 0] } },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } },
+      { $limit: 20 }
+    ]);
 
-    if (dateFrom) postQuery.createdAt = { $gte: new Date(dateFrom) };
-    if (dateTo) postQuery.createdAt = { ...postQuery.createdAt, $lte: new Date(dateTo) };
-    if (hasImages) postQuery['images.0'] = { $exists: true };
-    if (minLikes) postQuery.likes = { $size: { $gte: Number(minLikes) } };
-    if (location) postQuery.location = new RegExp(location, 'i');
-
-    const posts = await Post.find(postQuery)
-      .populate('author', 'username name avatar')
-      .sort({ createdAt: -1 })
-      .limit(20);
-
-    res.json({ posts });
+    res.json({ 
+      popular: popular.map(item => ({
+        term: item._id,
+        count: item.count
+      })) 
+    });
   } catch (error) {
-    console.error('Error in advanced search:', error);
-    res.status(500).json({ message: 'Error performing advanced search' });
+    console.error('❌ Popular searches error:', error);
+    res.status(500).json({ message: 'Error fetching popular searches' });
   }
 };

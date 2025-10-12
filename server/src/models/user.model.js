@@ -43,10 +43,30 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  location: {
+    type: String,
+    default: "",
+  },
+  work: {
+    type: String,
+    default: "",
+  },
+  followers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  following: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  savedPosts: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Post'
+  }],
   googleId: {
     type: String,
     unique: true,
-    sparse: true, // Allows multiple null values
+    sparse: true,
   },
   isGoogleUser: {
     type: Boolean,
@@ -59,8 +79,13 @@ const userSchema = new mongoose.Schema({
     type: Date,
   },
 }, 
-    {timestamps: true }
+  { timestamps: true }
 );
+
+// Only add indexes for fields that aren't already indexed by unique: true
+userSchema.index({ followers: 1 });
+userSchema.index({ following: 1 });
+// username and email already have indexes due to unique: true
 
 const User = mongoose.model("User", userSchema);
 

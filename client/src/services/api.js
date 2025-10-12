@@ -49,14 +49,15 @@ export const uploadPostImages = async (files, onProgress) => {
   }
 };
 
-
-// Search functions
 export const searchAll = async (query, filters = {}) => {
   try {
     const params = new URLSearchParams({
-      q: query,
-      ...filters
+      q: query.trim(),
+      ...Object.fromEntries(
+        Object.entries(filters).filter(([_, value]) => value !== undefined && value !== '')
+      )
     });
+    
     const response = await axiosInstance.get(`/search?${params}`);
     return response.data;
   } catch (error) {
@@ -65,11 +66,21 @@ export const searchAll = async (query, filters = {}) => {
   }
 };
 
+// Get trending with caching
+let trendingCache = null;
+let trendingCacheTime = 0;
+const TRENDING_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-// Fetch trending topics and search suggestions
 export const getTrending = async () => {
   try {
+    const now = Date.now();
+    if (trendingCache && (now - trendingCacheTime) < TRENDING_CACHE_DURATION) {
+      return trendingCache;
+    }
+
     const response = await axiosInstance.get('/search/trending');
+    trendingCache = response.data;
+    trendingCacheTime = now;
     return response.data;
   } catch (error) {
     console.error('Error getting trending:', error);
@@ -77,13 +88,40 @@ export const getTrending = async () => {
   }
 };
 
+// Enhanced suggestions with debouncing built-in
+let suggestionAbortController = null;
+
 export const getSearchSuggestions = async (query) => {
   try {
-    const response = await axiosInstance.get(`/search/suggestions?q=${query}`);
+    // Cancel previous request
+    if (suggestionAbortController) {
+      suggestionAbortController.abort();
+    }
+
+    // Create new abort controller
+    suggestionAbortController = new AbortController();
+
+    const response = await axiosInstance.get(`/search/suggestions?q=${encodeURIComponent(query)}`, {
+      signal: suggestionAbortController.signal
+    });
+    
     return response.data;
   } catch (error) {
+    if (error.name === 'CanceledError') {
+      return { suggestions: { users: [], hashtags: [] } };
+    }
     console.error('Error getting suggestions:', error);
     throw error;
   }
 };
 
+// Get popular searches
+export const getPopularSearches = async () => {
+  try {
+    const response = await axiosInstance.get('/search/popular');
+    return response.data;
+  } catch (error) {
+    console.error('Error getting popular searches:', error);
+    throw error;
+  }
+};
