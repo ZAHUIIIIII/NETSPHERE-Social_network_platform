@@ -1,21 +1,21 @@
+// client/src/pages/ProfilePage.jsx
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from "../store/useAuthStore";
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import ProfileHeader from '../components/profile/ProfileHeader';
-import ProfileStats from '../components/profile/ProfileStats';
 import ProfileBio from '../components/profile/ProfileBio';
 import ProfileTabs from '../components/profile/ProfileTabs';
 import ProfilePosts from '../components/profile/ProfilePosts';
 import ProfileSaved from '../components/profile/ProfileSaved';
-import ProfilePhotos from '../components/profile/ProfilePhotos';
 import EditProfileModal from '../components/profile/EditProfileModal';
 import { getUserProfile, getUserPosts } from '../services/profileApi';
 import toast from 'react-hot-toast';
-import { Loader } from 'lucide-react';
+import { Loader, ArrowLeft } from 'lucide-react';
 
 const ProfilePage = () => {
   const { username } = useParams();
   const { authUser } = useAuthStore();
+  const navigate = useNavigate();
   const [profileUser, setProfileUser] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,15 +31,21 @@ const ProfilePage = () => {
   const fetchProfile = async () => {
     setLoading(true);
     try {
+      let userData;
+      
       if (isOwnProfile) {
+        userData = authUser;
         setProfileUser(authUser);
       } else {
-        const userData = await getUserProfile(username);
+        userData = await getUserProfile(username);
         setProfileUser(userData);
       }
       
-      const userPosts = await getUserPosts(isOwnProfile ? authUser?._id : profileUser?._id);
-      setPosts(userPosts);
+      // Fetch user posts
+      if (userData?._id) {
+        const userPosts = await getUserPosts(userData._id);
+        setPosts(userPosts || []);
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
       toast.error('Failed to load profile');
@@ -56,17 +62,27 @@ const ProfilePage = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader className="w-12 h-12 animate-spin text-blue-500" />
+        <div className="text-center">
+          <Loader className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" />
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
       </div>
     );
   }
 
   if (!profileUser) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="text-center">
+          <div className="text-6xl mb-4">😕</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">User not found</h2>
-          <p className="text-gray-600">The profile you're looking for doesn't exist.</p>
+          <p className="text-gray-600 mb-6">The profile you're looking for doesn't exist.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all font-semibold"
+          >
+            Go to Home
+          </button>
         </div>
       </div>
     );
@@ -74,51 +90,32 @@ const ProfilePage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-5xl mx-auto">
-        {/* Profile Header */}
-        <ProfileHeader 
-          user={profileUser}
-          isOwnProfile={isOwnProfile}
-          onEditClick={() => setShowEditModal(true)}
-        />
+      {/* Profile Header */}
+      <ProfileHeader 
+        user={profileUser}
+        isOwnProfile={isOwnProfile}
+        onEditClick={() => setShowEditModal(true)}
+      />
 
-        {/* Stats */}
-        <ProfileStats 
-          posts={posts.length}
-          followers={profileUser.followers?.length || 0}
-          following={profileUser.following?.length || 0}
-        />
+      {/* Tabs */}
+      <ProfileTabs 
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        isOwnProfile={isOwnProfile}
+      />
 
-        {/* Bio */}
-        <ProfileBio user={profileUser} />
-
-        {/* Tabs */}
-        <ProfileTabs 
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
-
-        {/* Tab Content */}
-        <div className="px-4 pb-8">
-          {activeTab === 'posts' && (
-            <ProfilePosts 
-              posts={posts}
-              isOwnProfile={isOwnProfile}
-              onPostsUpdate={fetchProfile}
-            />
-          )}
-          {activeTab === 'saved' && (
-            <ProfileSaved userId={profileUser._id} />
-          )}
-          {activeTab === 'photos' && (
-            <ProfilePhotos posts={posts} />
-          )}
-          {activeTab === 'tagged' && (
-            <div className="text-center py-12 text-gray-500">
-              Tagged photos coming soon
-            </div>
-          )}
-        </div>
+      {/* Tab Content */}
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-6">
+        {activeTab === 'posts' && (
+          <ProfilePosts 
+            posts={posts}
+            isOwnProfile={isOwnProfile}
+            onPostsUpdate={fetchProfile}
+          />
+        )}
+        {activeTab === 'saved' && isOwnProfile && (
+          <ProfileSaved userId={profileUser._id} />
+        )}
       </div>
 
       {/* Edit Profile Modal */}

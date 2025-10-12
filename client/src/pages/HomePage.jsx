@@ -1106,7 +1106,7 @@ export default function HomePage() {
       `}</style>
 
       <div className="max-w-7xl mx-auto flex gap-6 p-4">
-        {/* Left Sidebar - User Info
+        Left Sidebar - User Info
         <div className="hidden xl:block w-72 flex-shrink-0">
           <div className="sticky top-4 space-y-4">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 animate-fadeIn">
@@ -1160,7 +1160,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-        </div> */}
+        </div>
 
         {/* Main Feed */}
         <div className="flex-1 max-w-2xl mx-auto space-y-6">

@@ -1,9 +1,11 @@
+// server/src/routes/post.route.js
 import express from 'express';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import multer from 'multer';
 import { protectRoute } from '../middleware/auth.middleware.js';
 import * as postController from '../controllers/post.controller.js';
+import { getUserPosts } from '../controllers/user.controller.js'; // Import from user controller
 
 // Get current directory
 const __filename = fileURLToPath(import.meta.url);
@@ -39,15 +41,14 @@ const upload = multer({
 
 // Post routes
 router.get('/', protectRoute, postController.getAllPosts);
+router.get('/user/:userId', protectRoute, getUserPosts); // ADD THIS LINE - Get user posts
 router.post('/', protectRoute, postController.createPost);
 router.post('/upload', protectRoute, upload.array('images', 10), postController.uploadImages);
 router.put('/:postId', protectRoute, postController.updatePost);
 router.delete('/:postId', protectRoute, postController.deletePost);
 router.post('/:postId/like', protectRoute, postController.likePost);
+router.post('/:postId/save', protectRoute, postController.savePost);
 router.post('/:postId/comment', protectRoute, postController.addComment);
 router.delete('/:postId/comment/:commentId', protectRoute, postController.deleteComment);
-
-router.post('/:postId/save', protectRoute, postController.savePost);
-
 
 export default router;
