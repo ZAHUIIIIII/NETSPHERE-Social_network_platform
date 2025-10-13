@@ -5,7 +5,13 @@ import axiosInstance from '../lib/axios';
 export const getUserProfile = async (username) => {
   try {
     const response = await axiosInstance.get(`/users/profile/${username}`);
-    return response.data;
+    const userData = response.data;
+    
+    // Ensure followers and following are always arrays
+    userData.followers = Array.isArray(userData.followers) ? userData.followers : [];
+    userData.following = Array.isArray(userData.following) ? userData.following : [];
+    
+    return userData;
   } catch (error) {
     console.error('Error fetching user profile:', error);
     throw error;

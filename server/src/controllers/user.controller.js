@@ -10,8 +10,8 @@ export const getUserProfile = async (req, res) => {
     
     const user = await User.findOne({ username })
       .select('-password')
-      .populate('followers', 'username avatar')
-      .populate('following', 'username avatar');
+      .populate('followers', 'username avatar bio')
+      .populate('following', 'username avatar bio');
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -20,16 +20,43 @@ export const getUserProfile = async (req, res) => {
     // Get post count
     const postCount = await Post.countDocuments({ author: user._id });
 
+    // Ensure followers and following are arrays
+    const followers = user.followers || [];
+    const following = user.following || [];
+
     // Check if current user is following this profile
-    const isFollowing = req.user && user.followers.some(
+    const isFollowing = req.user && followers.some(
       follower => follower._id.toString() === req.user._id.toString()
     );
 
-    res.json({
-      ...user.toObject(),
-      postCount,
-      isFollowing
+    // Convert to object and ensure followers/following are arrays
+    const userObject = user.toObject();
+    
+    // Ensure we're sending arrays even if they're empty
+    userObject.followers = userObject.followers || [];
+    userObject.following = userObject.following || [];
+
+    console.log('Backend - User profile data:', {
+      userId: userObject._id,
+      username: userObject.username,
+      followersCount: userObject.followers.length,
+      followingCount: userObject.following.length,
+      isFollowing,
+      hasFollowersArray: Array.isArray(userObject.followers),
+      hasFollowingArray: Array.isArray(userObject.following)
     });
+
+    const responseData = {
+      ...userObject,
+      postCount,
+      isFollowing,
+      followersCount: userObject.followers.length,
+      followingCount: userObject.following.length
+    };
+
+    console.log('Backend - Sending response:', responseData);
+
+    res.json(responseData);
   } catch (error) {
     console.error('Error in getUserProfile:', error);
     res.status(500).json({ message: 'Error fetching user profile' });

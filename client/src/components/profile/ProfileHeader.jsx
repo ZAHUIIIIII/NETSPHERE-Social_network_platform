@@ -1,5 +1,5 @@
 // client/src/components/profile/ProfileHeader.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Camera, MoreHorizontal, Edit, MapPin, Link as LinkIcon, Calendar, MessageCircle } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
@@ -13,8 +13,28 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
   const [selectedImg, setSelectedImg] = useState(null);
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
-  const [followersCount, setFollowersCount] = useState(user?.followers?.length || 0);
-  const [isFollowing, setIsFollowing] = useState(user?.isFollowing || false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followingCount, setFollowingCount] = useState(0);
+  const [isFollowing, setIsFollowing] = useState(false);
+
+  // Update counts whenever user prop changes
+  useEffect(() => {
+    if (user) {
+      const newFollowersCount = Array.isArray(user.followers) ? user.followers.length : 0;
+      const newFollowingCount = Array.isArray(user.following) ? user.following.length : 0;
+      
+      // Only update if counts actually changed
+      if (followersCount !== newFollowersCount) {
+        setFollowersCount(newFollowersCount);
+      }
+      if (followingCount !== newFollowingCount) {
+        setFollowingCount(newFollowingCount);
+      }
+      if (isFollowing !== user.isFollowing) {
+        setIsFollowing(user.isFollowing || false);
+      }
+    }
+  }, [user?.username]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -78,17 +98,39 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
     });
   };
 
-  const handleFollowChange = (data) => {
-    setIsFollowing(data.isFollowing);
-    if (data.followersCount !== undefined) {
-      setFollowersCount(data.followersCount);
+      const handleFollowChange = (data) => {
+    // Only update if the following status actually changed
+    if (isFollowing !== data.isFollowing) {
+      setIsFollowing(data.isFollowing);
+      
+      // Update follower count optimistically
+      setFollowersCount(prev => 
+        data.isFollowing ? prev + 1 : Math.max(0, prev - 1)
+      );
+      
+      // Propagate to parent
+      onFollowChange?.(data);
     }
-    onFollowChange?.(data);
   };
 
   const handleMessage = () => {
-    // Navigate to chat page with this user
     navigate(`/messages?user=${user._id}`);
+  };
+
+  const handleFollowersModalClose = () => {
+    setShowFollowersModal(false);
+    // Optionally refresh counts after modal close
+    if (user) {
+      setFollowersCount(user.followers?.length || 0);
+    }
+  };
+
+  const handleFollowingModalClose = () => {
+    setShowFollowingModal(false);
+    // Optionally refresh counts after modal close
+    if (user) {
+      setFollowingCount(user.following?.length || 0);
+    }
   };
 
   return (
@@ -204,7 +246,7 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                 onClick={() => setShowFollowingModal(true)}
               >
                 <span className="font-bold text-gray-900 text-base group-hover:underline">
-                  {user?.following?.length || 0}
+                  {followingCount}
                 </span>
                 <span className="text-gray-600 text-base group-hover:underline">Following</span>
               </button>
@@ -266,7 +308,7 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
           userId={user._id}
           type="followers"
           userName={user.username}
-          onClose={() => setShowFollowersModal(false)}
+          onClose={handleFollowersModalClose}
         />
       )}
 
@@ -276,10 +318,9 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
           userId={user._id}
           type="following"
           userName={user.username}
-          onClose={() => setShowFollowingModal(false)}
+          onClose={handleFollowingModalClose}
         />
       )}
-
     </div>
   );
 };

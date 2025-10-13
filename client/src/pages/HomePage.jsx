@@ -8,12 +8,16 @@ import {
 import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { getPosts, createPost, uploadPostImages } from "../services/api";
+import { 
+  getPosts, 
+  createPost, 
+  uploadPostImages,
+  savePost as savePostAPI,
+  checkPostSaved
+} from "../services/api";
+
 import axiosInstance from "../lib/axios";
-
 import SuggestedUsers from '../components/common/SuggestedUsers';
-
-
 
 // API helper functions
 const likePost = async (postId) => {
@@ -445,12 +449,44 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     setLiked(post.likes?.includes(currentUser?._id));
     setLikeCount(post.likes?.length || 0);
     setComments(post.comments || []);
-  }, [post.likes, post.comments, currentUser]);
+    
+    // Check if post is saved
+    checkIfSaved();
+  }, [post.likes, post.comments, currentUser, post._id]);
+
+  const checkIfSaved = async () => {
+    try {
+      const result = await checkPostSaved(post._id);
+      setBookmarked(result.isSaved || false);
+    } catch (error) {
+      console.error('Error checking saved status:', error);
+    }
+  };
+
+  const handleSaveToggle = async () => {
+    if (isSaving) return;
+    
+    setIsSaving(true);
+    try {
+      const result = await savePostAPI(post._id);
+      setBookmarked(result.isSaved);
+      toast.success(result.isSaved ? 'Post saved!' : 'Post removed from saved', {
+        icon: result.isSaved ? '🔖' : '📌',
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error('Error toggling save:', error);
+      toast.error('Failed to save post');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleLike = async () => {
     try {
@@ -509,7 +545,8 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
       setShowShareModal(false);
     } catch (error) {
       console.error('Error sharing:', error);
-      toast.error('Failed to share post');
+      
+toast.error('Failed to share post');
     }
   };
 
@@ -610,11 +647,11 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
               )}
               <button 
                 onClick={() => {
-                  setBookmarked(!bookmarked);
+                  handleSaveToggle();
                   setShowOptions(false);
-                  toast.success(bookmarked ? 'Post removed from saved' : 'Post saved!');
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
+                disabled={isSaving}
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm disabled:opacity-50"
               >
                 {bookmarked ? 'Unsave post' : 'Save post'}
               </button>
@@ -741,53 +778,51 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
         </div>
       </div>
 
-     {/* Action Buttons (compact) */}
-<div className="px-3 pb-2 pt-1 border-t border-gray-100">
-  <div className="flex items-center gap-1">
-    <button
-      onClick={handleLike}
-      className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg transition-all text-sm ${
-        liked
-          ? 'text-red-500 bg-red-50 hover:bg-red-100'
-          : 'text-gray-600 hover:bg-gray-50'
-      }`}
-    >
-      <Heart className={liked ? 'fill-current' : ''} size={12} />
-      <span>Like</span>
-    </button>
+      {/* Action Buttons */}
+      <div className="px-3 pb-2 pt-1 border-t border-gray-100">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleLike}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg transition-all text-sm ${
+              liked
+                ? 'text-red-500 bg-red-50 hover:bg-red-100'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <Heart className={liked ? 'fill-current' : ''} size={12} />
+            <span>Like</span>
+          </button>
 
-    <button
-      onClick={() => setShowComments(!showComments)}
-      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-all"
-    >
-      <MessageCircle size={12} />
-      <span>Comment</span>
-    </button>
+          <button
+            onClick={() => setShowComments(!showComments)}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-all"
+          >
+            <MessageCircle size={12} />
+            <span>Comment</span>
+          </button>
 
-    <button
-      onClick={() => setShowShareModal(true)}
-      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-all"
-    >
-      <Share2 size={12} />
-      <span>Share</span>
-    </button>
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-all"
+          >
+            <Share2 size={12} />
+            <span>Share</span>
+          </button>
 
-    <button
-      onClick={() => {
-        setBookmarked(!bookmarked);
-        toast.success(bookmarked ? 'Removed from saved' : 'Post saved!');
-      }}
-      aria-label={bookmarked ? 'Unsave post' : 'Save post'}
-      className={`p-1.5 rounded-lg transition-all ${
-        bookmarked
-          ? 'text-yellow-500 bg-yellow-50 hover:bg-yellow-100'
-          : 'text-gray-600 hover:bg-gray-50'
-      }`}
-    >
-      <Bookmark className={bookmarked ? 'fill-current' : ''} size={16} />
-    </button>
-  </div>
-</div>
+          <button
+            onClick={handleSaveToggle}
+            disabled={isSaving}
+            aria-label={bookmarked ? 'Unsave post' : 'Save post'}
+            className={`p-1.5 rounded-lg transition-all disabled:opacity-50 ${
+              bookmarked
+                ? 'text-yellow-500 bg-yellow-50 hover:bg-yellow-100'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <Bookmark className={bookmarked ? 'fill-current' : ''} size={16} />
+          </button>
+        </div>
+      </div>
 
       {/* Comments Section */}
       {showComments && (
@@ -956,8 +991,6 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
   );
 };
 
-
-
 // Main HomePage Component
 export default function HomePage() {
   const { authUser: user, isCheckingAuth: loading } = useAuthStore();
@@ -1110,63 +1143,8 @@ export default function HomePage() {
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
 
+
       <div className="max-w-7xl mx-auto flex gap-6 p-4">
-        {/* Left Sidebar - User Info */}
-        <div className="hidden xl:block w-72 flex-shrink-0">
-          <div className="sticky top-4 space-y-4">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 animate-fadeIn">
-              <div className="flex flex-col items-center text-center">
-                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[3px] mb-4">
-                  <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                    {user?.avatar ? (
-                      <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-2xl font-bold text-gray-700">{user?.username?.charAt(0) || 'U'}</span>
-                    )}
-                  </div>
-                </div>
-                <h3 className="font-bold text-gray-900 text-lg">{user?.username}</h3>
-                <p className="text-sm text-gray-500 mt-1">{user?.email}</p>
-                
-                <div className="flex items-center gap-4 mt-6 w-full">
-                  <div className="flex-1 text-center">
-                    <p className="font-bold text-gray-900">{posts.filter(p => p.author?._id === user?._id).length}</p>
-                    <p className="text-xs text-gray-500">Posts</p>
-                  </div>
-                  <div className="flex-1 text-center border-x border-gray-200">
-                    <p className="font-bold text-gray-900">0</p>
-                    <p className="text-xs text-gray-500">Friends</p>
-                  </div>
-                  <div className="flex-1 text-center">
-                    <p className="font-bold text-gray-900">0</p>
-                    <p className="text-xs text-gray-500">Saved</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 animate-fadeIn">
-              <h3 className="font-bold text-gray-900 mb-4">Quick Links</h3>
-              <div className="space-y-3">
-                {[
-                  { icon: '👥', label: 'Friends', count: 0 },
-                  { icon: '💾', label: 'Saved', count: 0 },
-                  { icon: '📷', label: 'Photos', count: 0 },
-                  { icon: '🎥', label: 'Videos', count: 0 },
-                ].map((item, i) => (
-                  <button key={i} className="w-full flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{item.icon}</span>
-                      <span className="font-medium text-gray-700">{item.label}</span>
-                    </div>
-                    <span className="text-sm text-gray-500">{item.count}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Main Feed */}
         <div className="flex-1 max-w-2xl mx-auto space-y-6">
           {/* Header */}

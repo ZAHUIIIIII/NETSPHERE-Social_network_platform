@@ -310,3 +310,34 @@ export const getSavedPosts = async (req, res) => {
     res.status(500).json({ message: 'Error fetching saved posts' });
   }
 };
+
+export const checkPostSaved = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    const isSaved = user.savedPosts.includes(postId);
+
+    res.json({ isSaved });
+  } catch (error) {
+    console.error('Error checking saved status:', error);
+    res.status(500).json({ message: 'Error checking saved status' });
+  }
+};
+
+// Check if post is saved by current user
+export const checkPostSavedStatus = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user._id;
+
+    const user = await User.findById(userId);
+    const isSaved = user.savedPosts.includes(postId);
+
+    res.json({ isSaved });
+  } catch (error) {
+    console.error('Error in checkPostSavedStatus:', error);
+    res.status(500).json({ message: 'Error checking saved status' });
+  }
+};

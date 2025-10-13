@@ -1,7 +1,8 @@
 // client/src/components/profile/ProfileSaved.jsx
 import React, { useState, useEffect } from 'react';
 import { getSavedPosts } from '../../services/profileApi';
-import { Loader, Bookmark, Heart, MessageCircle, BookmarkX } from 'lucide-react';
+import { savePost } from '../../services/api'; // ADD THIS
+import { Loader, Bookmark, Heart, MessageCircle, BookmarkX, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -27,6 +28,19 @@ const ProfileSaved = ({ userId }) => {
       toast.error('Failed to load saved posts');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ADD THIS FUNCTION
+  const handleUnsave = async (postId, e) => {
+    e.stopPropagation();
+    try {
+      await savePost(postId);
+      setSavedPosts(prev => prev.filter(post => post._id !== postId));
+      toast.success('Removed from saved');
+    } catch (error) {
+      console.error('Error unsaving post:', error);
+      toast.error('Failed to remove post');
     }
   };
 
@@ -85,10 +99,12 @@ const ProfileSaved = ({ userId }) => {
       {savedPosts.map((post) => (
         <div
           key={post._id}
-          className="group cursor-pointer overflow-hidden bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-          onClick={() => navigate(`/post/${post._id}`)}
+          className="group cursor-pointer overflow-hidden bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative"
         >
-          <div className="relative aspect-square">
+          <div 
+            className="relative aspect-square"
+            onClick={() => navigate(`/post/${post._id}`)}
+          >
             {post.images && post.images[0] ? (
               <img
                 src={post.images[0]}
@@ -117,13 +133,6 @@ const ProfileSaved = ({ userId }) => {
               </div>
             </div>
 
-            {/* Saved Badge */}
-            <div className="absolute top-3 right-3">
-              <div className="bg-blue-500 text-white p-2 rounded-full shadow-lg">
-                <Bookmark className="h-4 w-4" fill="currentColor" />
-              </div>
-            </div>
-
             {/* Multiple Images Indicator */}
             {post.images && post.images.length > 1 && (
               <div className="absolute top-3 left-3">
@@ -133,6 +142,15 @@ const ProfileSaved = ({ userId }) => {
               </div>
             )}
           </div>
+
+          {/* Unsave Button - ADD THIS */}
+          <button
+            onClick={(e) => handleUnsave(post._id, e)}
+            className="absolute top-3 right-3 p-2.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 z-10"
+            title="Remove from saved"
+          >
+            <Trash2 size={16} />
+          </button>
         </div>
       ))}
     </div>

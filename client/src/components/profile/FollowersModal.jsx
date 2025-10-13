@@ -13,6 +13,8 @@ const FollowersModal = ({ userId, type, onClose, userName }) => {
   const navigate = useNavigate();
   const { authUser } = useAuthStore();
 
+
+  
   useEffect(() => {
     fetchUsers();
   }, [userId, type]);

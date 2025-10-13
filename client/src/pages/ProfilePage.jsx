@@ -13,7 +13,7 @@ import { Loader, ArrowLeft } from 'lucide-react';
 
 const ProfilePage = () => {
   const { username } = useParams();
-  const { authUser } = useAuthStore();
+  const { authUser, updateProfile: updateAuthUserProfile } = useAuthStore();
   const navigate = useNavigate();
   const [profileUser, setProfileUser] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -24,25 +24,33 @@ const ProfilePage = () => {
   const isOwnProfile = !username || username === authUser?.username;
 
   useEffect(() => {
-    fetchProfile();
-  }, [username, authUser]);
+    // Only fetch if we don't have the profile data or username changes
+    if (!profileUser || username !== profileUser.username) {
+      fetchProfile();
+    }
+  }, [username]);
 
   const fetchProfile = async () => {
-    setLoading(true);
     try {
-      let userData;
-      
-      if (isOwnProfile) {
-        userData = authUser;
-        setProfileUser(authUser);
-      } else {
-        userData = await getUserProfile(username);
-        setProfileUser(userData);
+      // Only show loading on initial load
+      if (!profileUser) {
+        setLoading(true);
       }
+
+      const targetUsername = isOwnProfile ? authUser?.username : username;
+      if (!targetUsername) return;
+
+      const userData = await getUserProfile(targetUsername);
       
-      if (userData?._id) {
+      if (userData) {
+        setProfileUser(userData);
         const userPosts = await getUserPosts(userData._id);
         setPosts(userPosts || []);
+        
+        // Only update auth user data if it's actually different
+        if (isOwnProfile && JSON.stringify(authUser) !== JSON.stringify(userData)) {
+          updateAuthUserProfile(userData);
+        }
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -58,14 +66,39 @@ const ProfilePage = () => {
     fetchProfile(); // Refresh to get latest data
   };
 
-  const handleFollowChange = (data) => {
-    // Update local state when follow status changes
-    if (data.followersCount !== undefined) {
-      setProfileUser(prev => ({
-        ...prev,
-        followers: Array(data.followersCount).fill({}), // Update count
-        isFollowing: data.isFollowing
-      }));
+    const handleFollowChange = async (data) => {
+    try {
+      // Only update if the following status actually changed
+      if (profileUser.isFollowing !== data.isFollowing) {
+        // Immediately update UI with the new following status
+        setProfileUser(prev => ({
+          ...prev,
+          isFollowing: data.isFollowing,
+          followers: data.isFollowing 
+            ? [...(prev.followers || []), authUser]
+            : (prev.followers || []).filter(f => f._id !== authUser?._id)
+        }));
+
+        if (!isOwnProfile && authUser) {
+          // Update auth user's following count locally
+          const newFollowing = data.isFollowing
+            ? [...(authUser.following || []), profileUser]
+            : (authUser.following || []).filter(f => f._id !== profileUser?._id);
+
+          const newAuthUserData = {
+            ...authUser,
+            following: newFollowing
+          };
+
+          // Only update if there's an actual change
+          if (JSON.stringify(authUser) !== JSON.stringify(newAuthUserData)) {
+            updateAuthUserProfile(newAuthUserData);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error updating user data:', error);
+      toast.error('Failed to update follow status');
     }
   };
 
@@ -146,5 +179,6 @@ const ProfilePage = () => {
     </div>
   );
 };
+
 
 export default ProfilePage;

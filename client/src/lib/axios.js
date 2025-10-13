@@ -23,20 +23,29 @@ axiosInstance.interceptors.request.use(
 );
 
 // Response interceptor
+let isRefreshing = false;
+
 axiosInstance.interceptors.response.use(
     (response) => response,
     async (error) => {
         // Handle 401 Unauthorized errors
-        if (error?.response?.status === 401) {
-            // Clear token and redirect to login
+        if (error?.response?.status === 401 && !isRefreshing) {
+            isRefreshing = true;
+            
+            // Clear token and user data
             try {
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
             } catch (e) {}
-            // Only redirect in browser environment
-            if (typeof window !== 'undefined') {
-                window.location.href = '/login';
+
+            // Only redirect in browser environment and if we're not already on the login page
+            if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+                window.location.replace('/login');
             }
+            
+            setTimeout(() => {
+                isRefreshing = false;
+            }, 1000); // Prevent multiple redirects within 1 second
         }
         return Promise.reject(error);
     }

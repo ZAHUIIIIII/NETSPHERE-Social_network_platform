@@ -38,14 +38,15 @@ const upload = multer({
 
 // Post routes
 router.get('/', protectRoute, postController.getAllPosts);
-router.get('/saved', protectRoute, postController.getSavedPosts); // ADD THIS LINE
+router.get('/saved', protectRoute, postController.getSavedPosts);
 router.get('/user/:userId', protectRoute, getUserPosts);
+router.get('/:postId/saved-status', protectRoute, postController.checkPostSavedStatus); // ADD THIS
 router.post('/', protectRoute, postController.createPost);
 router.post('/upload', protectRoute, upload.array('images', 10), postController.uploadImages);
 router.put('/:postId', protectRoute, postController.updatePost);
 router.delete('/:postId', protectRoute, postController.deletePost);
 router.post('/:postId/like', protectRoute, postController.likePost);
-router.post('/:postId/save', protectRoute, postController.savePost); // ADD THIS LINE
+router.post('/:postId/save', protectRoute, postController.savePost);
 router.post('/:postId/comment', protectRoute, postController.addComment);
 router.delete('/:postId/comment/:commentId', protectRoute, postController.deleteComment);
 
