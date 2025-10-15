@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../lib/email.js';
 import passport, { ensureGoogleStrategy } from '../config/passport.js';
 
+
 export const registerInitiate = async (req, res) => {
     const { username, birthday, gender, email } = req.body;
     try {

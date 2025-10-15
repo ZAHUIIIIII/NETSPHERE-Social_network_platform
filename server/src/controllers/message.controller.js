@@ -9,7 +9,7 @@ export const getUsersForSidebar = async (req, res) => {
     console.log("getUsersForSidebar called by user:", req.user._id);
     const loggedInUserId = req.user._id;
     
-    // Get all users except the logged-in user
+    
     const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
     
     // Get last message for each user

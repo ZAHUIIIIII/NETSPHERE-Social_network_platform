@@ -37,4 +37,5 @@ router.get("/google/user", protectRoute, getGoogleUser);
 router.get("/check", protectRoute, checkAuth);
 router.put("/update-profile", protectRoute, updateProfile);
 
+
 export default router;

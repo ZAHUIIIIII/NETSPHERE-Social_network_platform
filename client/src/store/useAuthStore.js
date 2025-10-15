@@ -4,8 +4,8 @@ import toast from 'react-hot-toast';
 import { io } from 'socket.io-client';
 // import { disconnect } from 'mongoose';
 
+const BASE_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
 
-const BASE_URL = "http://localhost:5001";
 
 export const useAuthStore = create((set, get) => ({
     authUser : null,
@@ -17,17 +17,23 @@ export const useAuthStore = create((set, get) => ({
     socket: null,
 
 
-    checkAuth: async () => {
-        try {
-            const res = await axiosInstance.get('/auth/check');
-            set({authUser: res.data});
-            get().connectSocket();
-        } catch (error) {
+   checkAuth: async () => {
+    try {
+        const res = await axiosInstance.get('/auth/check');
+        set({authUser: res.data});
+        get().connectSocket();
+    } catch (error) {
+        // Silently handle 401 errors - user is just not authenticated
+        if (error.response?.status === 401) {
             set({authUser: null});
-        } finally {
-            set({isCheckingAuth: false});
+        } else {
+            console.error('Auth check error:', error);
+            set({authUser: null});
         }
-    },
+    } finally {
+        set({isCheckingAuth: false});
+    }
+},
 
     registerInitiate: async (data) => {
         set({isSigningUp: true});

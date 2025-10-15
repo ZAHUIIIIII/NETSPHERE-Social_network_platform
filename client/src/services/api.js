@@ -1,6 +1,6 @@
-// client/src/services/api.js
 import axiosInstance from '../lib/axios';
 
+// ==================== POSTS ====================
 export const getPosts = async (skip = 0, limit = 20) => {
   try {
     const response = await axiosInstance.get(`/posts?skip=${skip}&limit=${limit}`);
@@ -11,17 +11,10 @@ export const getPosts = async (skip = 0, limit = 20) => {
   }
 };
 
-// Post functions
 export const likePost = async (postId) => {
   const response = await axiosInstance.post(`/posts/${postId}/like`);
   return response.data;
 };
-
-export const addComment = async (postId, data) => {
-  const response = await axiosInstance.post(`/posts/${postId}/comment`, data);
-  return response.data;
-};
-
 
 export const createPost = async (postData) => {
   try {
@@ -49,6 +42,68 @@ export const uploadPostImages = async (files, onProgress) => {
   }
 };
 
+export const savePost = async (postId) => {
+  try {
+    const response = await axiosInstance.post(`/posts/${postId}/save`);
+    return response.data;
+  } catch (error) {
+    console.error('Error saving post:', error);
+    throw error;
+  }
+};
+
+export const checkPostSaved = async (postId) => {
+  try {
+    const response = await axiosInstance.get(`/posts/${postId}/saved-status`);
+    return response.data;
+  } catch (error) {
+    console.error('Error checking saved status:', error);
+    return { isSaved: false };
+  }
+};
+
+// ==================== COMMENTS - LISTING & PAGINATION ====================
+export const fetchComments = async (postId, { sort = 'relevant', limit = 20, cursor = '' } = {}) => {
+  const url = `/posts/${postId}/comments?sort=${sort}&limit=${limit}&cursor=${encodeURIComponent(cursor)}`;
+  const { data } = await axiosInstance.get(url);
+  return data; // { items, nextCursor }
+};
+
+export const fetchReplies = async (postId, commentId, { limit = 10, cursor = '' } = {}) => {
+  const url = `/posts/${postId}/comments/${commentId}/replies?limit=${limit}&cursor=${encodeURIComponent(cursor)}`;
+  const { data } = await axiosInstance.get(url);
+  return data; // { items, nextCursor }
+};
+
+// ==================== COMMENTS - CRUD ====================
+export const addComment = async (postId, { content, parentId = null }) => {
+  const { data } = await axiosInstance.post(`/posts/${postId}/comment`, { content, parentId });
+  return data; // { comment }
+};
+
+export const editComment = async (postId, commentId, content) => {
+  const { data } = await axiosInstance.patch(`/posts/${postId}/comment/${commentId}`, { content });
+  return data; // { comment }
+};
+
+export const deleteComment = async (postId, commentId) => {
+  const { data } = await axiosInstance.delete(`/posts/${postId}/comment/${commentId}`);
+  return data; // { ok: true }
+};
+
+// ==================== COMMENTS - REACTIONS ====================
+export const reactToComment = async (postId, commentId, type = 'like') => {
+  const { data } = await axiosInstance.post(`/posts/${postId}/comment/${commentId}/react`, { type });
+  return data; // { userReaction, reactions, likes, isLiked }
+};
+
+// Legacy like mapping – keep compatibility
+export const likeComment = async (postId, commentId) => {
+  const { data } = await axiosInstance.post(`/posts/${postId}/comment/${commentId}/like`);
+  return data;
+};
+
+// ==================== SEARCH ====================
 export const searchAll = async (query, filters = {}) => {
   try {
     const params = new URLSearchParams({
@@ -121,27 +176,3 @@ export const getPopularSearches = async () => {
     throw error;
   }
 };
-
-
-// Save/Unsave post
-export const savePost = async (postId) => {
-  try {
-    const response = await axiosInstance.post(`/posts/${postId}/save`);
-    return response.data;
-  } catch (error) {
-    console.error('Error saving post:', error);
-    throw error;
-  }
-};
-
-// Check if post is saved
-export const checkPostSaved = async (postId) => {
-  try {
-    const response = await axiosInstance.get(`/posts/${postId}/saved-status`);
-    return response.data;
-  } catch (error) {
-    console.error('Error checking saved status:', error);
-    return { isSaved: false };
-  }
-};
-

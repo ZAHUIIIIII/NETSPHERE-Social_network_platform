@@ -1,4 +1,3 @@
-// client/src/services/profileApi.js
 import axiosInstance from '../lib/axios';
 
 // Get user profile by username

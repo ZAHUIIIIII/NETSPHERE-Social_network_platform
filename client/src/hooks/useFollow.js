@@ -1,4 +1,3 @@
-// client/src/hooks/useFollow.js
 import { useState, useCallback } from 'react';
 import { followUser, unfollowUser } from '../services/profileApi';
 import toast from 'react-hot-toast';

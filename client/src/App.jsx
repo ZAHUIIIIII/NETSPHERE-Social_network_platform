@@ -29,6 +29,8 @@ const App = () => {
     checkAuth();
   }, [checkAuth]);
 
+
+
   // Handle Google OAuth success/error
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -60,7 +62,7 @@ const App = () => {
 
   console.log({ authUser });
 
-  if (isCheckingAuth) {
+  if (isCheckingAuth && location.pathname !== '/reset-password') {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader className="size-10 animate-spin" />
@@ -72,7 +74,7 @@ const App = () => {
     <UserProvider>
       <div className="flex">
         {/* Sidebar - only shows when authenticated */}
-        <Navbar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />
+        {authUser && <Navbar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />}
 
         {/* Main content */}
         <div className={`flex-1 transition-all duration-300 ${authUser ? (isCollapsed ? 'ml-20' : 'ml-64') : ''}`}>
@@ -80,7 +82,7 @@ const App = () => {
             <Route path='/' element={authUser ? <HomePage /> : <Navigate to="/login" />} />
             <Route path='/login' element={!authUser ? <LoginPage /> : <Navigate to="/" />} />
             <Route path='/signup' element={!authUser ? <SignUpPage /> : <Navigate to="/" />} />
-            <Route path='/reset-password' element={!authUser ? <ResetPasswordPage /> : <Navigate to="/" />} />
+            <Route path='/reset-password' element={<ResetPasswordPage />} />
             <Route path='/messages' element={authUser ? <ChatPage /> : <Navigate to="/login" />} />
             <Route path='/chat' element={authUser ? <ChatPage /> : <Navigate to="/login" />} />
             <Route path='/profile' element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />

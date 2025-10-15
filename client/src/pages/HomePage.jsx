@@ -3,7 +3,8 @@ import {
   Heart, MessageCircle, Share2, Send, Image as ImageIcon, X, 
   MoreHorizontal, TrendingUp, Bookmark, Smile, MapPin, 
   Eye, EyeOff, Globe, Lock, Users, Play, Pause, Volume2, VolumeX,
-  ChevronLeft, ChevronRight, Repeat, ThumbsUp, Laugh, AlertCircle
+  ChevronLeft, ChevronRight, Repeat, ThumbsUp, Laugh, AlertCircle,
+  ChevronDown, ChevronUp
 } from 'lucide-react';
 import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate } from 'react-router-dom';
@@ -32,6 +33,11 @@ const addComment = async (postId, data) => {
 
 const deleteComment = async (postId, commentId) => {
   const response = await axiosInstance.delete(`/posts/${postId}/comment/${commentId}`);
+  return response.data;
+};
+
+const likeComment = async (postId, commentId) => {
+  const response = await axiosInstance.post(`/posts/${postId}/comment/${commentId}/like`);
   return response.data;
 };
 
@@ -174,17 +180,17 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
           <div className="flex items-center gap-3">
             <button
               onClick={onCollapse}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600 hover:text-gray-900"
               disabled={isPosting}
             >
               <X size={20} />
             </button>
-            <h2 className="text-xl font-bold">Create Post</h2>
+            <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Create Post</h2>
           </div>
           <button
             onClick={handleSubmit}
             disabled={isPosting || (!content.trim() && images.length === 0)}
-            className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+            className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
           >
             {isPosting ? 'Posting...' : 'Post'}
           </button>
@@ -256,7 +262,7 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             maxLength={maxCharacters}
-            className="w-full min-h-32 max-h-64 text-lg border-0 resize-none focus:outline-none placeholder:text-gray-400"
+            className="w-full min-h-32 max-h-64 text-lg text-gray-900 border-0 resize-none focus:outline-none placeholder:text-gray-400"
             disabled={isPosting}
           />
 
@@ -435,26 +441,505 @@ const CreatePostQuick = ({ onExpand, user }) => {
   );
 };
 
+// Comment Component with Recursive Replies
+const Comment = ({ 
+  comment, 
+  currentUser, 
+  onReply, 
+  onLike, 
+  onDelete, 
+  level = 0,
+  postId 
+}) => {
+  const [showReplies, setShowReplies] = useState(true);
+  const [showReplyInput, setShowReplyInput] = useState(false);
+  const [replyText, setReplyText] = useState('');
+  const [showOptions, setShowOptions] = useState(false);
+  const replyInputRef = useRef(null);
+
+  const maxLevel = 5;
+  const hasReplies = comment.replies && comment.replies.length > 0;
+
+  useEffect(() => {
+    if (showReplyInput && replyInputRef.current) {
+      replyInputRef.current.focus();
+    }
+  }, [showReplyInput]);
+
+  const handleReplySubmit = () => {
+    if (!replyText.trim()) return;
+    
+    onReply(comment._id, replyText.trim());
+    setReplyText('');
+    setShowReplyInput(false);
+    setShowReplies(true);
+  };
+
+  const formatTime = (date) => {
+    const now = new Date();
+    const diff = Math.floor((now - new Date(date)) / 1000);
+
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+    if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
+    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  return (
+    <div className={`${level > 0 ? 'ml-10' : ''} mt-4`}>
+      <div className="flex gap-2 group">
+        {/* Avatar */}
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex-shrink-0 flex items-center justify-center overflow-hidden">
+          {comment.author?.avatar ? (
+            <img 
+              src={comment.author.avatar} 
+              alt={comment.author.username} 
+              className="w-full h-full object-cover" 
+            />
+          ) : (
+            <span className="text-xs font-medium text-white">
+              {comment.author?.username?.charAt(0) || 'U'}
+            </span>
+          )}
+        </div>
+
+        {/* Comment Content */}
+        <div className="flex-1 min-w-0">
+          <div className="bg-gray-100 rounded-2xl px-4 py-2.5 inline-block max-w-full">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm text-gray-900">
+                  {comment.author?.username || 'User'}
+                </p>
+                <p className="text-sm text-gray-800 mt-1 whitespace-pre-wrap break-words">
+                  {comment.content}
+                </p>
+              </div>
+              
+              {/* Options Menu */}
+              {comment.author?._id === currentUser?._id && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowOptions(!showOptions)}
+                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded transition-all"
+                  >
+                    <MoreHorizontal size={14} className="text-gray-600" />
+                  </button>
+                  
+                  {showOptions && (
+                    <div className="absolute right-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-10 min-w-[120px]">
+                      <button
+                        onClick={() => {
+                          onDelete(comment._id);
+                          setShowOptions(false);
+                        }}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm text-red-600"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-4 mt-1 ml-3">
+            <button 
+              onClick={() => onLike(comment._id)}
+              className={`text-xs font-semibold transition-colors ${
+                comment.isLiked 
+                  ? 'text-blue-600' 
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Like {comment.likes > 0 && `· ${comment.likes}`}
+            </button>
+            
+            {level < maxLevel && (
+              <button 
+                onClick={() => setShowReplyInput(!showReplyInput)}
+                className="text-xs text-gray-600 hover:text-gray-900 font-semibold"
+              >
+                Reply
+              </button>
+            )}
+            
+            <span className="text-xs text-gray-500">
+              {formatTime(comment.createdAt)}
+            </span>
+          </div>
+
+          {/* Reply Input */}
+          {showReplyInput && (
+            <div className="mt-3 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex-shrink-0 flex items-center justify-center overflow-hidden">
+                {currentUser?.avatar ? (
+                  <img 
+                    src={currentUser.avatar} 
+                    alt={currentUser.username} 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : (
+                  <span className="text-xs font-medium text-white">
+                    {currentUser?.username?.charAt(0) || 'U'}
+                  </span>
+                )}
+              </div>
+              
+              <div className="flex-1 flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2">
+                <input
+                  ref={replyInputRef}
+                  type="text"
+                  placeholder={`Reply ${comment.author?.username}...`}
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleReplySubmit();
+                    }
+                    if (e.key === 'Escape') {
+                      setShowReplyInput(false);
+                      setReplyText('');
+                    }
+                  }}
+                  className="flex-1 outline-none text-sm text-gray-700 placeholder-gray-500 bg-transparent"
+                />
+                <button
+                  onClick={handleReplySubmit}
+                  disabled={!replyText.trim()}
+                  className="text-blue-600 hover:text-blue-700 disabled:text-gray-400 disabled:cursor-not-allowed text-sm font-semibold"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Nested Replies */}
+          {hasReplies && (
+            <div className="mt-2">
+              {/* Toggle Replies Button */}
+              <button
+                onClick={() => setShowReplies(!showReplies)}
+                className="flex items-center gap-2 text-xs font-semibold text-gray-600 hover:text-gray-900 ml-3 mb-2"
+              >
+                {showReplies ? (
+                  <>
+                    <ChevronUp size={14} />
+                    Hide {comment.replies.length} replies
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown size={14} />
+                    Show all {comment.replies.length} replies
+                  </>
+                )}
+              </button>
+
+              {/* Render Nested Replies */}
+              {showReplies && (
+                <div className="border-l-2 border-gray-200 pl-2">
+                  {comment.replies.map((reply) => (
+                    <Comment
+                      key={reply._id}
+                      comment={reply}
+                      currentUser={currentUser}
+                      onReply={onReply}
+                      onLike={onLike}
+                      onDelete={onDelete}
+                      level={level + 1}
+                      postId={postId}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Comments Section Component
+const CommentsSection = ({ post, currentUser }) => {
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState('');
+  const [sortBy, setSortBy] = useState('relevant');
+  const [showSortMenu, setShowSortMenu] = useState(false);
+
+  useEffect(() => {
+    setComments(post.comments || []);
+  }, [post.comments]);
+
+  const handleAddComment = async () => {
+    if (!commentText.trim()) return;
+
+    try {
+      const res = await addComment(post._id, { 
+        content: commentText.trim(),
+        parentId: null
+      });
+      setComments([res.comment, ...comments]);
+      setCommentText('');
+      toast.success('Comment added!');
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      toast.error('Failed to add comment');
+    }
+  };
+
+  const handleReply = async (parentId, content) => {
+    try {
+      const res = await addComment(post._id, { 
+        content, 
+        parentId 
+      });
+      
+      // Add reply to the appropriate parent comment
+      const updateComments = (comments) => {
+        return comments.map(comment => {
+          if (comment._id === parentId) {
+            return {
+              ...comment,
+              replies: [...(comment.replies || []), res.comment]
+            };
+          }
+          if (comment.replies && comment.replies.length > 0) {
+            return {
+              ...comment,
+              replies: updateComments(comment.replies)
+            };
+          }
+          return comment;
+        });
+      };
+      
+      setComments(updateComments(comments));
+      toast.success('Reply added!');
+    } catch (error) {
+      console.error('Error adding reply:', error);
+      toast.error('Failed to add reply');
+    }
+  };
+
+  const handleLike = async (commentId) => {
+    try {
+      const res = await likeComment(post._id, commentId);
+      
+      // Update like status in comments tree
+      const updateLikes = (comments) => {
+        return comments.map(comment => {
+          if (comment._id === commentId) {
+            return {
+              ...comment,
+              isLiked: res.isLiked,
+              likes: res.likes
+            };
+          }
+          
+  if (comment.replies && comment.replies.length > 0) {
+            return {
+              ...comment,
+              replies: updateLikes(comment.replies)
+            };
+          }
+          return comment;
+        });
+      };
+      
+      setComments(updateLikes(comments));
+    } catch (error) {
+      console.error('Error liking comment:', error);
+      toast.error('Failed to like comment');
+    }
+  };
+
+  const handleDelete = async (commentId) => {
+    if (!confirm('You want to delete this comment?')) return;
+
+    try {
+      await deleteComment(post._id, commentId);
+      
+      // Remove comment from tree
+      const removeComment = (comments) => {
+        return comments.filter(comment => {
+          if (comment._id === commentId) return false;
+          if (comment.replies && comment.replies.length > 0) {
+            comment.replies = removeComment(comment.replies);
+          }
+          return true;
+        });
+      };
+      
+      setComments(removeComment(comments));
+      toast.success('Comment deleted');
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      toast.error('Failed to delete comment');
+    }
+  };
+
+  // Sorting options
+  const sortOptions = [
+    { value: 'relevant', label: 'Most Relevant', desc: 'Show comments from friends and those with the most interactions first.' },
+    { value: 'newest', label: 'Newest', desc: 'Show all comments, with the newest first.' },
+    { value: 'all', label: 'All Comments', desc: 'Show all comments, including those that may be spam.' }
+  ];
+
+  const currentSort = sortOptions.find(opt => opt.value === sortBy);
+
+  return (
+    <div className="bg-gray-50 border-t border-gray-200">
+      {/* Sort Dropdown */}
+      <div className="px-4 pt-4 pb-2 border-b border-gray-200 bg-white">
+        <div className="relative">
+          <button
+            onClick={() => setShowSortMenu(!showSortMenu)}
+            className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+          >
+            {currentSort?.label}
+            <ChevronDown size={16} className={`transform transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showSortMenu && (
+            <div className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-20 min-w-[320px]">
+              {sortOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    setSortBy(option.value);
+                    setShowSortMenu(false);
+                  }}
+                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="radio"
+                      checked={sortBy === option.value}
+                      onChange={() => {}}
+                      className="mt-1"
+                    />
+                    <div>
+                      <p className="font-semibold text-sm text-gray-900">{option.label}</p>
+                      <p className="text-xs text-gray-600 mt-0.5">{option.desc}</p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Main Comment Input */}
+      <div className="p-4 bg-white border-b border-gray-200">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
+            <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+              {currentUser?.avatar ? (
+                <img 
+                  src={currentUser.avatar} 
+                  alt={currentUser.username} 
+                  className="w-full h-full object-cover" 
+                />
+              ) : (
+                <span className="text-xs font-medium text-gray-700">
+                  {currentUser?.username?.charAt(0) || 'U'}
+                </span>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex-1 flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2.5">
+            <input
+              type="text"
+              placeholder='Write a comment...'
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleAddComment();
+                }
+              }}
+              className="flex-1 outline-none text-gray-700 placeholder-gray-500 bg-transparent"
+            />
+            <button
+              onClick={handleAddComment}
+              disabled={!commentText.trim()}
+              className="text-blue-600 hover:text-blue-700 disabled:text-gray-400 disabled:cursor-not-allowed font-semibold text-sm"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Comments List */}
+      <div className="px-4 pb-4 max-h-[600px] overflow-y-auto">
+        {comments.length > 0 ? (
+          <div className="space-y-1">
+            {comments.map((comment) => (
+              <Comment
+                key={comment._id}
+                comment={comment}
+                currentUser={currentUser}
+                onReply={handleReply}
+                onLike={handleLike}
+                onDelete={handleDelete}
+                level={0}
+                postId={post._id}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            <MessageCircle size={48} className="mx-auto mb-3 opacity-30" />
+            <p>No comments yet</p>
+            <p className="text-sm mt-1">Be the first to comment!</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // Enhanced Post Card Component  
 const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
   const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState([]);
-  const [commentText, setCommentText] = useState('');
-  const [replyingTo, setReplyingTo] = useState(null);
+  const [commentCount, setCommentCount] = useState(0);
   const [showOptions, setShowOptions] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showLightbox, setShowLightbox] = useState(false);
+  const [lightboxImageIndex, setLightboxImageIndex] = useState(0);
 
   useEffect(() => {
     setLiked(post.likes?.includes(currentUser?._id));
     setLikeCount(post.likes?.length || 0);
-    setComments(post.comments || []);
+    
+    // Count total comments including replies
+    const countComments = (comments) => {
+      let count = comments.length;
+      comments.forEach(comment => {
+        if (comment.replies && comment.replies.length > 0) {
+          count += countComments(comment.replies);
+        }
+      });
+      return count;
+    };
+    setCommentCount(countComments(post.comments || []));
     
     // Check if post is saved
     checkIfSaved();
@@ -506,37 +991,6 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
     }
   };
 
-  const handleComment = async () => {
-    if (!commentText.trim()) return;
-
-    try {
-      const res = await addComment(post._id, { 
-        content: commentText.trim(),
-        parentId: replyingTo 
-      });
-      setComments([...comments, res.comment]);
-      setCommentText('');
-      setReplyingTo(null);
-      toast.success('Comment added!');
-    } catch (error) {
-      console.error('Error adding comment:', error);
-      toast.error('Failed to add comment');
-    }
-  };
-
-  const handleDeleteComment = async (commentId) => {
-    if (!confirm('Delete this comment?')) return;
-
-    try {
-      await deleteComment(post._id, commentId);
-      setComments(comments.filter(c => c._id !== commentId));
-      toast.success('Comment deleted');
-    } catch (error) {
-      console.error('Error deleting comment:', error);
-      toast.error('Failed to delete comment');
-    }
-  };
-
   const handleShare = async () => {
     try {
       const postUrl = `${window.location.origin}/post/${post._id}`;
@@ -545,9 +999,37 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
       setShowShareModal(false);
     } catch (error) {
       console.error('Error sharing:', error);
-      
-toast.error('Failed to share post');
+      toast.error('Failed to share post');
     }
+  };
+
+  const openLightbox = (index) => {
+    setLightboxImageIndex(index);
+    setShowLightbox(true);
+  };
+
+  const closeLightbox = () => {
+    setShowLightbox(false);
+  };
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => 
+      prev < post.images.length - 1 ? prev + 1 : prev
+    );
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : prev));
+  };
+
+  const nextLightboxImage = () => {
+    setLightboxImageIndex((prev) => 
+      prev < post.images.length - 1 ? prev + 1 : prev
+    );
+  };
+
+  const prevLightboxImage = () => {
+    setLightboxImageIndex((prev) => (prev > 0 ? prev - 1 : prev));
   };
 
   const formatTime = (date) => {
@@ -601,7 +1083,7 @@ toast.error('Failed to share post');
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+            <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
               <span>{formatTime(post.createdAt)}</span>
               <span>•</span>
               {post.privacy === 'public' && <Globe size={12} />}
@@ -689,65 +1171,154 @@ toast.error('Failed to share post');
         </div>
       )}
 
-      {/* Post Images */}
+      {/* Post Images - Carousel with Horizontal Crop */}
       {post.images && post.images.length > 0 && (
-        <div className="relative">
-          {post.images.length === 1 && (
-            <div className="relative">
-              <img 
-                src={post.images[0]} 
-                alt="" 
-                className="w-full max-h-[600px] object-cover"
-              />
+        <div className="relative bg-gray-100">
+          <div 
+            className="relative w-full overflow-hidden cursor-pointer group"
+            style={{ aspectRatio: '16/9' }}
+            onClick={() => openLightbox(currentImageIndex)}
+          >
+            <img 
+              src={post.images[currentImageIndex]} 
+              alt="" 
+              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+            
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
+                <Eye size={16} />
+                Click to view full size
+              </div>
             </div>
-          )}
 
-          {post.images.length > 1 && (
-            <div className="relative bg-black">
-              <img 
-                src={post.images[currentImageIndex]} 
-                alt="" 
-                className="w-full max-h-[600px] object-contain mx-auto"
-              />
-              
-              {/* Image Navigation */}
-              {currentImageIndex > 0 && (
-                <button
-                  onClick={() => setCurrentImageIndex(prev => prev - 1)}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/90 hover:bg-white rounded-full shadow-lg transition-all"
-                >
-                  <ChevronLeft size={24} />
-                </button>
-              )}
-              
-              {currentImageIndex < post.images.length - 1 && (
-                <button
-                  onClick={() => setCurrentImageIndex(prev => prev + 1)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/90 hover:bg-white rounded-full shadow-lg transition-all"
-                >
-                  <ChevronRight size={24} />
-                </button>
-              )}
+            {post.images.length > 1 && currentImageIndex > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prevImage();
+                }}
+                className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 bg-white/90 hover:bg-white rounded-full shadow-lg transition-all hover:scale-110 z-10"
+              >
+                <ChevronLeft size={24} className="text-gray-800" />
+              </button>
+            )}
+            
+            {post.images.length > 1 && currentImageIndex < post.images.length - 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  nextImage();
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-white/90 hover:bg-white rounded-full shadow-lg transition-all hover:scale-110 z-10"
+              >
+                <ChevronRight size={24} className="text-gray-800" />
+              </button>
+            )}
 
-              {/* Image Counter */}
-              <div className="absolute top-4 right-4 px-3 py-1.5 bg-black/60 text-white rounded-full text-sm font-medium">
+            {post.images.length > 1 && (
+              <div className="absolute top-4 right-4 px-3 py-1.5 bg-black/70 text-white rounded-full text-sm font-medium backdrop-blur-sm">
                 {currentImageIndex + 1} / {post.images.length}
               </div>
+            )}
 
-              {/* Dots Indicator */}
+            {post.images.length > 1 && (
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                 {post.images.map((_, index) => (
                   <button
                     key={index}
-                    onClick={() => setCurrentImageIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-all ${
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(index);
+                    }}
+                    className={`transition-all ${
                       index === currentImageIndex 
-                        ? 'bg-white w-8' 
-                        : 'bg-white/60 hover:bg-white/80'
-                    }`}
+                        ? 'w-8 h-2 bg-white' 
+                        : 'w-2 h-2 bg-white/60 hover:bg-white/80'
+                    } rounded-full`}
+                    aria-label={`Go to image ${index + 1}`}
                   />
                 ))}
               </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {showLightbox && (
+        <div 
+          className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center animate-fadeIn"
+          onClick={closeLightbox}
+        >
+          <button
+            onClick={closeLightbox}
+            className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-10"
+          >
+            <X size={24} />
+          </button>
+
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/60 text-white rounded-full text-sm font-medium">
+            {lightboxImageIndex + 1} / {post.images.length}
+          </div>
+
+          <div 
+            className="relative max-w-7xl max-h-[90vh] w-full h-full flex items-center justify-center p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={post.images[lightboxImageIndex]}
+              alt=""
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
+
+          {lightboxImageIndex > 0 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                prevLightboxImage();
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all"
+            >
+              <ChevronLeft size={32} />
+            </button>
+          )}
+
+          {lightboxImageIndex < post.images.length - 1 && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                nextLightboxImage();
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all"
+            >
+              <ChevronRight size={32} />
+            </button>
+          )}
+
+          {post.images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 p-3 bg-black/60 rounded-lg max-w-[90%] overflow-x-auto">
+              {post.images.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightboxImageIndex(index);
+                  }}
+                  className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                    index === lightboxImageIndex
+                      ? 'border-white scale-110'
+                      : 'border-transparent opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <img
+                    src={image}
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -772,7 +1343,7 @@ toast.error('Failed to share post');
             onClick={() => setShowComments(!showComments)}
             className="hover:underline"
           >
-            {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
+            {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
           </button>
           <span>{post.shares || 0} shares</span>
         </div>
@@ -826,108 +1397,10 @@ toast.error('Failed to share post');
 
       {/* Comments Section */}
       {showComments && (
-        <div className="border-t border-gray-100 bg-gray-50 animate-slideDown">
-          {/* Comments List */}
-          {comments.length > 0 && (
-            <div className="p-4 space-y-4 max-h-96 overflow-y-auto">
-              {comments.map((comment) => (
-                <div key={comment._id} className="flex gap-3 group">
-                  <div className="w-9 h-9 rounded-full bg-gray-200 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                    {comment.author?.avatar ? (
-                      <img src={comment.author.avatar} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-xs font-medium text-gray-600">
-                        {comment.author?.username?.charAt(0) || 'U'}
-                      </span>
-                    )}
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="bg-white rounded-2xl px-4 py-2.5 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold text-sm text-gray-900">
-                          {comment.author?.username || 'User'}
-                        </p>
-                        {comment.author?._id === currentUser?._id && (
-                          <button
-                            onClick={() => handleDeleteComment(comment._id)}
-                            className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-100 rounded transition-all"
-                          >
-                            <X size={14} className="text-gray-500" />
-                          </button>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-800 mt-1 whitespace-pre-wrap break-words">
-                        {comment.content}
-                      </p>
-                    </div>
-                    
-                    <div className="flex items-center gap-4 mt-1 ml-4">
-                      <button className="text-xs text-gray-600 hover:text-gray-900 font-medium">
-                        Like
-                      </button>
-                      <button 
-                        onClick={() => setReplyingTo(comment._id)}
-                        className="text-xs text-gray-600 hover:text-gray-900 font-medium"
-                      >
-                        Reply
-                      </button>
-                      <span className="text-xs text-gray-500">
-                        {formatTime(comment.createdAt)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Comment Input */}
-          <div className="p-4 border-t border-gray-200 bg-white">
-            {replyingTo && (
-              <div className="mb-2 flex items-center justify-between px-3 py-2 bg-blue-50 rounded-lg">
-                <span className="text-sm text-blue-700">
-                  Replying to {comments.find(c => c._id === replyingTo)?.author?.username}
-                </span>
-                <button onClick={() => setReplyingTo(null)}>
-                  <X size={16} className="text-blue-600" />
-                </button>
-              </div>
-            )}
-            
-            <div className="flex gap-2">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
-                <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                  {currentUser?.avatar ? (
-                    <img src={currentUser.avatar} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-xs font-medium text-gray-700">
-                      {currentUser?.username?.charAt(0) || 'U'}
-                    </span>
-                  )}
-                </div>
-              </div>
-              
-              <div className="flex-1 flex gap-2">
-                <input
-                  type="text"
-                  placeholder="Write a comment..."
-                  value={commentText}
-                  onChange={(e) => setCommentText(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleComment()}
-                  className="flex-1 px-4 py-2.5 bg-gray-100 border-none rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                />
-                <button
-                  onClick={handleComment}
-                  className="p-2.5 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
-                  disabled={!commentText.trim()}
-                >
-                  <Send size={18} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <CommentsSection 
+          post={post}
+          currentUser={currentUser}
+        />
       )}
 
       {/* Share Modal */}
@@ -990,6 +1463,8 @@ toast.error('Failed to share post');
     </div>
   );
 };
+
+
 
 // Main HomePage Component
 export default function HomePage() {

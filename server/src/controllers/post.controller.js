@@ -1,7 +1,6 @@
 import Post from '../models/post.model.js';
-import User from '../models/user.model.js'; // ADD THIS LINE
+import User from '../models/user.model.js';
 import cloudinary from '../lib/cloudinary.js';
-import { promises as fs } from 'fs';
 
 // Get posts with pagination
 export const getAllPosts = async (req, res) => {
@@ -53,44 +52,66 @@ export const createPost = async (req, res) => {
 // Upload post images
 export const uploadImages = async (req, res) => {
   try {
+    console.log('📤 Upload request received');
+    console.log('Files:', req.files?.length || 0);
+    
     if (!req.files || req.files.length === 0) {
+      console.log('❌ No images uploaded');
       return res.status(400).json({ message: 'No images uploaded' });
     }
 
+    console.log('📁 Files to upload:', req.files.map(f => ({ 
+      name: f.originalname, 
+      size: f.size,
+      type: f.mimetype 
+    })));
+
     const uploadPromises = req.files.map(async (file) => {
       try {
-        const result = await cloudinary.uploader.upload(file.path, {
-          folder: 'posts',
-          transformation: [
-            { quality: 'auto:good' },
-            { fetch_format: 'auto' }
-          ]
-        });
-
-        // Delete local file after upload
-        await fs.unlink(file.path);
+        console.log(`⬆️  Uploading ${file.originalname} to Cloudinary...`);
         
-        return result.secure_url;
+        // Upload from memory buffer (no disk write!)
+        return new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: 'posts',
+              transformation: [
+                { quality: 'auto:good' },
+                { fetch_format: 'auto' }
+              ]
+            },
+            (error, result) => {
+              if (error) {
+                console.error(`❌ Error uploading ${file.originalname}:`, error);
+                reject(error);
+              } else {
+                console.log(`✅ Uploaded ${file.originalname} successfully`);
+                resolve(result.secure_url);
+              }
+            }
+          );
+          
+          // Send buffer to Cloudinary
+          uploadStream.end(file.buffer);
+        });
       } catch (error) {
-        console.error('Error uploading to cloudinary:', error);
+        console.error(`❌ Error uploading ${file.originalname}:`, error);
         throw error;
       }
     });
 
     const imageUrls = await Promise.all(uploadPromises);
+    console.log('✅ All images uploaded successfully:', imageUrls.length);
     res.json({ images: imageUrls });
 
   } catch (error) {
-    console.error('Error in uploadImages:', error);
-    
-    // Clean up any uploaded files if there's an error
-    if (req.files) {
-      await Promise.all(req.files.map(file => 
-        fs.unlink(file.path).catch(err => console.error('Error deleting file:', err))
-      ));
-    }
+    console.error('❌ Error in uploadImages:', error);
+    console.error('Error stack:', error.stack);
 
-    res.status(500).json({ message: 'Error uploading images' });
+    res.status(500).json({ 
+      message: 'Error uploading images',
+      error: error.message 
+    });
   }
 };
 
@@ -326,7 +347,6 @@ export const checkPostSaved = async (req, res) => {
   }
 };
 
-// Check if post is saved by current user
 export const checkPostSavedStatus = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -337,7 +357,7 @@ export const checkPostSavedStatus = async (req, res) => {
 
     res.json({ isSaved });
   } catch (error) {
-    console.error('Error in checkPostSavedStatus:', error);
-    res.status(500).json({ message: 'Error checking saved status' });
+    console.error('Error checking saved status:', error);
+    res.status(500).json({ message: 'Error checking saved status', isSaved: false });
   }
 };

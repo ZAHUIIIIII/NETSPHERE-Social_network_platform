@@ -265,7 +265,6 @@ export default function LoginPage() {
                 setForgotError(''); 
               }}
             >
-              ×
             </button>
             
             <div className="flex items-center justify-center mb-6">

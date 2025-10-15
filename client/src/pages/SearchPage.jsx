@@ -1,4 +1,3 @@
-// client/src/pages/SearchPage.jsx - Enhanced version
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, TrendingUp, X, Filter, Hash, User, MessageCircle, Heart, Clock, Sparkles } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
@@ -49,9 +48,19 @@ const SearchPage = () => {
     
     // If URL has query, search immediately
     if (urlQuery) {
+      setHasSearched(false); // Reset to trigger search
       handleSearch(urlQuery);
     }
-  }, []);
+  }, []); // Only run once on mount
+
+  // Handle URL query changes
+  useEffect(() => {
+    const newUrlQuery = searchParams.get('q') || '';
+    if (newUrlQuery && newUrlQuery !== searchQuery) {
+      setSearchQuery(newUrlQuery);
+      handleSearch(newUrlQuery);
+    }
+  }, [searchParams.get('q')]);
 
   const loadTrending = async () => {
     try {
@@ -59,6 +68,7 @@ const SearchPage = () => {
       setTrendingTopics(data.trending || []);
     } catch (error) {
       console.error('Error loading trending:', error);
+      // Don't show error toast for background data
     }
   };
 
@@ -68,6 +78,7 @@ const SearchPage = () => {
       setPopularSearches(data.popular?.slice(0, 8) || []);
     } catch (error) {
       console.error('Error loading popular searches:', error);
+      // Don't show error toast for background data
     }
   };
 
@@ -75,10 +86,16 @@ const SearchPage = () => {
     try {
       const stored = localStorage.getItem('recentSearches');
       if (stored) {
-        setRecentSearches(JSON.parse(stored));
+        const parsed = JSON.parse(stored);
+        // Validate it's an array
+        if (Array.isArray(parsed)) {
+          setRecentSearches(parsed);
+        }
       }
     } catch (e) {
       console.error('Error loading recent searches:', e);
+      // Clear corrupted data
+      localStorage.removeItem('recentSearches');
     }
   };
 
@@ -94,19 +111,28 @@ const SearchPage = () => {
     } catch (error) {
       if (error.name !== 'CanceledError') {
         console.error('Error fetching suggestions:', error);
+        // Don't show error toast for suggestions
       }
+      setSuggestions({ users: [], hashtags: [] });
     }
   }, []);
 
   const handleSearchInputChange = (value) => {
     setSearchQuery(value);
-    setShowSuggestions(true);
+    
+    // Show suggestions when typing
+    if (value.trim().length >= 2) {
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+      setSuggestions({ users: [], hashtags: [] });
+    }
 
     // Update URL
     if (value.trim()) {
-      setSearchParams({ q: value });
+      setSearchParams({ q: value }, { replace: true });
     } else {
-      setSearchParams({});
+      setSearchParams({}, { replace: true });
     }
 
     // Debounced suggestions
@@ -120,13 +146,13 @@ const SearchPage = () => {
   };
 
   const handleSearch = async (query = searchQuery) => {
-    if (!query.trim()) {
+    const trimmedQuery = query.trim();
+    
+    if (!trimmedQuery) {
       toast.error('Please enter a search term');
       return;
     }
 
-    const trimmedQuery = query.trim();
-    
     setIsSearching(true);
     setShowSuggestions(false);
     setHasSearched(true);
@@ -135,41 +161,61 @@ const SearchPage = () => {
       // Save to recent searches
       saveRecentSearch(trimmedQuery);
 
-      // Determine search type based on query
+      // Determine search type based on query and active tab
       let searchType = activeTab === 'all' ? undefined : activeTab;
+      let processedQuery = trimmedQuery;
       
-      // If query starts with #, search posts
+      // If query starts with #, search posts and remove # for API
       if (trimmedQuery.startsWith('#')) {
         searchType = 'posts';
+        processedQuery = trimmedQuery.substring(1); // Remove # for API
+        setActiveTab('posts'); // Switch to posts tab
       }
-      // If query starts with @, search users
+      // If query starts with @, search users and remove @
       else if (trimmedQuery.startsWith('@')) {
         searchType = 'users';
-        query = trimmedQuery.substring(1); // Remove @ symbol
+        processedQuery = trimmedQuery.substring(1); // Remove @ symbol
+        setActiveTab('users'); // Switch to users tab
       }
+
+      // Map filter sortBy to API parameter
+      const sortByMap = {
+        'Most Relevant': 'relevant',
+        'Most Recent': 'recent',
+        'Most Popular': 'popular',
+        'Oldest First': 'oldest'
+      };
 
       const searchParams = {
         type: searchType,
-        sortBy: filters.sortBy,
+        sortBy: sortByMap[filters.sortBy] || 'relevant',
         skip: 0,
         limit: 20
       };
 
-      const data = await searchAll(trimmedQuery, searchParams);
+      const data = await searchAll(processedQuery, searchParams);
 
-      setSearchResults(data.results || { users: [], posts: [], hashtags: [] });
-      setTotalCounts(data.totalCounts || { users: 0, posts: 0, hashtags: 0 });
+      // Ensure we have valid data structure
+      const results = data.results || { users: [], posts: [], hashtags: [] };
+      const counts = data.totalCounts || { users: 0, posts: 0, hashtags: 0 };
+
+      setSearchResults(results);
+      setTotalCounts(counts);
       
-      const totalResults = (data.totalCounts?.users || 0) + (data.totalCounts?.posts || 0);
+      const totalResults = counts.users + counts.posts + (counts.hashtags || 0);
       
       if (totalResults === 0) {
         toast('No results found', { icon: '🔍' });
       } else {
-        toast.success(`Found ${totalResults} result${totalResults > 1 ? 's' : ''}`);
+        toast.success(`Found ${totalResults} result${totalResults !== 1 ? 's' : ''}`);
       }
     } catch (error) {
       console.error('Search error:', error);
-      toast.error(error.response?.data?.message || 'Failed to search');
+      toast.error(error.response?.data?.message || 'Failed to search. Please try again.');
+      
+      // Reset results on error
+      setSearchResults({ users: [], posts: [], hashtags: [] });
+      setTotalCounts({ users: 0, posts: 0, hashtags: 0 });
     } finally {
       setIsSearching(false);
     }
@@ -177,10 +223,13 @@ const SearchPage = () => {
 
   const saveRecentSearch = (query) => {
     try {
+      const cleanQuery = query.trim();
+      if (!cleanQuery) return;
+
       const newRecentSearches = [
-        query,
-        ...recentSearches.filter(s => s !== query)
-      ].slice(0, 10);
+        cleanQuery,
+        ...recentSearches.filter(s => s.toLowerCase() !== cleanQuery.toLowerCase())
+      ].slice(0, 10); // Keep only 10 most recent
       
       setRecentSearches(newRecentSearches);
       localStorage.setItem('recentSearches', JSON.stringify(newRecentSearches));
@@ -191,14 +240,30 @@ const SearchPage = () => {
 
   const clearRecentSearches = () => {
     setRecentSearches([]);
-    localStorage.removeItem('recentSearches');
-    toast.success('Recent searches cleared');
+    try {
+      localStorage.removeItem('recentSearches');
+      toast.success('Recent searches cleared');
+    } catch (e) {
+      console.error('Error clearing recent searches:', e);
+    }
   };
 
   const removeRecentSearch = (searchToRemove) => {
     const updated = recentSearches.filter(s => s !== searchToRemove);
     setRecentSearches(updated);
-    localStorage.setItem('recentSearches', JSON.stringify(updated));
+    try {
+      localStorage.setItem('recentSearches', JSON.stringify(updated));
+    } catch (e) {
+      console.error('Error removing recent search:', e);
+    }
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    // Re-search with new tab filter if we have results
+    if (hasSearched && searchQuery.trim()) {
+      handleSearch(searchQuery);
+    }
   };
 
   const formatTime = (date) => {
@@ -208,10 +273,12 @@ const SearchPage = () => {
     if (diff < 60) return 'just now';
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    return `${Math.floor(diff / 86400)}d ago`;
+    if (diff < 2592000) return `${Math.floor(diff / 86400)}d ago`;
+    return new Date(date).toLocaleDateString();
   };
 
   const formatNumber = (num) => {
+    if (!num || num === 0) return '0';
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
     return num.toString();
@@ -251,7 +318,10 @@ const SearchPage = () => {
   );
 
   const PostResult = ({ post }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200">
+    <div 
+      onClick={() => navigate(`/post/${post._id}`)}
+      className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer"
+    >
       <div className="p-4 flex items-start justify-between">
         <div className="flex items-start gap-3">
           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
@@ -337,7 +407,11 @@ const SearchPage = () => {
                     setShowSuggestions(false);
                   }
                 }}
-                onFocus={() => searchQuery && setShowSuggestions(true)}
+                onFocus={() => {
+                  if (searchQuery.trim().length >= 2) {
+                    setShowSuggestions(true);
+                  }
+                }}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                 className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-full text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all"
                 autoComplete="off"
@@ -355,7 +429,7 @@ const SearchPage = () => {
                       </div>
                       {suggestions.users.map((suggestion, index) => (
                         <div
-                          key={`user-${index}`}
+                          key={`user-${suggestion._id || index}`}
                           onMouseDown={() => {
                             setSearchQuery(suggestion.value);
                             setActiveTab('users');
@@ -364,10 +438,10 @@ const SearchPage = () => {
                           className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
                         >
                           {suggestion.avatar ? (
-                            <img src={suggestion.avatar} alt="" className="w-8 h-8 rounded-full" />
+                            <img src={suggestion.avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
                           ) : (
                             <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                              <span className="text-xs font-medium">{suggestion.value.charAt(0)}</span>
+                              <span className="text-xs font-medium">{suggestion.value.charAt(0).toUpperCase()}</span>
                             </div>
                           )}
                           <span className="text-sm font-medium text-gray-900">{suggestion.value}</span>
@@ -398,20 +472,26 @@ const SearchPage = () => {
                             </div>
                             <span className="text-sm font-medium text-gray-900">#{suggestion.value}</span>
                           </div>
-                          <span className="text-xs text-gray-500">{suggestion.count} posts</span>
+                          {suggestion.count && (
+                            <span className="text-xs text-gray-500">{formatNumber(suggestion.count)} posts</span>
+                          )}
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
               )}
-            </div>            {searchQuery && (
+            </div>
+
+            {searchQuery && (
               <button
                 onClick={() => {
                   setSearchQuery('');
                   setSearchParams({});
                   setSearchResults({ users: [], posts: [], hashtags: [] });
+                  setTotalCounts({ users: 0, posts: 0, hashtags: 0 });
                   setHasSearched(false);
+                  setActiveTab('all');
                   searchInputRef.current?.focus();
                 }}
                 className="p-3 hover:bg-gray-100 rounded-full transition-colors"
@@ -451,7 +531,7 @@ const SearchPage = () => {
                     key={option}
                     onClick={() => {
                       setFilters({ ...filters, sortBy: option });
-                      if (hasSearched) {
+                      if (hasSearched && searchQuery.trim()) {
                         handleSearch();
                       }
                     }}
@@ -540,7 +620,7 @@ const SearchPage = () => {
                           <p className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
                             #{topic.hashtag}
                           </p>
-                          <p className="text-sm text-gray-500">{topic.posts} posts</p>
+                          <p className="text-sm text-gray-500">{formatNumber(topic.posts)} posts</p>
                         </div>
                       </div>
                       {topic.trending && (
@@ -573,9 +653,11 @@ const SearchPage = () => {
                       className="px-4 py-2 bg-purple-50 text-purple-700 rounded-full hover:bg-purple-100 transition-colors text-sm font-medium"
                     >
                       #{search.term}
-                      <span className="ml-2 text-xs text-purple-500">
-                        {formatNumber(search.count)}
-                      </span>
+                      {search.count && (
+                        <span className="ml-2 text-xs text-purple-500">
+                          {formatNumber(search.count)}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -617,7 +699,7 @@ const SearchPage = () => {
                 ].map((tab) => (
                   <button
                     key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
+                    onClick={() => handleTabChange(tab.key)}
                     className={`flex-1 px-6 py-4 text-sm font-semibold transition-all relative ${
                       activeTab === tab.key
                         ? 'text-blue-600 bg-blue-50'
@@ -711,4 +793,3 @@ const SearchPage = () => {
 };
 
 export default SearchPage;
-                    
