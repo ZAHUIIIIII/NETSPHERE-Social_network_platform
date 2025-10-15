@@ -1,14 +1,15 @@
+// client/src/components/comment/CommentsSection.jsx
 import React, { useEffect, useState } from 'react';
 import { MessageCircle, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Comment from './Comment'; // Import the enhanced Comment component
+import Comment from './Comment';
 import {
   fetchComments,
   addComment as addCommentAPI,
   editComment as editCommentAPI,
   deleteComment as deleteCommentAPI,
   reactToComment as reactToCommentAPI
-} from '../services/api';
+} from '../../services/api';
 
 const CommentsSection = ({ post, currentUser }) => {
   const [comments, setComments] = useState([]);
@@ -72,6 +73,148 @@ const CommentsSection = ({ post, currentUser }) => {
       parentId: null,
       repliesCount: 0
     };
+
+    // Optimistic update
+    setComments(prev => [optimisticComment, ...prev]);
+    setCommentText('');
+
+    try {
+      const res = await addCommentAPI(post._id, { 
+        content: commentText.trim(),
+        parentId: null
+      });
+
+      // Replace optimistic comment with real one
+      setComments(prev => prev.map(c => 
+        c._id === tempId ? res.comment : c
+      ));
+      
+      toast.success('Đã thêm bình luận!');
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      // Remove optimistic comment on error
+      setComments(prev => prev.filter(c => c._id !== tempId));
+      toast.error('Không thể thêm bình luận');
+    }
+  };
+
+  const handleReply = async (parentId, content) => {
+    try {
+      const res = await addCommentAPI(post._id, { 
+        content, 
+        parentId 
+      });
+      
+      // Add reply to the appropriate parent comment
+      const updateComments = (comments) => {
+        return comments.map(comment => {
+          if (comment._id === parentId) {
+            return {
+              ...comment,
+              repliesCount: (comment.repliesCount || 0) + 1,
+              repliesPreview: [
+                ...(comment.repliesPreview || []),
+                res.comment
+              ]
+            };
+          }
+          return comment;
+        });
+      };
+      
+      setComments(updateComments(comments));
+      toast.success('Đã thêm phản hồi!');
+    } catch (error) {
+      console.error('Error adding reply:', error);
+      toast.error('Không thể thêm phản hồi');
+    }
+  };
+
+  const handleEdit = async (commentId, content) => {
+    // Optimistic update
+    const updateContent = (comments) => {
+      return comments.map(comment => {
+        if (comment._id === commentId) {
+          return {
+            ...comment,
+            content,
+            edited: true,
+            editedAt: new Date().toISOString()
+          };
+        }
+        if (comment.repliesPreview) {
+          return {
+            ...comment,
+            repliesPreview: updateContent(comment.repliesPreview)
+          };
+        }
+        return comment;
+      });
+    };
+
+    const previousComments = [...comments];
+    setComments(updateContent(comments));
+
+    try {
+      await editCommentAPI(post._id, commentId, content);
+      toast.success('Đã cập nhật bình luận!');
+    } catch (error) {
+      console.error('Error editing comment:', error);
+      setComments(previousComments); // Rollback
+      toast.error('Không thể chỉnh sửa bình luận');
+    }
+  };
+
+  const handleReact = async (commentId, type) => {
+    // Optimistic update
+    const updateReaction = (comments) => {
+      return comments.map(comment => {
+        if (comment._id === commentId) {
+          const newReactions = { ...comment.reactions };
+          const oldReaction = comment.userReaction;
+
+          // Remove from old reaction
+          if (oldReaction) {
+            newReactions[oldReaction] = Math.max(0, (newReactions[oldReaction] || 0) - 1);
+          }
+
+          // Toggle or add new reaction
+          const newUserReaction = oldReaction === type ? null : type;
+          if (newUserReaction) {
+            newReactions[type] = (newReactions[type] || 0) + 1;
+          }
+
+          return {
+            ...comment,
+            reactions: newReactions,
+            userReaction: newUserReaction,
+            isLiked: type === 'like' && newUserReaction !== null
+          };
+        }
+        if (comment.repliesPreview) {
+          return {
+            ...comment,
+            repliesPreview: updateReaction(comment.repliesPreview)
+          };
+        }
+        return comment;
+      });
+    };
+
+    const previousComments = [...comments];
+    setComments(updateReaction(comments));
+
+    try {
+      await reactToCommentAPI(post._id, commentId, type);
+    } catch (error) {
+      console.error('Error reacting to comment:', error);
+      setComments(previousComments); // Rollback
+      toast.error('Không thể phản ứng');
+    }
+  };
+
+  const handleDelete = async (commentId) => {
+    if (!confirm('Bạn có chắc muốn xóa bình luận này?')) return;
 
     // Optimistic update
     const previousComments = [...comments];
@@ -253,145 +396,3 @@ const CommentsSection = ({ post, currentUser }) => {
 };
 
 export default CommentsSection;
-    setComments(prev => [optimisticComment, ...prev]);
-    setCommentText('');
-
-    try {
-      const res = await addCommentAPI(post._id, { 
-        content: commentText.trim(),
-        parentId: null
-      });
-
-      // Replace optimistic comment with real one
-      setComments(prev => prev.map(c => 
-        c._id === tempId ? res.comment : c
-      ));
-      
-      toast.success('Đã thêm bình luận!');
-    } catch (error) {
-      console.error('Error adding comment:', error);
-      // Remove optimistic comment on error
-      setComments(prev => prev.filter(c => c._id !== tempId));
-      toast.error('Không thể thêm bình luận');
-    }
-  };
-
-  const handleReply = async (parentId, content) => {
-    try {
-      const res = await addCommentAPI(post._id, { 
-        content, 
-        parentId 
-      });
-      
-      // Add reply to the appropriate parent comment
-      const updateComments = (comments) => {
-        return comments.map(comment => {
-          if (comment._id === parentId) {
-            return {
-              ...comment,
-              repliesCount: (comment.repliesCount || 0) + 1,
-              repliesPreview: [
-                ...(comment.repliesPreview || []),
-                res.comment
-              ]
-            };
-          }
-          return comment;
-        });
-      };
-      
-      setComments(updateComments(comments));
-      toast.success('Đã thêm phản hồi!');
-    } catch (error) {
-      console.error('Error adding reply:', error);
-      toast.error('Không thể thêm phản hồi');
-    }
-  };
-
-  const handleEdit = async (commentId, content) => {
-    // Optimistic update
-    const updateContent = (comments) => {
-      return comments.map(comment => {
-        if (comment._id === commentId) {
-          return {
-            ...comment,
-            content,
-            edited: true,
-            editedAt: new Date().toISOString()
-          };
-        }
-        if (comment.repliesPreview) {
-          return {
-            ...comment,
-            repliesPreview: updateContent(comment.repliesPreview)
-          };
-        }
-        return comment;
-      });
-    };
-
-    const previousComments = [...comments];
-    setComments(updateContent(comments));
-
-    try {
-      await editCommentAPI(post._id, commentId, content);
-      toast.success('Đã cập nhật bình luận!');
-    } catch (error) {
-      console.error('Error editing comment:', error);
-      setComments(previousComments); // Rollback
-      toast.error('Không thể chỉnh sửa bình luận');
-    }
-  };
-
-  const handleReact = async (commentId, type) => {
-    // Optimistic update
-    const updateReaction = (comments) => {
-      return comments.map(comment => {
-        if (comment._id === commentId) {
-          const newReactions = { ...comment.reactions };
-          const oldReaction = comment.userReaction;
-
-          // Remove from old reaction
-          if (oldReaction) {
-            newReactions[oldReaction] = Math.max(0, (newReactions[oldReaction] || 0) - 1);
-          }
-
-          // Toggle or add new reaction
-          const newUserReaction = oldReaction === type ? null : type;
-          if (newUserReaction) {
-            newReactions[type] = (newReactions[type] || 0) + 1;
-          }
-
-          return {
-            ...comment,
-            reactions: newReactions,
-            userReaction: newUserReaction,
-            isLiked: type === 'like' && newUserReaction !== null
-          };
-        }
-        if (comment.repliesPreview) {
-          return {
-            ...comment,
-            repliesPreview: updateReaction(comment.repliesPreview)
-          };
-        }
-        return comment;
-      });
-    };
-
-    const previousComments = [...comments];
-    setComments(updateReaction(comments));
-
-    try {
-      await reactToCommentAPI(post._id, commentId, type);
-    } catch (error) {
-      console.error('Error reacting to comment:', error);
-      setComments(previousComments); // Rollback
-      toast.error('Không thể phản ứng');
-    }
-  };
-
-  const handleDelete = async (commentId) => {
-    if (!confirm('Bạn có chắc muốn xóa bình luận này?')) return;
-
-    // Optimistic update

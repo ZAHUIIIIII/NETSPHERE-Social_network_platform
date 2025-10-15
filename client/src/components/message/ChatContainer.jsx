@@ -1,11 +1,12 @@
-import { useChatStore } from "../store/useChatStore";
+import { useChatStore } from "../../store/useChatStore";
 import { useEffect, useRef } from "react";
 
 import ChatHeader from "./ChatHeader";
 import MessageInput from "./MessageInput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
-import { useAuthStore } from "../store/useAuthStore";
-import { formatMessageTime } from "../lib/utils";
+import { useAuthStore } from "../../store/useAuthStore";
+import { formatMessageTime } from '../../lib/utils';
+
 
 const ChatContainer = () => {
   const {
@@ -69,8 +70,21 @@ const ChatContainer = () => {
           </div>
         ) : (
           messages.map((message, index) => {
-            const isMyMessage = message.senderId === authUser._id;
-            const showAvatar = index === 0 || messages[index - 1].senderId !== message.senderId;
+            // Handle both populated and non-populated senderId
+            const messageSenderId = typeof message.senderId === 'object' 
+              ? message.senderId._id 
+              : message.senderId;
+            
+            const isMyMessage = messageSenderId === authUser._id;
+            
+            // Check if we should show avatar based on previous message sender
+            const prevMessageSenderId = index > 0 
+              ? (typeof messages[index - 1].senderId === 'object' 
+                  ? messages[index - 1].senderId._id 
+                  : messages[index - 1].senderId)
+              : null;
+            
+            const showAvatar = index === 0 || prevMessageSenderId !== messageSenderId;
             
             return (
               <div

@@ -19,27 +19,11 @@ import {
 
 import axiosInstance from "../lib/axios";
 import SuggestedUsers from '../components/common/SuggestedUsers';
+import CommentsSection from '../components/comment/CommentsSection';
+import { 
+  likePost as likePostAPI
+} from "../services/api";
 
-// API helper functions
-const likePost = async (postId) => {
-  const response = await axiosInstance.post(`/posts/${postId}/like`);
-  return response.data;
-};
-
-const addComment = async (postId, data) => {
-  const response = await axiosInstance.post(`/posts/${postId}/comment`, data);
-  return response.data;
-};
-
-const deleteComment = async (postId, commentId) => {
-  const response = await axiosInstance.delete(`/posts/${postId}/comment/${commentId}`);
-  return response.data;
-};
-
-const likeComment = async (postId, commentId) => {
-  const response = await axiosInstance.post(`/posts/${postId}/comment/${commentId}/like`);
-  return response.data;
-};
 
 // Enhanced Create Post Component
 const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
@@ -441,474 +425,6 @@ const CreatePostQuick = ({ onExpand, user }) => {
   );
 };
 
-// Comment Component with Recursive Replies
-const Comment = ({ 
-  comment, 
-  currentUser, 
-  onReply, 
-  onLike, 
-  onDelete, 
-  level = 0,
-  postId 
-}) => {
-  const [showReplies, setShowReplies] = useState(true);
-  const [showReplyInput, setShowReplyInput] = useState(false);
-  const [replyText, setReplyText] = useState('');
-  const [showOptions, setShowOptions] = useState(false);
-  const replyInputRef = useRef(null);
-
-  const maxLevel = 5;
-  const hasReplies = comment.replies && comment.replies.length > 0;
-
-  useEffect(() => {
-    if (showReplyInput && replyInputRef.current) {
-      replyInputRef.current.focus();
-    }
-  }, [showReplyInput]);
-
-  const handleReplySubmit = () => {
-    if (!replyText.trim()) return;
-    
-    onReply(comment._id, replyText.trim());
-    setReplyText('');
-    setShowReplyInput(false);
-    setShowReplies(true);
-  };
-
-  const formatTime = (date) => {
-    const now = new Date();
-    const diff = Math.floor((now - new Date(date)) / 1000);
-
-    if (diff < 60) return 'just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
-    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
-  return (
-    <div className={`${level > 0 ? 'ml-10' : ''} mt-4`}>
-      <div className="flex gap-2 group">
-        {/* Avatar */}
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex-shrink-0 flex items-center justify-center overflow-hidden">
-          {comment.author?.avatar ? (
-            <img 
-              src={comment.author.avatar} 
-              alt={comment.author.username} 
-              className="w-full h-full object-cover" 
-            />
-          ) : (
-            <span className="text-xs font-medium text-white">
-              {comment.author?.username?.charAt(0) || 'U'}
-            </span>
-          )}
-        </div>
-
-        {/* Comment Content */}
-        <div className="flex-1 min-w-0">
-          <div className="bg-gray-100 rounded-2xl px-4 py-2.5 inline-block max-w-full">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-gray-900">
-                  {comment.author?.username || 'User'}
-                </p>
-                <p className="text-sm text-gray-800 mt-1 whitespace-pre-wrap break-words">
-                  {comment.content}
-                </p>
-              </div>
-              
-              {/* Options Menu */}
-              {comment.author?._id === currentUser?._id && (
-                <div className="relative">
-                  <button
-                    onClick={() => setShowOptions(!showOptions)}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded transition-all"
-                  >
-                    <MoreHorizontal size={14} className="text-gray-600" />
-                  </button>
-                  
-                  {showOptions && (
-                    <div className="absolute right-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-10 min-w-[120px]">
-                      <button
-                        onClick={() => {
-                          onDelete(comment._id);
-                          setShowOptions(false);
-                        }}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm text-red-600"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center gap-4 mt-1 ml-3">
-            <button 
-              onClick={() => onLike(comment._id)}
-              className={`text-xs font-semibold transition-colors ${
-                comment.isLiked 
-                  ? 'text-blue-600' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Like {comment.likes > 0 && `· ${comment.likes}`}
-            </button>
-            
-            {level < maxLevel && (
-              <button 
-                onClick={() => setShowReplyInput(!showReplyInput)}
-                className="text-xs text-gray-600 hover:text-gray-900 font-semibold"
-              >
-                Reply
-              </button>
-            )}
-            
-            <span className="text-xs text-gray-500">
-              {formatTime(comment.createdAt)}
-            </span>
-          </div>
-
-          {/* Reply Input */}
-          {showReplyInput && (
-            <div className="mt-3 flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                {currentUser?.avatar ? (
-                  <img 
-                    src={currentUser.avatar} 
-                    alt={currentUser.username} 
-                    className="w-full h-full object-cover" 
-                  />
-                ) : (
-                  <span className="text-xs font-medium text-white">
-                    {currentUser?.username?.charAt(0) || 'U'}
-                  </span>
-                )}
-              </div>
-              
-              <div className="flex-1 flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2">
-                <input
-                  ref={replyInputRef}
-                  type="text"
-                  placeholder={`Reply ${comment.author?.username}...`}
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleReplySubmit();
-                    }
-                    if (e.key === 'Escape') {
-                      setShowReplyInput(false);
-                      setReplyText('');
-                    }
-                  }}
-                  className="flex-1 outline-none text-sm text-gray-700 placeholder-gray-500 bg-transparent"
-                />
-                <button
-                  onClick={handleReplySubmit}
-                  disabled={!replyText.trim()}
-                  className="text-blue-600 hover:text-blue-700 disabled:text-gray-400 disabled:cursor-not-allowed text-sm font-semibold"
-                >
-                  Send
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Nested Replies */}
-          {hasReplies && (
-            <div className="mt-2">
-              {/* Toggle Replies Button */}
-              <button
-                onClick={() => setShowReplies(!showReplies)}
-                className="flex items-center gap-2 text-xs font-semibold text-gray-600 hover:text-gray-900 ml-3 mb-2"
-              >
-                {showReplies ? (
-                  <>
-                    <ChevronUp size={14} />
-                    Hide {comment.replies.length} replies
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown size={14} />
-                    Show all {comment.replies.length} replies
-                  </>
-                )}
-              </button>
-
-              {/* Render Nested Replies */}
-              {showReplies && (
-                <div className="border-l-2 border-gray-200 pl-2">
-                  {comment.replies.map((reply) => (
-                    <Comment
-                      key={reply._id}
-                      comment={reply}
-                      currentUser={currentUser}
-                      onReply={onReply}
-                      onLike={onLike}
-                      onDelete={onDelete}
-                      level={level + 1}
-                      postId={postId}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Comments Section Component
-const CommentsSection = ({ post, currentUser }) => {
-  const [comments, setComments] = useState([]);
-  const [commentText, setCommentText] = useState('');
-  const [sortBy, setSortBy] = useState('relevant');
-  const [showSortMenu, setShowSortMenu] = useState(false);
-
-  useEffect(() => {
-    setComments(post.comments || []);
-  }, [post.comments]);
-
-  const handleAddComment = async () => {
-    if (!commentText.trim()) return;
-
-    try {
-      const res = await addComment(post._id, { 
-        content: commentText.trim(),
-        parentId: null
-      });
-      setComments([res.comment, ...comments]);
-      setCommentText('');
-      toast.success('Comment added!');
-    } catch (error) {
-      console.error('Error adding comment:', error);
-      toast.error('Failed to add comment');
-    }
-  };
-
-  const handleReply = async (parentId, content) => {
-    try {
-      const res = await addComment(post._id, { 
-        content, 
-        parentId 
-      });
-      
-      // Add reply to the appropriate parent comment
-      const updateComments = (comments) => {
-        return comments.map(comment => {
-          if (comment._id === parentId) {
-            return {
-              ...comment,
-              replies: [...(comment.replies || []), res.comment]
-            };
-          }
-          if (comment.replies && comment.replies.length > 0) {
-            return {
-              ...comment,
-              replies: updateComments(comment.replies)
-            };
-          }
-          return comment;
-        });
-      };
-      
-      setComments(updateComments(comments));
-      toast.success('Reply added!');
-    } catch (error) {
-      console.error('Error adding reply:', error);
-      toast.error('Failed to add reply');
-    }
-  };
-
-  const handleLike = async (commentId) => {
-    try {
-      const res = await likeComment(post._id, commentId);
-      
-      // Update like status in comments tree
-      const updateLikes = (comments) => {
-        return comments.map(comment => {
-          if (comment._id === commentId) {
-            return {
-              ...comment,
-              isLiked: res.isLiked,
-              likes: res.likes
-            };
-          }
-          
-  if (comment.replies && comment.replies.length > 0) {
-            return {
-              ...comment,
-              replies: updateLikes(comment.replies)
-            };
-          }
-          return comment;
-        });
-      };
-      
-      setComments(updateLikes(comments));
-    } catch (error) {
-      console.error('Error liking comment:', error);
-      toast.error('Failed to like comment');
-    }
-  };
-
-  const handleDelete = async (commentId) => {
-    if (!confirm('You want to delete this comment?')) return;
-
-    try {
-      await deleteComment(post._id, commentId);
-      
-      // Remove comment from tree
-      const removeComment = (comments) => {
-        return comments.filter(comment => {
-          if (comment._id === commentId) return false;
-          if (comment.replies && comment.replies.length > 0) {
-            comment.replies = removeComment(comment.replies);
-          }
-          return true;
-        });
-      };
-      
-      setComments(removeComment(comments));
-      toast.success('Comment deleted');
-    } catch (error) {
-      console.error('Error deleting comment:', error);
-      toast.error('Failed to delete comment');
-    }
-  };
-
-  // Sorting options
-  const sortOptions = [
-    { value: 'relevant', label: 'Most Relevant', desc: 'Show comments from friends and those with the most interactions first.' },
-    { value: 'newest', label: 'Newest', desc: 'Show all comments, with the newest first.' },
-    { value: 'all', label: 'All Comments', desc: 'Show all comments, including those that may be spam.' }
-  ];
-
-  const currentSort = sortOptions.find(opt => opt.value === sortBy);
-
-  return (
-    <div className="bg-gray-50 border-t border-gray-200">
-      {/* Sort Dropdown */}
-      <div className="px-4 pt-4 pb-2 border-b border-gray-200 bg-white">
-        <div className="relative">
-          <button
-            onClick={() => setShowSortMenu(!showSortMenu)}
-            className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
-          >
-            {currentSort?.label}
-            <ChevronDown size={16} className={`transform transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
-          </button>
-
-          {showSortMenu && (
-            <div className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-20 min-w-[320px]">
-              {sortOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => {
-                    setSortBy(option.value);
-                    setShowSortMenu(false);
-                  }}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="radio"
-                      checked={sortBy === option.value}
-                      onChange={() => {}}
-                      className="mt-1"
-                    />
-                    <div>
-                      <p className="font-semibold text-sm text-gray-900">{option.label}</p>
-                      <p className="text-xs text-gray-600 mt-0.5">{option.desc}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main Comment Input */}
-      <div className="p-4 bg-white border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
-            <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-              {currentUser?.avatar ? (
-                <img 
-                  src={currentUser.avatar} 
-                  alt={currentUser.username} 
-                  className="w-full h-full object-cover" 
-                />
-              ) : (
-                <span className="text-xs font-medium text-gray-700">
-                  {currentUser?.username?.charAt(0) || 'U'}
-                </span>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex-1 flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2.5">
-            <input
-              type="text"
-              placeholder='Write a comment...'
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleAddComment();
-                }
-              }}
-              className="flex-1 outline-none text-gray-700 placeholder-gray-500 bg-transparent"
-            />
-            <button
-              onClick={handleAddComment}
-              disabled={!commentText.trim()}
-              className="text-blue-600 hover:text-blue-700 disabled:text-gray-400 disabled:cursor-not-allowed font-semibold text-sm"
-            >
-              Send
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Comments List */}
-      <div className="px-4 pb-4 max-h-[600px] overflow-y-auto">
-        {comments.length > 0 ? (
-          <div className="space-y-1">
-            {comments.map((comment) => (
-              <Comment
-                key={comment._id}
-                comment={comment}
-                currentUser={currentUser}
-                onReply={handleReply}
-                onLike={handleLike}
-                onDelete={handleDelete}
-                level={0}
-                postId={post._id}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            <MessageCircle size={48} className="mx-auto mb-3 opacity-30" />
-            <p>No comments yet</p>
-            <p className="text-sm mt-1">Be the first to comment!</p>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 // Enhanced Post Card Component  
 const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
   const navigate = useNavigate();
@@ -924,6 +440,9 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
   const [lightboxImageIndex, setLightboxImageIndex] = useState(0);
+  const [showLikesModal, setShowLikesModal] = useState(false);
+  const [likesData, setLikesData] = useState([]);
+  const [loadingLikes, setLoadingLikes] = useState(false);
 
   useEffect(() => {
     setLiked(post.likes?.includes(currentUser?._id));
@@ -975,7 +494,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
 
   const handleLike = async () => {
     try {
-      const res = await likePost(post._id);
+      const res = await likePostAPI(post._id);
       setLiked(res.isLiked);
       setLikeCount(res.likes);
       
@@ -1041,6 +560,22 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
     if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
     if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
     return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const handleShowLikes = async () => {
+    setShowLikesModal(true);
+    setLoadingLikes(true);
+    
+    try {
+      const response = await axiosInstance.get(`/posts/${post._id}/likes`);
+      setLikesData(response.data.likes || []);
+    } catch (error) {
+      console.error('Error fetching likes:', error);
+      toast.error(error.response?.data?.message || 'Failed to load likes');
+      setShowLikesModal(false);
+    } finally {
+      setLoadingLikes(false);
+    }
   };
 
   const author = post.author || post.user;
@@ -1328,11 +863,19 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
       <div className="px-4 pt-3 pb-2 flex items-center justify-between text-sm">
         <div className="flex items-center gap-2">
           {likeCount > 0 && (
-            <button className="flex items-center gap-1.5 hover:underline">
+            <button 
+              onClick={handleShowLikes}
+              className={`flex items-center gap-1.5 ${
+                post.author?._id === currentUser?._id 
+                  ? 'hover:underline cursor-pointer' 
+                  : 'cursor-default'
+              }`}
+              // disabled={post.author?._id !== currentUser?._id} // Only author can click to see who liked
+            >
               <div className="flex items-center gap-1">
                 <span className="text-small">❤️</span>
-                <span className="text-small">👍</span>
-                <span className="text-small">😊</span>
+                {/* <span className="text-small">👍</span>
+                <span className="text-small">😊</span> */}
               </div>
               <span className="text-sm text-gray-700 font-medium">{likeCount} reactions</span>
             </button>
@@ -1460,11 +1003,88 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
           </div>
         </div>
       )}
+
+      {/* Likes Modal - Only for Post Owner */}
+      {showLikesModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn"
+          onClick={() => setShowLikesModal(false)}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] flex flex-col animate-scaleIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <h3 className="text-xl font-bold text-gray-900">Reactions</h3>
+              <button
+                onClick={() => setShowLikesModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              {loadingLikes ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-blue-500"></div>
+                </div>
+              ) : likesData.length > 0 ? (
+                <div className="space-y-2">
+                  {likesData.map((user) => (
+                    <div 
+                      key={user._id} 
+                      className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer"
+                      onClick={() => {
+                        navigate(`/profile/${user.username}`);
+                        setShowLikesModal(false);
+                      }}
+                    >
+                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
+                        <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                          {user.avatar ? (
+                            <img 
+                              src={user.avatar} 
+                              alt={user.username} 
+                              className="w-full h-full object-cover" 
+                            />
+                          ) : (
+                            <span className="text-gray-700 font-bold">
+                              {user.username?.charAt(0).toUpperCase() || 'U'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 truncate">
+                          {user.username || user.name || 'User'}
+                        </p>
+                        {user.name && user.name !== user.username && (
+                          <p className="text-sm text-gray-500 truncate">{user.name}</p>
+                        )}
+                      </div>
+                      <div className="text-red-500">
+                        <Heart className="fill-current" size={20} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <Heart size={48} className="mx-auto mb-3 opacity-30" />
+                  <p className="font-medium">No reactions yet</p>
+                  <p className="text-sm mt-1">Be the first to react!</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-
-
 
 // Main HomePage Component
 export default function HomePage() {

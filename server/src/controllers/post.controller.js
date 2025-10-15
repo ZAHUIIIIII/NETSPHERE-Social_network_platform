@@ -209,6 +209,28 @@ export const likePost = async (req, res) => {
   }
 };
 
+// Get users who liked a post
+export const getPostLikes = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    
+    const post = await Post.findById(postId)
+      .populate('likes', 'username name avatar');
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    res.json({ 
+      likes: post.likes,
+      count: post.likes.length 
+    });
+  } catch (error) {
+    console.error('Error in getPostLikes:', error);
+    res.status(500).json({ message: 'Error fetching likes' });
+  }
+};
+
 // Add a comment
 export const addComment = async (req, res) => {
   try {
@@ -359,5 +381,34 @@ export const checkPostSavedStatus = async (req, res) => {
   } catch (error) {
     console.error('Error checking saved status:', error);
     res.status(500).json({ message: 'Error checking saved status', isSaved: false });
+  }
+};
+
+
+// Get a post by ID
+export const getPostById = async (req, res) => {
+  try {
+    const { postId } = req.params;
+
+    const post = await Post.findById(postId)
+      .populate('author', 'username name avatar')
+      .populate({
+        path: 'comments.author',
+        select: 'username name avatar'
+      });
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check privacy settings
+    if (post.privacy === 'private' && post.author._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'This post is private' });
+    }
+
+    res.json(post);
+  } catch (error) {
+    console.error('Error in getPostById:', error);
+    res.status(500).json({ message: 'Error fetching post' });
   }
 };

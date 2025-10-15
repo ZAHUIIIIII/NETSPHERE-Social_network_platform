@@ -300,20 +300,6 @@ export const searchSuggestions = async (req, res) => {
   }
 };
 
-// New: Get search history for user
-export const getSearchHistory = async (req, res) => {
-  try {
-    const userId = req.user._id;
-    
-    // This would require a SearchHistory model
-    // For now, return empty array
-    res.json({ history: [] });
-  } catch (error) {
-    console.error('❌ History error:', error);
-    res.status(500).json({ message: 'Error fetching search history' });
-  }
-};
-
 // New: Popular searches
 export const getPopularSearches = async (req, res) => {
   try {

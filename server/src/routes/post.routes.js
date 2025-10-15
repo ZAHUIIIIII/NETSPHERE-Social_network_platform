@@ -1,4 +1,4 @@
-// server/src/routes/post.route.js
+// server/src/routes/post.routes.js
 import express from 'express';
 import multer from 'multer';
 import { protectRoute } from '../middleware/auth.middleware.js';
@@ -25,15 +25,20 @@ const upload = multer({
 // Post routes
 router.get('/', protectRoute, postController.getAllPosts);
 router.get('/saved', protectRoute, postController.getSavedPosts);
-router.get('/user/:userId', protectRoute, getUserPosts);
-router.get('/:postId/saved-status', protectRoute, postController.checkPostSavedStatus); // ADD THIS
-router.post('/', protectRoute, postController.createPost);
 router.post('/upload', protectRoute, upload.array('images', 10), postController.uploadImages);
-router.put('/:postId', protectRoute, postController.updatePost);
-router.delete('/:postId', protectRoute, postController.deletePost);
+router.get('/user/:userId', protectRoute, getUserPosts);
+
+// Specific routes before generic :postId routes to avoid conflicts
+router.get('/:postId/saved-status', protectRoute, postController.checkPostSavedStatus);
+router.get('/:postId/likes', protectRoute, postController.getPostLikes);
 router.post('/:postId/like', protectRoute, postController.likePost);
 router.post('/:postId/save', protectRoute, postController.savePost);
-router.post('/:postId/comment', protectRoute, postController.addComment);
-router.delete('/:postId/comment/:commentId', protectRoute, postController.deleteComment);
+// Comment routes removed - handled by comment.routes.js for advanced features
+
+// Generic :postId routes
+router.post('/', protectRoute, postController.createPost);
+router.get('/:postId', protectRoute, postController.getPostById);
+router.put('/:postId', protectRoute, postController.updatePost);
+router.delete('/:postId', protectRoute, postController.deletePost);
 
 export default router;

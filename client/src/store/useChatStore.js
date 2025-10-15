@@ -39,13 +39,44 @@ export const useChatStore = create((set, get) => ({
 
   
   sendMessage: async (messageData) => {
-    const { selectedUser, messages } = get();
+    const { selectedUser, messages, users } = get();
+    const currentUserId = useAuthStore.getState().authUser?._id;
+    
     try {
       const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
-      set({ messages: [...messages, res.data] });
+      const newMessage = res.data;
       
-      // Update users list to reflect the new last message
-      get().getUsers();
+      // Add message to current conversation
+      set({ messages: [...messages, newMessage] });
+      
+      // Update the specific user's last message in the users list WITHOUT refetching
+      const updatedUsers = users.map(user => {
+        if (user._id === selectedUser._id) {
+          return {
+            ...user,
+            lastMessage: {
+              _id: newMessage._id,
+              text: newMessage.text || '',
+              image: newMessage.image || null,
+              senderId: currentUserId,
+              senderName: 'You',
+              createdAt: newMessage.createdAt || new Date().toISOString(),
+              isFromMe: true
+            }
+          };
+        }
+        return user;
+      });
+      
+      // Re-sort users by last message time (most recent first)
+      updatedUsers.sort((a, b) => {
+        if (!a.lastMessage && !b.lastMessage) return 0;
+        if (!a.lastMessage) return 1;
+        if (!b.lastMessage) return -1;
+        return new Date(b.lastMessage.createdAt) - new Date(a.lastMessage.createdAt);
+      });
+      
+      set({ users: updatedUsers });
     } catch (error) {
       console.error("Error sending message:", error);
       toast.error(error.response?.data?.message || "Failed to send message");
@@ -60,12 +91,40 @@ export const useChatStore = create((set, get) => ({
       const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser._id;
       if (!isMessageSentFromSelectedUser) return;
 
+      // Add message to current conversation
       set({
         messages: [...get().messages, newMessage],
       });
       
-      // Update users list to reflect the new last message
-      get().getUsers();
+      // Update the specific user's last message in the users list WITHOUT refetching
+      const { users } = get();
+      const updatedUsers = users.map(user => {
+        if (user._id === selectedUser._id) {
+          return {
+            ...user,
+            lastMessage: {
+              _id: newMessage._id,
+              text: newMessage.text || '',
+              image: newMessage.image || null,
+              senderId: newMessage.senderId,
+              senderName: selectedUser.username,
+              createdAt: newMessage.createdAt || new Date().toISOString(),
+              isFromMe: false
+            }
+          };
+        }
+        return user;
+      });
+      
+      // Re-sort users by last message time (most recent first)
+      updatedUsers.sort((a, b) => {
+        if (!a.lastMessage && !b.lastMessage) return 0;
+        if (!a.lastMessage) return 1;
+        if (!b.lastMessage) return -1;
+        return new Date(b.lastMessage.createdAt) - new Date(a.lastMessage.createdAt);
+      });
+      
+      set({ users: updatedUsers });
     });
   },
 

@@ -1,2 +1,28 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+/* IMMEDIATE FIX FOR BLUE TEXT */
+@layer base {
+  body {
+    @apply text-gray-900;
+  }
+  
+  /* Reset all text to dark by default */
+  * {
+    color: inherit;
+  }
+  
+  /* Only links should have color */
+  a {
+    @apply text-gray-900;
+  }
+  
+  a:hover {
+    @apply text-blue-600;
+  }
+  
+  /* Buttons keep their colors */
+  button {
+    color: inherit;
+  }
+}
