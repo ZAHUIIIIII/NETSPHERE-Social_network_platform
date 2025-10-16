@@ -8,9 +8,11 @@ import ProfilePage from './pages/ProfilePage';
 import SettingPage from './pages/SettingPage';
 import SearchPage from './pages/SearchPage';  
 import PostDetailPage from './pages/PostDetailPage';
+import NotificationPage from './pages/NotificationPage';
 
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
+import { useNotificationStore } from './store/useNotificationStore';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { UserProvider } from './UserContext';
@@ -20,6 +22,7 @@ import {Toaster} from 'react-hot-toast';
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore();
+  const { addNotification, setUnreadCount } = useNotificationStore();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
@@ -28,6 +31,48 @@ const App = () => {
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Real-time notification listener
+  useEffect(() => {
+    if (!authUser) return;
+
+    const handleNewNotification = (event) => {
+      const notification = event.detail;
+      console.log('🔔 App received new notification:', notification);
+      
+      // Add to store
+      addNotification(notification);
+      
+      // Show toast notification
+      const messages = {
+        follow: `${notification.sender?.username} started following you`,
+        comment: `${notification.sender?.username} commented on your post`,
+        reply: `${notification.sender?.username} replied to your comment`,
+        reaction: `${notification.sender?.username} reacted ${notification.reactionType ? `with ${notification.reactionType}` : ''} to your ${notification.post ? 'post' : 'comment'}`,
+        like: `${notification.sender?.username} liked your post`
+      };
+      
+      toast.success(messages[notification.type] || 'New notification', {
+        duration: 4000,
+        icon: '🔔'
+      });
+    };
+
+    const handleUnreadCountUpdate = (event) => {
+      const count = event.detail;
+      console.log('📊 App received unread count update:', count);
+      setUnreadCount(count);
+    };
+
+    // Listen to custom events dispatched from useAuthStore
+    window.addEventListener('newNotification', handleNewNotification);
+    window.addEventListener('unreadCountUpdate', handleUnreadCountUpdate);
+
+    return () => {
+      window.removeEventListener('newNotification', handleNewNotification);
+      window.removeEventListener('unreadCountUpdate', handleUnreadCountUpdate);
+    };
+  }, [authUser, addNotification, setUnreadCount]);
 
 
 
@@ -90,9 +135,9 @@ const App = () => {
             <Route path='/search' element={authUser ? <SearchPage /> : <Navigate to="/login" />} />
             <Route path='/profile/:username?' element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />
             <Route path='/post/:postId' element={authUser ? <PostDetailPage /> : <Navigate to="/login" />} />
+            <Route path='/notifications' element={authUser ? <NotificationPage /> : <Navigate to="/login" />} />
           </Routes>
         </div>
-
         <Toaster />
       </div>
     </UserProvider>

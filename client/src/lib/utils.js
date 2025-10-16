@@ -19,7 +19,7 @@ export function formatTime(date) {
   }).format(targetDate);
 }
 
-// Format time for messages (absolute time with context)
+// Format time for messages (in chat) - detailed time
 export function formatMessageTime(date) {
   const messageDate = new Date(date);
   const now = new Date();
@@ -62,6 +62,58 @@ export function formatMessageTime(date) {
       hour12: true,
     });
   }
+}
+
+/**
+ * SHORT TIME LABEL 
+ * 
+ * Format timestamp into short, non-hover time labels per spec requirements:
+ * - < 60s: "Just now"
+ * - < 60m: "Xm" (e.g., "5m")
+ * - < 24h: "Xh" (e.g., "3h")
+ * - Yesterday: "Yesterday HH:mm" (e.g., "Yesterday 14:30")
+ * - Same year: "DD MMM HH:mm" (e.g., "16 Oct 08:45")
+ * - Different year: "DD MMM YYYY" (e.g., "16 Oct 2024")
+ * 
+ * @param {string|Date} dateISO - ISO date string or Date object
+ * @returns {string} Formatted time label
+ */
+export function shortTimeLabel(dateISO) {
+  const d = new Date(dateISO);
+  const now = new Date();
+  const diff = (now.getTime() - d.getTime()) / 1000; // seconds
+
+  // Less than 60 seconds
+  if (diff < 60) return "Just now";
+  
+  // Less than 60 minutes
+  const m = Math.floor(diff / 60);
+  if (m < 60) return `${m}m`;
+  
+  // Less than 24 hours
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+
+  // Helper to compare dates (ignoring time)
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yest = new Date(today);
+  yest.setDate(today.getDate() - 1);
+  const dOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  
+  // Helper for zero-padding
+  const pad = (n) => String(n).padStart(2, "0");
+  const hhmm = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+  // Yesterday
+  if (dOnly.getTime() === yest.getTime()) {
+    return `Yesterday ${hhmm}`;
+  }
+
+  // Same year or different year
+  const sameYear = d.getFullYear() === now.getFullYear();
+  const dStr = d.toLocaleString("en-GB", { day: "2-digit", month: "short" });
+  
+  return sameYear ? `${dStr} ${hhmm}` : `${dStr} ${d.getFullYear()}`;
 }
 
 // Count total comments including nested replies

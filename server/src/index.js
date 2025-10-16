@@ -19,6 +19,7 @@ import postRoutes from './routes/post.routes.js';
 import searchRoutes from './routes/search.routes.js';
 import commentRoutes from './routes/comment.routes.js';
 import userRoutes from './routes/user.route.js';
+import notificationRoutes from './routes/notification.routes.js';
 
 
 
@@ -68,6 +69,8 @@ app.use('/api/posts', commentRoutes); // Mount comment routes FIRST to take prio
 app.use('/api/posts', postRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/search', searchRoutes);
+app.use('/api/notifications', notificationRoutes);
+
 
 (async () => {
   try {

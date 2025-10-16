@@ -1,6 +1,7 @@
 import Post from '../models/post.model.js';
 import User from '../models/user.model.js';
 import cloudinary from '../lib/cloudinary.js';
+import { createNotification } from './notification.controller.js';
 
 // Helper function to calculate top 3 reactions for a post
 const getTopReactions = (post) => {
@@ -208,81 +209,6 @@ export const deletePost = async (req, res) => {
   }
 };
 
-// React to post
-export const reactToPost = async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const { type = 'like' } = req.body;
-    const userId = req.user._id;
-
-    const validTypes = ['like', 'love', 'haha', 'wow', 'sad', 'angry'];
-    if (!validTypes.includes(type)) {
-      return res.status(400).json({ message: 'Invalid reaction type' });
-    }
-
-    const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
-
-    // Initialize reactions if not exist
-    if (!post.reactions) {
-      post.reactions = { like: [], love: [], haha: [], wow: [], sad: [], angry: [] };
-    }
-
-    // Find and remove user from all reaction types
-    let oldReactionType = null;
-    validTypes.forEach(reactionType => {
-      if (!post.reactions[reactionType]) {
-        post.reactions[reactionType] = [];
-      }
-      const index = post.reactions[reactionType].indexOf(userId);
-      if (index !== -1) {
-        post.reactions[reactionType].splice(index, 1);
-        oldReactionType = reactionType;
-      }
-    });
-
-    // If clicking the same reaction, just remove it (toggle off)
-    // If clicking a different reaction, add the new one
-    let userReaction = null;
-    if (oldReactionType !== type) {
-      post.reactions[type].push(userId);
-      userReaction = type;
-    }
-
-    // Sync legacy likes array with reactions.like for compatibility
-    post.likes = [...post.reactions.like];
-
-    await post.save();
-
-    // Calculate reaction counts
-    const reactions = {
-      like: post.reactions.like?.length || 0,
-      love: post.reactions.love?.length || 0,
-      haha: post.reactions.haha?.length || 0,
-      wow: post.reactions.wow?.length || 0,
-      sad: post.reactions.sad?.length || 0,
-      angry: post.reactions.angry?.length || 0
-    };
-
-    // Calculate top 3 reactions for frontend
-    const topReactions = getTopReactions(post);
-
-    res.json({
-      userReaction,
-      reactions,
-      topReactions,
-      likes: post.likes.length,
-      isLiked: post.reactions.like.includes(userId)
-    });
-  } catch (error) {
-    console.error('Error in reactToPost:', error);
-    res.status(500).json({ message: 'Error processing reaction' });
-  }
-};
-
-// Get users who liked a post
 // Get users who reacted to a post (with reaction types)
 export const getPostLikes = async (req, res) => {
   try {
@@ -411,7 +337,6 @@ export const deleteComment = async (req, res) => {
   }
 };
 
-
 // Save/Unsave a post
 export const savePost = async (req, res) => {
   try {
@@ -443,7 +368,6 @@ export const savePost = async (req, res) => {
   }
 };
 
-
 // Get saved posts for current user
 export const getSavedPosts = async (req, res) => {
   try {
@@ -471,21 +395,7 @@ export const getSavedPosts = async (req, res) => {
   }
 };
 
-export const checkPostSaved = async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const userId = req.user._id;
-
-    const user = await User.findById(userId);
-    const isSaved = user.savedPosts.includes(postId);
-
-    res.json({ isSaved });
-  } catch (error) {
-    console.error('Error checking saved status:', error);
-    res.status(500).json({ message: 'Error checking saved status' });
-  }
-};
-
+// Check if post is saved by current user
 export const checkPostSavedStatus = async (req, res) => {
   try {
     const { postId } = req.params;
@@ -500,7 +410,6 @@ export const checkPostSavedStatus = async (req, res) => {
     res.status(500).json({ message: 'Error checking saved status', isSaved: false });
   }
 };
-
 
 // Get a post by ID
 export const getPostById = async (req, res) => {
@@ -531,5 +440,99 @@ export const getPostById = async (req, res) => {
   } catch (error) {
     console.error('Error in getPostById:', error);
     res.status(500).json({ message: 'Error fetching post' });
+  }
+};
+
+// React to post WITH NOTIFICATION
+export const reactToPost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const { type = 'like' } = req.body;
+    const userId = req.user._id;
+
+    const validTypes = ['like', 'love', 'haha', 'wow', 'sad', 'angry'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ message: 'Invalid reaction type' });
+    }
+
+    // Populate author for notification
+    const post = await Post.findById(postId).populate('author', '_id username avatar');
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Initialize reactions if not exist
+    if (!post.reactions) {
+      post.reactions = { like: [], love: [], haha: [], wow: [], sad: [], angry: [] };
+    }
+
+    // Find and remove user from all reaction types
+    let oldReactionType = null;
+    validTypes.forEach(reactionType => {
+      if (!post.reactions[reactionType]) {
+        post.reactions[reactionType] = [];
+      }
+      const index = post.reactions[reactionType].indexOf(userId);
+      if (index !== -1) {
+        post.reactions[reactionType].splice(index, 1);
+        oldReactionType = reactionType;
+      }
+    });
+
+    // If clicking the same reaction, just remove it (toggle off)
+    // If clicking a different reaction, add the new one
+    let userReaction = null;
+    if (oldReactionType !== type) {
+      post.reactions[type].push(userId);
+      userReaction = type;
+      
+      // Create notification for post author (only if not reacting to own post)
+      if (post.author._id.toString() !== userId.toString()) {
+        try {
+          await createNotification({
+            recipient: post.author._id,
+            sender: userId,
+            type: 'reaction',
+            post: postId,
+            reactionType: type,
+            metadata: {
+              postContent: post.content?.substring(0, 100),
+              postImage: post.images?.[0]
+            }
+          });
+        } catch (notifError) {
+          console.error('Error creating reaction notification:', notifError);
+        }
+      }
+    }
+
+    // Sync legacy likes array with reactions.like for compatibility
+    post.likes = [...post.reactions.like];
+
+    await post.save();
+
+    // Calculate reaction counts
+    const reactions = {
+      like: post.reactions.like?.length || 0,
+      love: post.reactions.love?.length || 0,
+      haha: post.reactions.haha?.length || 0,
+      wow: post.reactions.wow?.length || 0,
+      sad: post.reactions.sad?.length || 0,
+      angry: post.reactions.angry?.length || 0
+    };
+
+    // Calculate top 3 reactions for frontend
+    const topReactions = getTopReactions(post);
+
+    res.json({
+      userReaction,
+      reactions,
+      topReactions,
+      likes: post.likes.length,
+      isLiked: post.reactions.like.includes(userId)
+    });
+  } catch (error) {
+    console.error('Error in reactToPost:', error);
+    res.status(500).json({ message: 'Error processing reaction' });
   }
 };

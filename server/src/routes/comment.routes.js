@@ -5,27 +5,30 @@ import {
   editComment,
   deleteComment,
   reactToComment,
-  likeComment,
   getComments,
   getReplies
 } from '../controllers/comment.controller.js';
 
 const router = express.Router();
 
-// All routes require authentication
 router.use(protectRoute);
 
-// Comment CRUD
+// Create comment or reply
 router.post('/:postId/comment', createComment);
+
+// Edit comment
 router.patch('/:postId/comment/:commentId', editComment);
+
+// Delete comment (soft delete)
 router.delete('/:postId/comment/:commentId', deleteComment);
 
-// Reactions
+// Toggle reaction
 router.post('/:postId/comment/:commentId/react', reactToComment);
-router.post('/:postId/comment/:commentId/like', likeComment); // Legacy compatibility
 
-// Listing & pagination
+// Get root comments with pagination
 router.get('/:postId/comments', getComments);
-router.get('/:postId/comments/:commentId/replies', getReplies);
+
+// Get replies for a root comment
+router.get('/:postId/comments/:rootCommentId/replies', getReplies);
 
 export default router;

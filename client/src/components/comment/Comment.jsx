@@ -1,10 +1,27 @@
 import React, { useState } from 'react';
-import { Heart, Reply, MoreHorizontal, Edit2, Trash2, Send, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { MoreHorizontal, Edit2, Trash2, Send, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { formatTime } from '../../lib/utils';
+import { shortTimeLabel } from '../../lib/utils';
 
-// Main Comment Component
+const REACTION_EMOJIS = {
+  like: '👍',
+  love: '❤️',
+  haha: '😂',
+  wow: '😮',
+  sad: '😢',
+  angry: '😠'
+};
+
+const REACTION_COLORS = {
+  like: 'text-blue-600',
+  love: 'text-red-600',
+  haha: 'text-yellow-600',
+  wow: 'text-orange-600',
+  sad: 'text-blue-500',
+  angry: 'text-red-700'
+};
+
 const Comment = ({ 
   comment, 
   currentUser, 
@@ -12,10 +29,8 @@ const Comment = ({
   onEdit,
   onDelete,
   onReact,
-  depth = 0,
-  postId
+  depth = 0
 }) => {
-  const [showReplies, setShowReplies] = useState(true);
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
@@ -24,18 +39,12 @@ const Comment = ({
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [isSubmittingReply, setIsSubmittingReply] = useState(false);
 
-  const isOwnComment = currentUser?._id === comment.author._id;
-  const canReply = true; // Always allow replies
-  
-  // Get replies to display
-  const replies = comment.repliesPreview || [];
-  const totalReplies = comment.repliesCount || 0;
-  
-  // Only show toggle button at depth 0 (parent comments)
-  const showToggleButton = depth === 0 && replies.length > 0;
+  const isOwnComment = currentUser?._id === comment.user?._id;
+  const isRootComment = depth === 0;
 
   const handleReact = (reactionType) => {
     onReact(comment._id, reactionType);
+    setShowReactionPicker(false);
   };
 
   const handleEdit = () => {
@@ -49,12 +58,18 @@ const Comment = ({
     if (replyContent.trim() && !isSubmittingReply) {
       setIsSubmittingReply(true);
       try {
-        await onReply(comment._id, replyContent.trim());
+        // Pass target comment info for reply metadata
+        await onReply({
+          parentId: comment.parentId || comment._id, // Always point to root
+          replyToUserId: comment.user._id,
+          replyToCommentId: comment._id,
+          content: replyContent.trim()
+        });
         setReplyContent('');
         setIsReplying(false);
-        setShowReplies(true);
       } catch (error) {
         console.error('Failed to submit reply:', error);
+        toast.error('Failed to post reply');
       } finally {
         setIsSubmittingReply(false);
       }
@@ -66,44 +81,29 @@ const Comment = ({
     setShowDeleteDialog(false);
   };
 
+  // Calculate total reactions
+  const totalReactions = Object.values(comment.reactions || {}).reduce((sum, count) => sum + count, 0);
+
+  // Get top 2 reaction types for display
+  const topReactions = Object.entries(comment.reactions || {})
+    .filter(([_, count]) => count > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 2)
+    .map(([type]) => type);
+
   return (
     <>
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.2 }}
-        className={`${depth > 0 ? 'ml-10 mt-3 relative' : ''}`}
+        className={`${depth > 0 ? 'ml-10 mt-3' : ''}`}
       >
-        {/* Vertical Line and Curved Connector for Replies */}
-        {depth > 0 && (
-          <>
-            {/* Vertical line connecting replies */}
-            <div 
-              className="absolute left-[-20px] w-[2px] bg-gray-300"
-              style={{ 
-                top: '-12px',
-                height: 'calc(100% + 12px)'
-              }}
-            />
-            
-            {/* Curved horizontal line pointing to avatar */}
-            <div 
-              className="absolute left-[-20px] top-[5px] w-[20px] h-[16px] border-l-2 border-b-2 border-gray-300"
-              style={{ 
-                borderBottomLeftRadius: '8px',
-                borderTopColor: 'transparent',
-                borderRightColor: 'transparent'
-              }}
-            />
-          </>
-        )}
-        
         <div className="flex space-x-2">
           {/* Avatar */}
           <img
-            src={comment.author.avatar || `https://ui-avatars.com/api/?name=${comment.author.username}&background=random`}
-            alt={comment.author.username}
+            src={comment.user?.avatar || `https://ui-avatars.com/api/?name=${comment.user?.name}&background=random`}
+            alt={comment.user?.name}
             className="h-8 w-8 rounded-full object-cover flex-shrink-0"
           />
 
@@ -121,7 +121,7 @@ const Comment = ({
                   <div className="flex space-x-2">
                     <button
                       onClick={handleEdit}
-                      className="px-3 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
+                      className="px-3 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600"
                     >
                       Save
                     </button>
@@ -130,7 +130,7 @@ const Comment = ({
                         setEditContent(comment.content);
                         setIsEditing(false);
                       }}
-                      className="px-3 py-1.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                      className="px-3 py-1.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-100"
                     >
                       Cancel
                     </button>
@@ -139,12 +139,30 @@ const Comment = ({
               ) : (
                 <>
                   <p className="font-semibold text-sm text-gray-900 mb-0.5">
-                    {comment.author.username}
-                    {comment.edited && (
+                    {comment.user?.name}
+                    {comment.isEdited && (
                       <span className="ml-1 text-xs text-gray-500 font-normal">(edited)</span>
                     )}
                   </p>
-                  <p className="text-sm text-gray-900 whitespace-pre-wrap break-words">{comment.content}</p>
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap break-words">
+                    {/* Show "Replying to" inline with comment text for Level 2 */}
+                    {comment.replyToSnapshot && (
+                      <>
+                        <a 
+                          href={`/profile/${comment.replyToSnapshot.username || comment.replyToSnapshot.name}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            window.location.href = `/profile/${comment.replyToSnapshot.username || comment.replyToSnapshot.name}`;
+                          }}
+                          className="font-semibold text-gray-900 hover:underline cursor-pointer"
+                        >
+                          {comment.replyToSnapshot.name}
+                        </a>
+                        {' '}
+                      </>
+                    )}
+                    {comment.content}
+                  </p>
                 </>
               )}
             </div>
@@ -156,32 +174,18 @@ const Comment = ({
                 <button
                   onClick={() => {
                     if (comment.userReaction) {
-                      handleReact(comment.userReaction); // Toggle off current reaction
+                      handleReact(comment.userReaction); // Toggle off
                     } else {
-                      handleReact('like'); // Default to like on click
+                      handleReact('like'); // Default like
                     }
                   }}
                   onMouseEnter={() => setShowReactionPicker(true)}
-                  onMouseLeave={() => {
-                    setTimeout(() => setShowReactionPicker(false), 3000);
-                  }}
+                  onMouseLeave={() => setTimeout(() => setShowReactionPicker(false), 200)}
                   className={`text-xs font-semibold transition-colors hover:underline ${
-                    comment.userReaction === 'like' ? 'text-blue-600' :
-                    comment.userReaction === 'love' ? 'text-red-600' :
-                    comment.userReaction === 'haha' ? 'text-yellow-600' :
-                    comment.userReaction === 'wow' ? 'text-orange-600' :
-                    comment.userReaction === 'sad' ? 'text-blue-500' :
-                    comment.userReaction === 'angry' ? 'text-red-700' :
-                    'text-gray-600'
+                    comment.userReaction ? REACTION_COLORS[comment.userReaction] : 'text-gray-600'
                   }`}
                 >
-                  {comment.userReaction === 'like' && 'Like'}
-                  {comment.userReaction === 'love' && 'Love'}
-                  {comment.userReaction === 'haha' && 'Haha'}
-                  {comment.userReaction === 'wow' && 'Wow'}
-                  {comment.userReaction === 'sad' && 'Sad'}
-                  {comment.userReaction === 'angry' && 'Angry'}
-                  {!comment.userReaction && 'Like'}
+                  {comment.userReaction ? comment.userReaction.charAt(0).toUpperCase() + comment.userReaction.slice(1) : 'Like'}
                 </button>
 
                 {/* Reaction Picker */}
@@ -191,95 +195,53 @@ const Comment = ({
                     onMouseEnter={() => setShowReactionPicker(true)}
                     onMouseLeave={() => setShowReactionPicker(false)}
                   >
-                    <button
-                      onClick={() => { handleReact('like'); setShowReactionPicker(false); }}
-                      className="hover:scale-125 transition-transform text-xl p-1 rounded-full hover:bg-gray-100"
-                      title="Like"
-                    >
-                      👍
-                    </button>
-                    <button
-                      onClick={() => { handleReact('love'); setShowReactionPicker(false); }}
-                      className="hover:scale-125 transition-transform text-xl p-1 rounded-full hover:bg-gray-100"
-                      title="Love"
-                    >
-                      ❤️
-                    </button>
-                    <button
-                      onClick={() => { handleReact('haha'); setShowReactionPicker(false); }}
-                      className="hover:scale-125 transition-transform text-xl p-1 rounded-full hover:bg-gray-100"
-                      title="Haha"
-                    >
-                      😂
-                    </button>
-                    <button
-                      onClick={() => { handleReact('wow'); setShowReactionPicker(false); }}
-                      className="hover:scale-125 transition-transform text-xl p-1 rounded-full hover:bg-gray-100"
-                      title="Wow"
-                    >
-                      😮
-                    </button>
-                    <button
-                      onClick={() => { handleReact('sad'); setShowReactionPicker(false); }}
-                      className="hover:scale-125 transition-transform text-xl p-1 rounded-full hover:bg-gray-100"
-                      title="Sad"
-                    >
-                      😢
-                    </button>
-                    <button
-                      onClick={() => { handleReact('angry'); setShowReactionPicker(false); }}
-                      className="hover:scale-125 transition-transform text-xl p-1 rounded-full hover:bg-gray-100"
-                      title="Angry"
-                    >
-                      😠
-                    </button>
+                    {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => (
+                      <button
+                        key={type}
+                        onClick={() => handleReact(type)}
+                        className="hover:scale-125 transition-transform text-xl p-1 rounded-full hover:bg-gray-100"
+                        title={type.charAt(0).toUpperCase() + type.slice(1)}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
 
-              {/* Reaction Count Display */}
-              {(() => {
-                const total = Object.values(comment.reactions || {}).reduce((sum, count) => sum + (count || 0), 0);
-                if (total > 0) {
-                  return (
-                    <div className="flex items-center space-x-1">
-                      {comment.reactions.like > 0 && <span className="text-sm">👍</span>}
-                      {comment.reactions.love > 0 && <span className="text-sm">❤️</span>}
-                      {comment.reactions.haha > 0 && <span className="text-sm">😂</span>}
-                      {comment.reactions.wow > 0 && <span className="text-sm">😮</span>}
-                      {comment.reactions.sad > 0 && <span className="text-sm">😢</span>}
-                      {comment.reactions.angry > 0 && <span className="text-sm">😠</span>}
-                      <span className="text-xs text-gray-600">{total}</span>
-                    </div>
-                  );
-                }
-                return null;
-              })()}
+              {/* Reaction Summary */}
+              {totalReactions > 0 && (
+                <div className="flex items-center space-x-1">
+                  {topReactions.map(type => (
+                    <span key={type} className="text-sm">{REACTION_EMOJIS[type]}</span>
+                  ))}
+                  <span className="text-xs text-gray-600">{totalReactions}</span>
+                </div>
+              )}
 
-              {/* Dot Separator */}
               <span className="text-xs text-gray-400">·</span>
 
-              {canReply && (
+              {/* Reply button - only show if not at max depth */}
+              {depth < 1 && (
                 <button
                   onClick={() => setIsReplying(!isReplying)}
-                  className="text-xs text-gray-600 font-semibold transition-colors hover:underline"
+                  className="text-xs text-gray-600 font-semibold hover:underline"
                 >
                   Reply
                 </button>
               )}
 
-              {/* Dot Separator */}
               <span className="text-xs text-gray-400">·</span>
 
+              {/* Time label (no hover tooltip) */}
               <span className="text-xs text-gray-500">
-                {formatTime(comment.createdAt)}
+                {shortTimeLabel(comment.createdAt)}
               </span>
 
+              {/* Edit/Delete menu for own comments */}
               {isOwnComment && !isEditing && (
                 <>
-                  {/* Dot Separator */}
                   <span className="text-xs text-gray-400">·</span>
-                  
                   <div className="relative group">
                     <button className="text-gray-500 hover:text-gray-700 transition-colors">
                       <MoreHorizontal className="h-3.5 w-3.5" />
@@ -322,11 +284,10 @@ const Comment = ({
                       <textarea
                         value={replyContent}
                         onChange={(e) => setReplyContent(e.target.value)}
-                        placeholder={`Reply to ${comment.author.username}...`}
+                        placeholder={`Reply to ${comment.user?.name}...`}
                         className="w-full min-h-[44px] max-h-[200px] resize-none p-3 pr-12 bg-gray-100 text-gray-900 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors"
                         autoFocus
                         onKeyDown={(e) => {
-                          // Prevent submission during IME composition (Vietnamese, Chinese, Japanese, Korean keyboards)
                           if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                             e.preventDefault();
                             handleReply();
@@ -361,68 +322,17 @@ const Comment = ({
                 </div>
               </motion.div>
             )}
-
-            {/* Replies - Only show toggle at depth 0 */}
-            {showToggleButton && (
-              <div className="mt-2">
-                <button
-                  onClick={() => setShowReplies(!showReplies)}
-                  className="flex items-center space-x-1 text-xs text-blue-600 hover:underline mb-2"
-                >
-                  {showReplies ? (
-                    <>
-                      <ChevronUp className="h-3.5 w-3.5" />
-                      <span>Hide replies</span>
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="h-3.5 w-3.5" />
-                      <span>Show {replies.length} {replies.length === 1 ? 'reply' : 'replies'}</span>
-                    </>
-                  )}
-                </button>
-
-                <AnimatePresence>
-                  {showReplies && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                    >
-                      {replies.map((reply) => (
-                        <Comment
-                          key={reply._id}
-                          postId={postId}
-                          comment={reply}
-                          currentUser={currentUser}
-                          onReply={onReply}
-                          onEdit={onEdit}
-                          onDelete={onDelete}
-                          onReact={onReact}
-                          depth={1}
-                        />
-                      ))}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
           </div>
         </div>
       </motion.div>
 
-      {/* Delete Dialog */}
+      {/* Delete Confirmation Dialog */}
       {showDeleteDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-lg font-semibold mb-2">Delete Comment</h3>
             <p className="text-gray-600 mb-4">
               Are you sure you want to delete this comment? This action cannot be undone.
-              {replies.length > 0 && (
-                <span className="block mt-2 font-medium">
-                  This will also delete {replies.length} {replies.length === 1 ? 'reply' : 'replies'}.
-                </span>
-              )}
             </p>
             <div className="flex justify-end space-x-2">
               <button

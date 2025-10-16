@@ -1,7 +1,7 @@
-// server/src/controllers/user.controller.js
 import User from '../models/user.model.js';
 import Post from '../models/post.model.js';
 import cloudinary from '../lib/cloudinary.js';
+import { createNotification } from './notification.controller.js';
 
 // Get user profile by username
 export const getUserProfile = async (req, res) => {
@@ -89,7 +89,7 @@ export const getUserPosts = async (req, res) => {
   }
 };
 
-// Follow user
+// Follow user WITH NOTIFICATION
 export const followUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -117,6 +117,17 @@ export const followUser = async (req, res) => {
 
     await currentUser.save();
     await userToFollow.save();
+
+    // Create notification (wrapped in try-catch to not fail the request)
+    try {
+      await createNotification({
+        recipient: userId,
+        sender: currentUserId,
+        type: 'follow'
+      });
+    } catch (notifError) {
+      console.error('Error creating follow notification:', notifError);
+    }
 
     res.json({ 
       message: 'User followed successfully',
@@ -268,7 +279,6 @@ export const getSavedPosts = async (req, res) => {
     res.status(500).json({ message: 'Error fetching saved posts' });
   }
 };
-
 
 // Get suggested users (users not followed by current user)
 export const getSuggestedUsers = async (req, res) => {

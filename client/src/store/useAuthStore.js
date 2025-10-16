@@ -149,11 +149,24 @@ export const useAuthStore = create((set, get) => ({
         });
 
         socket.on("connect", () => {
-            console.log("Socket connected successfully");
+            console.log("✅ Socket connected successfully:", socket.id);
         });
 
         socket.on("disconnect", () => {
-            console.log("Socket disconnected");
+            console.log("❌ Socket disconnected");
+        });
+
+        // Notification event listeners
+        socket.on("newNotification", (notification) => {
+            console.log("🔔 New notification received:", notification);
+            // Emit custom event that App.jsx can listen to
+            window.dispatchEvent(new CustomEvent('newNotification', { detail: notification }));
+        });
+
+        socket.on("unreadCount", (data) => {
+            console.log("📊 Unread count updated:", data.count);
+            // Emit custom event that App.jsx can listen to
+            window.dispatchEvent(new CustomEvent('unreadCountUpdate', { detail: data.count }));
         });
 },
 
