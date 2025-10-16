@@ -2,6 +2,27 @@ import Post from '../models/post.model.js';
 import User from '../models/user.model.js';
 import cloudinary from '../lib/cloudinary.js';
 
+// Helper function to calculate top 3 reactions for a post
+const getTopReactions = (post) => {
+  if (!post.reactions) return [];
+  
+  const reactionCounts = [
+    { type: 'like', count: post.reactions.like?.length || 0, emoji: '👍' },
+    { type: 'love', count: post.reactions.love?.length || 0, emoji: '❤️' },
+    { type: 'haha', count: post.reactions.haha?.length || 0, emoji: '😂' },
+    { type: 'wow', count: post.reactions.wow?.length || 0, emoji: '😮' },
+    { type: 'sad', count: post.reactions.sad?.length || 0, emoji: '😢' },
+    { type: 'angry', count: post.reactions.angry?.length || 0, emoji: '😠' }
+  ];
+  
+  // Sort by count descending and take top 3 with count > 0
+  return reactionCounts
+    .filter(r => r.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3)
+    .map(r => ({ type: r.type, emoji: r.emoji }));
+};
+
 // Get posts with pagination
 export const getAllPosts = async (req, res) => {
   try {
@@ -20,7 +41,14 @@ export const getAllPosts = async (req, res) => {
         }
       });
 
-    res.json({ posts });
+    // Add top reactions to each post
+    const postsWithTopReactions = posts.map(post => {
+      const postObj = post.toObject();
+      postObj.topReactions = getTopReactions(post);
+      return postObj;
+    });
+
+    res.json({ posts: postsWithTopReactions });
   } catch (error) {
     console.error('Error in getPosts:', error);
     res.status(500).json({ message: 'Error fetching posts' });
@@ -180,54 +208,143 @@ export const deletePost = async (req, res) => {
   }
 };
 
-// Like/Unlike a post
-export const likePost = async (req, res) => {
+// React to post
+export const reactToPost = async (req, res) => {
   try {
     const { postId } = req.params;
+    const { type = 'like' } = req.body;
     const userId = req.user._id;
+
+    const validTypes = ['like', 'love', 'haha', 'wow', 'sad', 'angry'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ message: 'Invalid reaction type' });
+    }
 
     const post = await Post.findById(postId);
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    const likeIndex = post.likes.indexOf(userId);
-    
-    if (likeIndex === -1) {
-      // Like the post
-      post.likes.push(userId);
-    } else {
-      // Unlike the post
-      post.likes.splice(likeIndex, 1);
+    // Initialize reactions if not exist
+    if (!post.reactions) {
+      post.reactions = { like: [], love: [], haha: [], wow: [], sad: [], angry: [] };
     }
 
+    // Find and remove user from all reaction types
+    let oldReactionType = null;
+    validTypes.forEach(reactionType => {
+      if (!post.reactions[reactionType]) {
+        post.reactions[reactionType] = [];
+      }
+      const index = post.reactions[reactionType].indexOf(userId);
+      if (index !== -1) {
+        post.reactions[reactionType].splice(index, 1);
+        oldReactionType = reactionType;
+      }
+    });
+
+    // If clicking the same reaction, just remove it (toggle off)
+    // If clicking a different reaction, add the new one
+    let userReaction = null;
+    if (oldReactionType !== type) {
+      post.reactions[type].push(userId);
+      userReaction = type;
+    }
+
+    // Sync legacy likes array with reactions.like for compatibility
+    post.likes = [...post.reactions.like];
+
     await post.save();
-    res.json({ likes: post.likes.length, isLiked: likeIndex === -1 });
+
+    // Calculate reaction counts
+    const reactions = {
+      like: post.reactions.like?.length || 0,
+      love: post.reactions.love?.length || 0,
+      haha: post.reactions.haha?.length || 0,
+      wow: post.reactions.wow?.length || 0,
+      sad: post.reactions.sad?.length || 0,
+      angry: post.reactions.angry?.length || 0
+    };
+
+    // Calculate top 3 reactions for frontend
+    const topReactions = getTopReactions(post);
+
+    res.json({
+      userReaction,
+      reactions,
+      topReactions,
+      likes: post.likes.length,
+      isLiked: post.reactions.like.includes(userId)
+    });
   } catch (error) {
-    console.error('Error in likePost:', error);
-    res.status(500).json({ message: 'Error processing like' });
+    console.error('Error in reactToPost:', error);
+    res.status(500).json({ message: 'Error processing reaction' });
   }
 };
 
 // Get users who liked a post
+// Get users who reacted to a post (with reaction types)
 export const getPostLikes = async (req, res) => {
   try {
     const { postId } = req.params;
     
     const post = await Post.findById(postId)
-      .populate('likes', 'username name avatar');
+      .populate('reactions.like', 'username name avatar')
+      .populate('reactions.love', 'username name avatar')
+      .populate('reactions.haha', 'username name avatar')
+      .populate('reactions.wow', 'username name avatar')
+      .populate('reactions.sad', 'username name avatar')
+      .populate('reactions.angry', 'username name avatar');
 
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
 
+    // Build array of users with their reaction types
+    const reactionsList = [];
+    const reactionTypes = ['like', 'love', 'haha', 'wow', 'sad', 'angry'];
+    
+    reactionTypes.forEach(type => {
+      if (post.reactions && post.reactions[type]) {
+        post.reactions[type].forEach(user => {
+          if (user && user._id) {
+            reactionsList.push({
+              user: {
+                _id: user._id,
+                username: user.username,
+                name: user.name,
+                avatar: user.avatar
+              },
+              reactionType: type
+            });
+          }
+        });
+      }
+    });
+
+    // Calculate reaction counts
+    const reactionCounts = {
+      like: post.reactions?.like?.length || 0,
+      love: post.reactions?.love?.length || 0,
+      haha: post.reactions?.haha?.length || 0,
+      wow: post.reactions?.wow?.length || 0,
+      sad: post.reactions?.sad?.length || 0,
+      angry: post.reactions?.angry?.length || 0
+    };
+
+    const totalCount = Object.values(reactionCounts).reduce((sum, count) => sum + count, 0);
+
     res.json({ 
-      likes: post.likes,
-      count: post.likes.length 
+      reactions: reactionsList,
+      reactionCounts,
+      totalCount,
+      // Legacy compatibility
+      likes: post.likes || [],
+      count: totalCount
     });
   } catch (error) {
     console.error('Error in getPostLikes:', error);
-    res.status(500).json({ message: 'Error fetching likes' });
+    res.status(500).json({ message: 'Error fetching reactions' });
   }
 };
 
@@ -406,7 +523,11 @@ export const getPostById = async (req, res) => {
       return res.status(403).json({ message: 'This post is private' });
     }
 
-    res.json(post);
+    // Add top reactions
+    const postObj = post.toObject();
+    postObj.topReactions = getTopReactions(post);
+
+    res.json(postObj);
   } catch (error) {
     console.error('Error in getPostById:', error);
     res.status(500).json({ message: 'Error fetching post' });

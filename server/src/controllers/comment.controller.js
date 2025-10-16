@@ -1,4 +1,3 @@
-// server/src/controllers/comment.controller.js
 import Post from '../models/post.model.js';
 import mongoose from 'mongoose';
 
@@ -93,59 +92,92 @@ const formatCommentDTO = (comment, userId, includeRepliesPreview = false) => {
 
 // Create comment or reply
 export const createComment = async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const { content, parentId = null } = req.body;
-    const userId = req.user._id;
+  const maxRetries = 3;
+  let retryCount = 0;
+  
+  while (retryCount < maxRetries) {
+    try {
+      const { postId } = req.params;
+      const { content, parentId = null } = req.body;
+      const userId = req.user._id;
 
-    if (!content || !content.trim()) {
-      return res.status(400).json({ message: 'Content is required' });
-    }
-
-    const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
-
-    // If parentId provided, validate it exists
-    if (parentId) {
-      const parentComment = post.comments.id(parentId);
-      if (!parentComment) {
-        return res.status(404).json({ message: 'Parent comment not found' });
+      if (!content || !content.trim()) {
+        return res.status(400).json({ message: 'Content is required' });
       }
-    }
 
-    const newComment = {
-      content: content.trim(),
-      author: userId,
-      parentId: parentId || null,
-      reactions: { like: [], love: [], haha: [], wow: [], sad: [], angry: [] },
-      likes: [],
-      repliesCount: 0
-    };
-
-    post.comments.push(newComment);
-
-    // Increment parent's repliesCount
-    if (parentId) {
-      const parentComment = post.comments.id(parentId);
-      if (parentComment) {
-        parentComment.repliesCount = (parentComment.repliesCount || 0) + 1;
+      const post = await Post.findById(postId);
+      if (!post) {
+        return res.status(404).json({ message: 'Post not found' });
       }
+
+      // If parentId provided, validate it exists
+      if (parentId) {
+        const parentComment = post.comments.id(parentId);
+        
+        if (!parentComment) {
+          return res.status(404).json({ message: 'Parent comment not found' });
+        }
+      }
+
+      const newComment = {
+        content: content.trim(),
+        author: userId,
+        parentId: parentId || null,
+        reactions: { like: [], love: [], haha: [], wow: [], sad: [], angry: [] },
+        likes: [],
+        repliesCount: 0
+      };
+
+      post.comments.push(newComment);
+
+      // Increment parent's repliesCount
+      if (parentId) {
+        const parentComment = post.comments.id(parentId);
+        if (parentComment) {
+          parentComment.repliesCount = (parentComment.repliesCount || 0) + 1;
+          
+          // If this is a reply to a reply (level 2), also increment the root comment's count
+          if (parentComment.parentId) {
+            const rootComment = post.comments.id(parentComment.parentId);
+            if (rootComment) {
+              rootComment.repliesCount = (rootComment.repliesCount || 0) + 1;
+            }
+          }
+        }
+      }
+
+      await post.save();
+
+      // Get the created comment and populate
+      const createdComment = post.comments[post.comments.length - 1];
+      await post.populate('comments.author', '_id username avatar');
+
+      const commentDTO = formatCommentDTO(createdComment, userId);
+
+      return res.status(201).json({ comment: commentDTO });
+      
+    } catch (error) {
+      // Check if it's a version conflict error
+      if (error.name === 'VersionError' || error.message.includes('No matching document found')) {
+        retryCount++;
+        
+        if (retryCount < maxRetries) {
+          // Wait a bit before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
+          continue; // Retry
+        } else {
+          console.error('[SERVER] Max retries reached for version conflict');
+          return res.status(500).json({ 
+            message: 'Server error: Too many concurrent requests',
+            error: 'Please try again' 
+          });
+        }
+      }
+      
+      // For other errors, return immediately
+      console.error('Error creating comment:', error);
+      return res.status(500).json({ message: 'Server error', error: error.message });
     }
-
-    await post.save();
-
-    // Get the created comment and populate
-    const createdComment = post.comments[post.comments.length - 1];
-    await post.populate('comments.author', '_id username avatar');
-
-    const commentDTO = formatCommentDTO(createdComment, userId);
-
-    res.status(201).json({ comment: commentDTO });
-  } catch (error) {
-    console.error('Error creating comment:', error);
-    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -210,27 +242,56 @@ export const deleteComment = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
 
-    const hasReplies = comment.repliesCount > 0;
+    // Find all replies (direct and nested) to delete
+    const findAllReplies = (parentId) => {
+      const replies = post.comments.filter(c => 
+        c.parentId && c.parentId.toString() === parentId.toString()
+      );
+      
+      let allReplies = [...replies];
+      replies.forEach(reply => {
+        allReplies = [...allReplies, ...findAllReplies(reply._id)];
+      });
+      
+      return allReplies;
+    };
 
-    if (hasReplies) {
-      // Soft delete: replace content
-      comment.content = 'Comment deleted';
-      comment.edited = true;
-      comment.editedAt = new Date();
-    } else {
-      // Hard delete: remove comment and update parent repliesCount
-      if (comment.parentId) {
-        const parentComment = post.comments.id(comment.parentId);
-        if (parentComment) {
-          parentComment.repliesCount = Math.max(0, (parentComment.repliesCount || 0) - 1);
+    // Get all replies if this is a parent comment
+    const repliesToDelete = findAllReplies(commentId);
+    
+    // Delete all replies first
+    repliesToDelete.forEach(reply => {
+      post.comments.pull(reply._id);
+    });
+
+    // If this is a reply, update parent's repliesCount
+    if (comment.parentId) {
+      const parentComment = post.comments.id(comment.parentId);
+      if (parentComment) {
+        // Decrement by 1 for this reply
+        parentComment.repliesCount = Math.max(0, (parentComment.repliesCount || 0) - 1);
+        
+        // If this reply has children, also decrement parent's count by the number of children
+        if (repliesToDelete.length > 0) {
+          parentComment.repliesCount = Math.max(0, parentComment.repliesCount - repliesToDelete.length);
+        }
+        
+        // If parent is also a reply, update the root comment's count
+        if (parentComment.parentId) {
+          const rootComment = post.comments.id(parentComment.parentId);
+          if (rootComment) {
+            rootComment.repliesCount = Math.max(0, (rootComment.repliesCount || 0) - 1 - repliesToDelete.length);
+          }
         }
       }
-      post.comments.pull(commentId);
     }
+
+    // Delete the comment itself
+    post.comments.pull(commentId);
 
     await post.save();
 
-    res.json({ ok: true });
+    res.json({ ok: true, deletedCount: 1 + repliesToDelete.length });
   } catch (error) {
     console.error('Error deleting comment:', error);
     res.status(500).json({ message: 'Server error' });
@@ -361,14 +422,26 @@ export const getComments = async (req, res) => {
     const items = paginatedComments.map(comment => {
       const dto = formatCommentDTO(comment, userId, true);
       
-      // Add replies preview (latest 2)
+      // Add ALL replies including nested ones (for flat structure rendering)
       if (dto.repliesCount > 0) {
-        const replies = post.comments
+        // Get all direct replies (level 1)
+        const directReplies = post.comments
           .filter(c => c.parentId && c.parentId.toString() === comment._id.toString())
-          .sort((a, b) => a.createdAt - b.createdAt)
-          .slice(0, 2);
+          .sort((a, b) => a.createdAt - b.createdAt);
         
-        dto.repliesPreview = replies.map(r => formatCommentDTO(r, userId));
+        // Get all nested replies (level 2 - replies to replies)
+        const nestedReplies = [];
+        directReplies.forEach(reply => {
+          const repliesOfReply = post.comments
+            .filter(c => c.parentId && c.parentId.toString() === reply._id.toString())
+            .sort((a, b) => a.createdAt - b.createdAt);
+          nestedReplies.push(...repliesOfReply);
+        });
+        
+        // Combine all replies (direct + nested) for flat display
+        const allReplies = [...directReplies, ...nestedReplies];
+        
+        dto.repliesPreview = allReplies.map(r => formatCommentDTO(r, userId));
       }
       
       return dto;

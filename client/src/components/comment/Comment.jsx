@@ -1,472 +1,447 @@
-// client/src/components/comment/Comment.jsx
-import React, { useEffect, useState, useRef } from 'react';
-import { 
-  MoreHorizontal, ChevronDown, ChevronUp, 
-  Edit2, Check, X
-} from 'lucide-react';
-import { fetchReplies } from '../../services/api';
+import React, { useState } from 'react';
+import { Heart, Reply, MoreHorizontal, Edit2, Trash2, Send, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { formatTime } from '../../lib/utils';
 
-// Reaction picker component
-const ReactionPicker = ({ onSelect, show }) => {
-  const reactions = [
-    { type: 'like', emoji: '👍', label: 'Like' },
-    { type: 'love', emoji: '❤️', label: 'Love' },
-    { type: 'haha', emoji: '😂', label: 'Haha' },
-    { type: 'wow', emoji: '😮', label: 'Wow' },
-    { type: 'sad', emoji: '😢', label: 'Sad' },
-    { type: 'angry', emoji: '😠', label: 'Angry' }
-  ];
-
-  if (!show) return null;
-
-  return (
-    <div className="absolute bottom-full left-0 mb-2 bg-white rounded-full shadow-2xl border border-gray-200 px-2 py-1.5 flex gap-1 z-20 animate-scaleIn">
-      {reactions.map(({ type, emoji, label }) => (
-        <button
-          key={type}
-          onClick={(e) => {
-            e.stopPropagation();
-            onSelect(type);
-          }}
-          className="hover:scale-125 transition-transform p-1.5 rounded-full hover:bg-gray-100"
-          title={label}
-        >
-          <span className="text-xl">{emoji}</span>
-        </button>
-      ))}
-    </div>
-  );
-};
-
-// Reaction display component
-const ReactionDisplay = ({ reactions, userReaction }) => {
-  const reactionEmojis = {
-    like: '👍', love: '❤️', haha: '😂', 
-    wow: '😮', sad: '😢', angry: '😠'
-  };
-
-  const totalReactions = Object.values(reactions || {}).reduce((sum, count) => sum + count, 0);
-  if (totalReactions === 0) return null;
-
-  // Get top 3 reactions
-  const sortedReactions = Object.entries(reactions || {})
-    .filter(([_, count]) => count > 0)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 3);
-
-  return (
-    <div className="absolute -bottom-2 -right-2 flex items-center gap-0.5 bg-white rounded-full shadow-md px-1.5 py-0.5 border border-gray-200">
-      {sortedReactions.map(([type]) => (
-        <span key={type} className="text-xs">{reactionEmojis[type]}</span>
-      ))}
-      <span className="text-[10px] font-semibold text-gray-600 ml-0.5">{totalReactions}</span>
-    </div>
-  );
-};
-
-// Enhanced Comment Component
+// Main Comment Component
 const Comment = ({ 
   comment, 
   currentUser, 
   onReply, 
   onEdit,
-  onDelete, 
+  onDelete,
   onReact,
-  level = 0,
-  postId 
+  depth = 0,
+  postId
 }) => {
   const [showReplies, setShowReplies] = useState(true);
-  const [showReplyInput, setShowReplyInput] = useState(false);
-  const [replyText, setReplyText] = useState('');
-  const [showOptions, setShowOptions] = useState(false);
+  const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(comment.content);
+  const [editContent, setEditContent] = useState(comment.content);
+  const [replyContent, setReplyContent] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
-  const [replies, setReplies] = useState(comment.repliesPreview || []);
-  const [loadingReplies, setLoadingReplies] = useState(false);
-  const [repliesCursor, setRepliesCursor] = useState(null);
-  const [hasMoreReplies, setHasMoreReplies] = useState(false);
+  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+
+  const isOwnComment = currentUser?._id === comment.author._id;
+  const canReply = true; // Always allow replies
   
-  const replyInputRef = useRef(null);
-  const editInputRef = useRef(null);
-
-  const maxLevel = 5;
+  // Get replies to display
+  const replies = comment.repliesPreview || [];
   const totalReplies = comment.repliesCount || 0;
-  const hiddenRepliesCount = totalReplies - replies.length;
+  
+  // Only show toggle button at depth 0 (parent comments)
+  const showToggleButton = depth === 0 && replies.length > 0;
 
-  useEffect(() => {
-    if (showReplyInput && replyInputRef.current) {
-      replyInputRef.current.focus();
-    }
-  }, [showReplyInput]);
-
-  useEffect(() => {
-    if (isEditing && editInputRef.current) {
-      editInputRef.current.focus();
-      editInputRef.current.select();
-    }
-  }, [isEditing]);
-
-  const handleReplySubmit = async () => {
-    if (!replyText.trim()) return;
-    
-    await onReply(comment._id, replyText.trim());
-    setReplyText('');
-    setShowReplyInput(false);
-    setShowReplies(true);
+  const handleReact = (reactionType) => {
+    onReact(comment._id, reactionType);
   };
 
-  const handleEditSave = async () => {
-    if (!editText.trim() || editText === comment.content) {
+  const handleEdit = () => {
+    if (editContent.trim() && editContent !== comment.content) {
+      onEdit(comment._id, editContent.trim());
       setIsEditing(false);
-      return;
-    }
-
-    await onEdit(comment._id, editText.trim());
-    setIsEditing(false);
-    setShowOptions(false);
-  };
-
-  const handleReact = async (type) => {
-    setShowReactionPicker(false);
-    await onReact(comment._id, type);
-  };
-
-  const loadMoreReplies = async () => {
-    if (loadingReplies) return;
-
-    setLoadingReplies(true);
-    try {
-      const result = await fetchReplies(postId, comment._id, { 
-        limit: 10, 
-        cursor: repliesCursor || '' 
-      });
-      
-      setReplies(prev => [...prev, ...result.items]);
-      setRepliesCursor(result.nextCursor);
-      setHasMoreReplies(!!result.nextCursor);
-    } catch (error) {
-      console.error('Error loading replies:', error);
-      toast.error('Failed to load replies');
-    } finally {
-      setLoadingReplies(false);
     }
   };
 
-  const formatTime = (date) => {
-    const now = new Date();
-    const diff = Math.floor((now - new Date(date)) / 1000);
-
-    if (diff < 60) return 'vừa xong';
-    if (diff < 3600) return `${Math.floor(diff / 60)} phút`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)} giờ`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)} ngày`;
-    return new Date(date).toLocaleDateString('vi-VN', { month: 'short', day: 'numeric' });
+  const handleReply = async () => {
+    if (replyContent.trim() && !isSubmittingReply) {
+      setIsSubmittingReply(true);
+      try {
+        await onReply(comment._id, replyContent.trim());
+        setReplyContent('');
+        setIsReplying(false);
+        setShowReplies(true);
+      } catch (error) {
+        console.error('Failed to submit reply:', error);
+      } finally {
+        setIsSubmittingReply(false);
+      }
+    }
   };
 
-  const getReactionLabel = () => {
-    if (!comment.userReaction) return 'Like';
-    const labels = {
-      like: 'Like', love: 'Love', haha: 'Haha',
-      wow: 'Wow', sad: 'Sad', angry: 'Angry'
-    };
-    return labels[comment.userReaction] || 'Like';
+  const handleDelete = () => {
+    onDelete(comment._id);
+    setShowDeleteDialog(false);
   };
-
-  const getReactionColor = () => {
-    if (!comment.userReaction) return 'text-gray-600';
-    const colors = {
-      like: 'text-blue-600',
-      love: 'text-red-600',
-      haha: 'text-yellow-600',
-      wow: 'text-purple-600',
-      sad: 'text-gray-600',
-      angry: 'text-orange-600'
-    };
-    return colors[comment.userReaction] || 'text-gray-600';
-  };
-
-  // Collapsible text (>6 lines)
-  const [isExpanded, setIsExpanded] = useState(false);
-  const isLongText = comment.content.split('\n').length > 6 || comment.content.length > 300;
-  const displayContent = isLongText && !isExpanded && !isEditing
-    ? comment.content.slice(0, 300) + '...'
-    : comment.content;
 
   return (
-    <div className={`${level > 0 ? 'ml-10' : ''} mt-4`}>
-      <div className="flex gap-2 group">
-        {/* Avatar */}
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex-shrink-0 flex items-center justify-center overflow-hidden">
-          {comment.author?.avatar ? (
-            <img 
-              src={comment.author.avatar} 
-              alt={comment.author.username} 
-              className="w-full h-full object-cover" 
+    <>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.2 }}
+        className={`${depth > 0 ? 'ml-10 mt-3 relative' : ''}`}
+      >
+        {/* Vertical Line and Curved Connector for Replies */}
+        {depth > 0 && (
+          <>
+            {/* Vertical line connecting replies */}
+            <div 
+              className="absolute left-[-20px] w-[2px] bg-gray-300"
+              style={{ 
+                top: '-12px',
+                height: 'calc(100% + 12px)'
+              }}
             />
-          ) : (
-            <span className="text-xs font-medium text-white">
-              {comment.author?.username?.charAt(0) || 'U'}
-            </span>
-          )}
-        </div>
+            
+            {/* Curved horizontal line pointing to avatar */}
+            <div 
+              className="absolute left-[-20px] top-[5px] w-[20px] h-[16px] border-l-2 border-b-2 border-gray-300"
+              style={{ 
+                borderBottomLeftRadius: '8px',
+                borderTopColor: 'transparent',
+                borderRightColor: 'transparent'
+              }}
+            />
+          </>
+        )}
+        
+        <div className="flex space-x-2">
+          {/* Avatar */}
+          <img
+            src={comment.author.avatar || `https://ui-avatars.com/api/?name=${comment.author.username}&background=random`}
+            alt={comment.author.username}
+            className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+          />
 
-        {/* Comment Content */}
-        <div className="flex-1 min-w-0">
-          <div className="relative bg-gray-100 rounded-2xl px-4 py-2.5 inline-block max-w-full">
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm text-gray-900">
-                  {comment.author?.username || 'User'}
-                </p>
-                
-                {!isEditing ? (
-                  <div>
-                    <p className="text-sm text-gray-800 mt-1 whitespace-pre-wrap break-words">
-                      {displayContent}
-                    </p>
-                    {isLongText && (
-                      <button
-                        onClick={() => setIsExpanded(!isExpanded)}
-                        className="text-xs text-blue-600 hover:underline mt-1 font-medium"
-                      >
-                        {isExpanded ? 'Thu gọn' : 'Xem thêm'}
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="mt-2">
-                    <textarea
-                      ref={editInputRef}
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleEditSave();
-                        }
-                        if (e.key === 'Escape') {
-                          setIsEditing(false);
-                          setEditText(comment.content);
-                        }
+          <div className="flex-1 min-w-0">
+            {/* Comment bubble */}
+            <div className="inline-block bg-gray-100 rounded-2xl px-3 py-2 max-w-full">
+              {isEditing ? (
+                <div className="space-y-2">
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="w-full min-h-[60px] p-2 bg-white text-gray-900 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    autoFocus
+                  />
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={handleEdit}
+                      className="px-3 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditContent(comment.content);
+                        setIsEditing(false);
                       }}
-                      className="w-full min-h-[60px] p-2 text-sm text-gray-800 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                      rows={3}
-                    />
-                    <div className="flex gap-2 mt-2">
-                      <button
-                        onClick={handleEditSave}
-                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 flex items-center gap-1"
-                      >
-                        <Check size={12} /> Lưu
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsEditing(false);
-                          setEditText(comment.content);
-                        }}
-                        className="px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded-lg hover:bg-gray-300"
-                      >
-                        Hủy
-                      </button>
-                    </div>
+                      className="px-3 py-1.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      Cancel
+                    </button>
                   </div>
-                )}
-              </div>
-              
-              {/* Options Menu */}
-              {comment.author?._id === currentUser?._id && !isEditing && (
-                <div className="relative">
-                  <button
-                    onClick={() => setShowOptions(!showOptions)}
-                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 rounded transition-all"
-                  >
-                    <MoreHorizontal size={14} className="text-gray-600" />
-                  </button>
-                  
-                  {showOptions && (
-                    <div className="absolute right-0 mt-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-10 min-w-[120px]">
-                      <button
-                        onClick={() => {
-                          setIsEditing(true);
-                          setShowOptions(false);
-                        }}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm flex items-center gap-2"
-                      >
-                        <Edit2 size={14} /> Chỉnh sửa
-                      </button>
-                      <button
-                        onClick={() => {
-                          onDelete(comment._id);
-                          setShowOptions(false);
-                        }}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm text-red-600"
-                      >
-                        Xóa
-                      </button>
-                    </div>
-                  )}
                 </div>
+              ) : (
+                <>
+                  <p className="font-semibold text-sm text-gray-900 mb-0.5">
+                    {comment.author.username}
+                    {comment.edited && (
+                      <span className="ml-1 text-xs text-gray-500 font-normal">(edited)</span>
+                    )}
+                  </p>
+                  <p className="text-sm text-gray-900 whitespace-pre-wrap break-words">{comment.content}</p>
+                </>
               )}
             </div>
 
-            {/* Reaction Display */}
-            <ReactionDisplay 
-              reactions={comment.reactions} 
-              userReaction={comment.userReaction}
-            />
-          </div>
-
-          {/* Action Buttons */}
-          {!isEditing && (
-            <div className="flex items-center gap-4 mt-1 ml-3">
+            {/* Actions */}
+            <div className="flex items-center space-x-3 mt-1 px-3">
+              {/* Reaction Button with Picker */}
               <div className="relative">
-                <button 
-                  onMouseEnter={() => setShowReactionPicker(true)}
-                  onMouseLeave={() => setTimeout(() => setShowReactionPicker(false), 200)}
-                  onClick={() => handleReact('like')}
-                  className={`text-xs font-semibold transition-colors ${getReactionColor()} hover:underline`}
-                >
-                  {getReactionLabel()}
-                </button>
-                
-                <div
-                  onMouseEnter={() => setShowReactionPicker(true)}
-                  onMouseLeave={() => setShowReactionPicker(false)}
-                >
-                  <ReactionPicker 
-                    show={showReactionPicker}
-                    onSelect={handleReact}
-                  />
-                </div>
-              </div>
-              
-              {level < maxLevel && (
-                <button 
-                  onClick={() => setShowReplyInput(!showReplyInput)}
-                  className="text-xs text-gray-600 hover:text-gray-900 font-semibold"
-                >
-                  Trả lời
-                </button>
-              )}
-              
-              <span className="text-xs text-gray-500">
-                {formatTime(comment.createdAt)}
-                {comment.edited && (
-                  <span className="ml-1 italic" title={`Đã chỉnh sửa ${new Date(comment.editedAt).toLocaleString('vi-VN')}`}>
-                    · Đã chỉnh sửa
-                  </span>
-                )}
-              </span>
-            </div>
-          )}
-
-          {/* Reply Input */}
-          {showReplyInput && (
-            <div className="mt-3 flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                {currentUser?.avatar ? (
-                  <img 
-                    src={currentUser.avatar} 
-                    alt={currentUser.username} 
-                    className="w-full h-full object-cover" 
-                  />
-                ) : (
-                  <span className="text-xs font-medium text-white">
-                    {currentUser?.username?.charAt(0) || 'U'}
-                  </span>
-                )}
-              </div>
-              
-              <div className="flex-1 flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2">
-                <input
-                  ref={replyInputRef}
-                  type="text"
-                  placeholder={`Trả lời ${comment.author?.username}...`}
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleReplySubmit();
-                    }
-                    if (e.key === 'Escape') {
-                      setShowReplyInput(false);
-                      setReplyText('');
+                <button
+                  onClick={() => {
+                    if (comment.userReaction) {
+                      handleReact(comment.userReaction); // Toggle off current reaction
+                    } else {
+                      handleReact('like'); // Default to like on click
                     }
                   }}
-                  className="flex-1 outline-none text-sm text-gray-700 placeholder-gray-500 bg-transparent"
-                />
-                <button
-                  onClick={handleReplySubmit}
-                  disabled={!replyText.trim()}
-                  className="text-blue-600 hover:text-blue-700 disabled:text-gray-400 disabled:cursor-not-allowed text-sm font-semibold"
+                  onMouseEnter={() => setShowReactionPicker(true)}
+                  onMouseLeave={() => {
+                    setTimeout(() => setShowReactionPicker(false), 3000);
+                  }}
+                  className={`text-xs font-semibold transition-colors hover:underline ${
+                    comment.userReaction === 'like' ? 'text-blue-600' :
+                    comment.userReaction === 'love' ? 'text-red-600' :
+                    comment.userReaction === 'haha' ? 'text-yellow-600' :
+                    comment.userReaction === 'wow' ? 'text-orange-600' :
+                    comment.userReaction === 'sad' ? 'text-blue-500' :
+                    comment.userReaction === 'angry' ? 'text-red-700' :
+                    'text-gray-600'
+                  }`}
                 >
-                  Gửi
+                  {comment.userReaction === 'like' && 'Like'}
+                  {comment.userReaction === 'love' && 'Love'}
+                  {comment.userReaction === 'haha' && 'Haha'}
+                  {comment.userReaction === 'wow' && 'Wow'}
+                  {comment.userReaction === 'sad' && 'Sad'}
+                  {comment.userReaction === 'angry' && 'Angry'}
+                  {!comment.userReaction && 'Like'}
                 </button>
-              </div>
-            </div>
-          )}
 
-          {/* Nested Replies */}
-          {totalReplies > 0 && (
-            <div className="mt-2">
-              {/* Toggle Replies Button */}
-              <button
-                onClick={() => setShowReplies(!showReplies)}
-                className="flex items-center gap-2 text-xs font-semibold text-gray-600 hover:text-gray-900 ml-3 mb-2"
-              >
-                {showReplies ? (
-                  <>
-                    <ChevronUp size={14} />
-                    Ẩn {totalReplies} phản hồi
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown size={14} />
-                    Xem tất cả {totalReplies} phản hồi
-                  </>
-                )}
-              </button>
-
-              {/* Render Nested Replies */}
-              {showReplies && (
-                <div className="border-l-2 border-gray-200 pl-2">
-                  {replies.map((reply) => (
-                    <Comment
-                      key={reply._id}
-                      comment={reply}
-                      currentUser={currentUser}
-                      onReply={onReply}
-                      onEdit={onEdit}
-                      onDelete={onDelete}
-                      onReact={onReact}
-                      level={level + 1}
-                      postId={postId}
-                    />
-                  ))}
-
-                  {/* Load More Replies */}
-                  {hiddenRepliesCount > 0 && (
+                {/* Reaction Picker */}
+                {showReactionPicker && (
+                  <div 
+                    className="absolute bottom-full left-0 mb-2 bg-white rounded-full shadow-xl border border-gray-200 px-2 py-2 flex space-x-1 z-30"
+                    onMouseEnter={() => setShowReactionPicker(true)}
+                    onMouseLeave={() => setShowReactionPicker(false)}
+                  >
                     <button
-                      onClick={loadMoreReplies}
-                      disabled={loadingReplies}
-                      className="ml-3 mt-2 text-xs font-semibold text-blue-600 hover:underline disabled:opacity-50"
+                      onClick={() => { handleReact('like'); setShowReactionPicker(false); }}
+                      className="hover:scale-125 transition-transform text-xl p-1 rounded-full hover:bg-gray-100"
+                      title="Like"
                     >
-                      {loadingReplies 
-                        ? 'Đang tải...' 
-                        : `Xem thêm ${hiddenRepliesCount} phản hồi`
-                      }
+                      👍
                     </button>
-                  )}
-                </div>
+                    <button
+                      onClick={() => { handleReact('love'); setShowReactionPicker(false); }}
+                      className="hover:scale-125 transition-transform text-xl p-1 rounded-full hover:bg-gray-100"
+                      title="Love"
+                    >
+                      ❤️
+                    </button>
+                    <button
+                      onClick={() => { handleReact('haha'); setShowReactionPicker(false); }}
+                      className="hover:scale-125 transition-transform text-xl p-1 rounded-full hover:bg-gray-100"
+                      title="Haha"
+                    >
+                      😂
+                    </button>
+                    <button
+                      onClick={() => { handleReact('wow'); setShowReactionPicker(false); }}
+                      className="hover:scale-125 transition-transform text-xl p-1 rounded-full hover:bg-gray-100"
+                      title="Wow"
+                    >
+                      😮
+                    </button>
+                    <button
+                      onClick={() => { handleReact('sad'); setShowReactionPicker(false); }}
+                      className="hover:scale-125 transition-transform text-xl p-1 rounded-full hover:bg-gray-100"
+                      title="Sad"
+                    >
+                      😢
+                    </button>
+                    <button
+                      onClick={() => { handleReact('angry'); setShowReactionPicker(false); }}
+                      className="hover:scale-125 transition-transform text-xl p-1 rounded-full hover:bg-gray-100"
+                      title="Angry"
+                    >
+                      😠
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Reaction Count Display */}
+              {(() => {
+                const total = Object.values(comment.reactions || {}).reduce((sum, count) => sum + (count || 0), 0);
+                if (total > 0) {
+                  return (
+                    <div className="flex items-center space-x-1">
+                      {comment.reactions.like > 0 && <span className="text-sm">👍</span>}
+                      {comment.reactions.love > 0 && <span className="text-sm">❤️</span>}
+                      {comment.reactions.haha > 0 && <span className="text-sm">😂</span>}
+                      {comment.reactions.wow > 0 && <span className="text-sm">😮</span>}
+                      {comment.reactions.sad > 0 && <span className="text-sm">😢</span>}
+                      {comment.reactions.angry > 0 && <span className="text-sm">😠</span>}
+                      <span className="text-xs text-gray-600">{total}</span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
+
+              {/* Dot Separator */}
+              <span className="text-xs text-gray-400">·</span>
+
+              {canReply && (
+                <button
+                  onClick={() => setIsReplying(!isReplying)}
+                  className="text-xs text-gray-600 font-semibold transition-colors hover:underline"
+                >
+                  Reply
+                </button>
+              )}
+
+              {/* Dot Separator */}
+              <span className="text-xs text-gray-400">·</span>
+
+              <span className="text-xs text-gray-500">
+                {formatTime(comment.createdAt)}
+              </span>
+
+              {isOwnComment && !isEditing && (
+                <>
+                  {/* Dot Separator */}
+                  <span className="text-xs text-gray-400">·</span>
+                  
+                  <div className="relative group">
+                    <button className="text-gray-500 hover:text-gray-700 transition-colors">
+                      <MoreHorizontal className="h-3.5 w-3.5" />
+                    </button>
+                    <div className="absolute right-0 bottom-full mb-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 text-gray-700"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => setShowDeleteDialog(true)}
+                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
-          )}
+
+            {/* Reply Input */}
+            {isReplying && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-3"
+              >
+                <div className="flex space-x-2 items-start">
+                  <img
+                    src={currentUser?.avatar || `https://ui-avatars.com/api/?name=${currentUser?.username}&background=random`}
+                    alt={currentUser?.username}
+                    className="h-8 w-8 rounded-full object-cover flex-shrink-0"
+                  />
+                  <div className="flex-1 flex items-start space-x-2">
+                    <div className="flex-1 relative">
+                      <textarea
+                        value={replyContent}
+                        onChange={(e) => setReplyContent(e.target.value)}
+                        placeholder={`Reply to ${comment.author.username}...`}
+                        className="w-full min-h-[44px] max-h-[200px] resize-none p-3 pr-12 bg-gray-100 text-gray-900 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          // Prevent submission during IME composition (Vietnamese, Chinese, Japanese, Korean keyboards)
+                          if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                            e.preventDefault();
+                            handleReply();
+                          }
+                        }}
+                        rows={1}
+                      />
+                    </div>
+                    <button
+                      onClick={handleReply}
+                      disabled={!replyContent.trim() || isSubmittingReply}
+                      className="p-2.5 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                      title="Send reply"
+                    >
+                      {isSubmittingReply ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsReplying(false);
+                        setReplyContent('');
+                      }}
+                      className="p-2.5 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Replies - Only show toggle at depth 0 */}
+            {showToggleButton && (
+              <div className="mt-2">
+                <button
+                  onClick={() => setShowReplies(!showReplies)}
+                  className="flex items-center space-x-1 text-xs text-blue-600 hover:underline mb-2"
+                >
+                  {showReplies ? (
+                    <>
+                      <ChevronUp className="h-3.5 w-3.5" />
+                      <span>Hide replies</span>
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-3.5 w-3.5" />
+                      <span>Show {replies.length} {replies.length === 1 ? 'reply' : 'replies'}</span>
+                    </>
+                  )}
+                </button>
+
+                <AnimatePresence>
+                  {showReplies && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      {replies.map((reply) => (
+                        <Comment
+                          key={reply._id}
+                          postId={postId}
+                          comment={reply}
+                          currentUser={currentUser}
+                          onReply={onReply}
+                          onEdit={onEdit}
+                          onDelete={onDelete}
+                          onReact={onReact}
+                          depth={1}
+                        />
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+
+      {/* Delete Dialog */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-2">Delete Comment</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to delete this comment? This action cannot be undone.
+              {replies.length > 0 && (
+                <span className="block mt-2 font-medium">
+                  This will also delete {replies.length} {replies.length === 1 ? 'reply' : 'replies'}.
+                </span>
+              )}
+            </p>
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setShowDeleteDialog(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

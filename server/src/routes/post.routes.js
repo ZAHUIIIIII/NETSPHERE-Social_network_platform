@@ -31,7 +31,7 @@ router.get('/user/:userId', protectRoute, getUserPosts);
 // Specific routes before generic :postId routes to avoid conflicts
 router.get('/:postId/saved-status', protectRoute, postController.checkPostSavedStatus);
 router.get('/:postId/likes', protectRoute, postController.getPostLikes);
-router.post('/:postId/like', protectRoute, postController.likePost);
+router.post('/:postId/react', protectRoute, postController.reactToPost);
 router.post('/:postId/save', protectRoute, postController.savePost);
 // Comment routes removed - handled by comment.routes.js for advanced features
 

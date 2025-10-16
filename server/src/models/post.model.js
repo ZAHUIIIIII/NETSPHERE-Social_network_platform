@@ -115,10 +115,38 @@ const postSchema = new mongoose.Schema({
     ref: 'User',
     required: true,
   },
+  // Legacy likes array (kept for compatibility)
   likes: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
+  // Enhanced reactions system
+  reactions: {
+    like: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    love: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    haha: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    wow: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    sad: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    angry: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }]
+  },
   comments: [commentSchema],
   privacy: {
     type: String,

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, TrendingUp, X, Filter, Hash, User, MessageCircle, Heart, Clock, Sparkles } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import { searchAll, getTrending, getSearchSuggestions, getPopularSearches } from '../services/api';
+import { formatTime } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -264,17 +265,6 @@ const SearchPage = () => {
     if (hasSearched && searchQuery.trim()) {
       handleSearch(searchQuery);
     }
-  };
-
-  const formatTime = (date) => {
-    const now = new Date();
-    const diff = Math.floor((now - new Date(date)) / 1000);
-
-    if (diff < 60) return 'just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    if (diff < 2592000) return `${Math.floor(diff / 86400)}d ago`;
-    return new Date(date).toLocaleDateString();
   };
 
   const formatNumber = (num) => {

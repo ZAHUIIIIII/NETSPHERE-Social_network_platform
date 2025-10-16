@@ -7,7 +7,7 @@ import {
 import { useAuthStore } from '../store/useAuthStore';
 import axiosInstance from '../lib/axios';
 import toast from 'react-hot-toast';
-import { formatMessageTime } from '../lib/utils';
+import { formatTime, formatMessageTime } from '../lib/utils';
 
 const PostDetailPage = () => {
   const { postId } = useParams();
@@ -158,16 +158,6 @@ const PostDetailPage = () => {
 
   const prevLightboxImage = () => {
     setLightboxImageIndex((prev) => (prev > 0 ? prev - 1 : prev));
-  };
-
-  const formatTime = (date) => {
-    const now = new Date();
-    const diff = Math.floor((now - new Date(date)) / 1000);
-    if (diff < 60) return 'just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
   const handleShowLikes = async () => {

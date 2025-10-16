@@ -1,8 +1,8 @@
-// client/src/components/comment/CommentsSection.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { MessageCircle, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Comment from './Comment';
+import { countTotalComments } from '../../lib/utils';
 import {
   fetchComments,
   addComment as addCommentAPI,
@@ -11,19 +11,37 @@ import {
   reactToComment as reactToCommentAPI
 } from '../../services/api';
 
-const CommentsSection = ({ post, currentUser }) => {
+const generateTempId = () => {
+  return `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
+
+const CommentsSection = ({ post, currentUser, onCommentCountChange }) => {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
   const [sortBy, setSortBy] = useState('relevant');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
   const [cursor, setCursor] = useState(null);
   const [hasMore, setHasMore] = useState(false);
+  const inputRef = useRef(null);
+  const containerRef = useRef(null);
 
-  // Load comments on mount and when sort changes
   useEffect(() => {
     loadComments(true);
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }, [sortBy]);
+
+  // Notify parent of comment count changes using shared utility
+  useEffect(() => {
+    if (onCommentCountChange) {
+      const totalCount = countTotalComments(comments);
+      onCommentCountChange(totalCount);
+    }
+  }, [comments, onCommentCountChange]);
 
   const loadComments = async (reset = false) => {
     if (loading) return;
@@ -46,19 +64,28 @@ const CommentsSection = ({ post, currentUser }) => {
       setHasMore(!!result.nextCursor);
     } catch (error) {
       console.error('Error loading comments:', error);
-      toast.error('Không thể tải bình luận');
+      toast.error('Failed to load comments');
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddComment = async () => {
-    if (!commentText.trim()) return;
+    const currentText = inputRef.current?.value || '';
+    if (!currentText.trim() || submitting) return;
 
-    const tempId = Date.now().toString();
+    const savedCommentText = currentText.trim();
+    
+    if (inputRef.current) {
+      inputRef.current.value = '';
+    }
+    setCommentText('');
+    setSubmitting(true);
+
+    const tempId = generateTempId();
     const optimisticComment = {
       _id: tempId,
-      content: commentText.trim(),
+      content: savedCommentText,
       author: {
         _id: currentUser._id,
         username: currentUser.username,
@@ -66,49 +93,75 @@ const CommentsSection = ({ post, currentUser }) => {
       },
       createdAt: new Date().toISOString(),
       edited: false,
-      likes: [],
-      isLiked: false,
       reactions: { like: 0, love: 0, haha: 0, wow: 0, sad: 0, angry: 0 },
       userReaction: null,
       parentId: null,
-      repliesCount: 0
+      repliesCount: 0,
+      repliesPreview: [],
+      isOptimistic: true
     };
 
-    // Optimistic update
-    setComments(prev => [optimisticComment, ...prev]);
-    setCommentText('');
+    // Add new comment at the bottom
+    setComments(prev => [...prev, optimisticComment]);
 
     try {
       const res = await addCommentAPI(post._id, { 
-        content: commentText.trim(),
+        content: savedCommentText,
         parentId: null
       });
 
-      // Replace optimistic comment with real one
-      setComments(prev => prev.map(c => 
-        c._id === tempId ? res.comment : c
-      ));
+      // Replace optimistic comment with real one at the bottom
+      setComments(prev => {
+        const withoutTemp = prev.filter(c => c._id !== tempId);
+        return [...withoutTemp, res.comment];
+      });
       
-      toast.success('Đã thêm bình luận!');
+      // Scroll to bottom to show new comment
+      setTimeout(() => {
+        if (containerRef.current) {
+          containerRef.current.scrollTo({
+            top: containerRef.current.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
+      
+      toast.success('Comment added!');
     } catch (error) {
       console.error('Error adding comment:', error);
-      // Remove optimistic comment on error
       setComments(prev => prev.filter(c => c._id !== tempId));
-      toast.error('Không thể thêm bình luận');
+      setCommentText(savedCommentText);
+      if (inputRef.current) {
+        inputRef.current.value = savedCommentText;
+      }
+      toast.error('Failed to add comment');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleReply = async (parentId, content) => {
+    if (replyingTo === parentId) {
+      throw new Error('Reply already in progress');
+    }
+    
+    setReplyingTo(parentId);
+    
+    // Save old state for rollback
+    const oldComments = comments;
+    
     try {
-      const res = await addCommentAPI(post._id, { 
-        content, 
-        parentId 
-      });
+      const res = await addCommentAPI(post._id, { content, parentId });
       
-      // Add reply to the appropriate parent comment
-      const updateComments = (comments) => {
+      const updateCommentWithReply = (comments) => {
         return comments.map(comment => {
+          // If this is the direct parent, add the reply
           if (comment._id === parentId) {
+            const replyExists = (comment.repliesPreview || []).some(
+              r => r._id === res.comment._id
+            );
+            if (replyExists) return comment;
+            
             return {
               ...comment,
               repliesCount: (comment.repliesCount || 0) + 1,
@@ -118,20 +171,41 @@ const CommentsSection = ({ post, currentUser }) => {
               ]
             };
           }
+          
+          // If this comment has replies, search in them recursively
+          if (comment.repliesPreview && comment.repliesPreview.length > 0) {
+            const updatedReplies = updateCommentWithReply(comment.repliesPreview);
+            
+            // Only update if the replies actually changed
+            if (updatedReplies !== comment.repliesPreview) {
+              return {
+                ...comment,
+                repliesPreview: updatedReplies
+              };
+            }
+          }
+          
           return comment;
         });
       };
       
-      setComments(updateComments(comments));
-      toast.success('Đã thêm phản hồi!');
+      setComments(prev => updateCommentWithReply(prev));
+      toast.success('Reply added!');
     } catch (error) {
       console.error('Error adding reply:', error);
-      toast.error('Không thể thêm phản hồi');
+      // Rollback to old state instead of reloading
+      setComments(oldComments);
+      toast.error('Failed to add reply');
+      throw error; // Re-throw so child component knows it failed
+    } finally {
+      setReplyingTo(null);
     }
   };
 
   const handleEdit = async (commentId, content) => {
-    // Optimistic update
+    // Save old state for rollback
+    const oldComments = comments;
+    
     const updateContent = (comments) => {
       return comments.map(comment => {
         if (comment._id === commentId) {
@@ -152,43 +226,67 @@ const CommentsSection = ({ post, currentUser }) => {
       });
     };
 
-    const previousComments = [...comments];
-    setComments(updateContent(comments));
+    // Optimistic update
+    setComments(prev => updateContent(prev));
 
     try {
       await editCommentAPI(post._id, commentId, content);
-      toast.success('Đã cập nhật bình luận!');
+      toast.success('Comment updated!');
     } catch (error) {
       console.error('Error editing comment:', error);
-      setComments(previousComments); // Rollback
-      toast.error('Không thể chỉnh sửa bình luận');
+      // Rollback to old state instead of reloading
+      setComments(oldComments);
+      toast.error('Failed to update comment');
     }
   };
 
-  const handleReact = async (commentId, type) => {
-    // Optimistic update
+  const handleDelete = async (commentId) => {
+    const removeComment = (comments) => {
+      return comments
+        .filter(c => c._id !== commentId)
+        .map(comment => ({
+          ...comment,
+          repliesPreview: comment.repliesPreview 
+            ? removeComment(comment.repliesPreview)
+            : []
+        }));
+    };
+
+    const oldComments = comments;
+    setComments(prev => removeComment(prev));
+
+    try {
+      await deleteCommentAPI(post._id, commentId);
+      toast.success('Comment deleted!');
+    } catch (error) {
+      console.error('Error deleting comment:', error);
+      setComments(oldComments);
+      toast.error('Failed to delete comment');
+    }
+  };
+
+  const handleReact = async (commentId, reactionType) => {
+    // Save old state for rollback
+    const oldComments = comments;
+    
     const updateReaction = (comments) => {
       return comments.map(comment => {
         if (comment._id === commentId) {
-          const newReactions = { ...comment.reactions };
           const oldReaction = comment.userReaction;
+          const newReactions = { ...comment.reactions };
 
-          // Remove from old reaction
           if (oldReaction) {
             newReactions[oldReaction] = Math.max(0, (newReactions[oldReaction] || 0) - 1);
           }
 
-          // Toggle or add new reaction
-          const newUserReaction = oldReaction === type ? null : type;
-          if (newUserReaction) {
-            newReactions[type] = (newReactions[type] || 0) + 1;
+          if (oldReaction !== reactionType) {
+            newReactions[reactionType] = (newReactions[reactionType] || 0) + 1;
           }
 
           return {
             ...comment,
             reactions: newReactions,
-            userReaction: newUserReaction,
-            isLiked: type === 'like' && newUserReaction !== null
+            userReaction: oldReaction === reactionType ? null : reactionType
           };
         }
         if (comment.repliesPreview) {
@@ -201,195 +299,160 @@ const CommentsSection = ({ post, currentUser }) => {
       });
     };
 
-    const previousComments = [...comments];
-    setComments(updateReaction(comments));
+    // Optimistic update
+    setComments(prev => updateReaction(prev));
 
     try {
-      await reactToCommentAPI(post._id, commentId, type);
+      await reactToCommentAPI(post._id, commentId, { reactionType });
     } catch (error) {
       console.error('Error reacting to comment:', error);
-      setComments(previousComments); // Rollback
-      toast.error('Không thể phản ứng');
+      // Rollback to old state instead of reloading everything
+      setComments(oldComments);
+      toast.error('Failed to add reaction');
     }
   };
-
-  const handleDelete = async (commentId) => {
-    if (!confirm('Bạn có chắc muốn xóa bình luận này?')) return;
-
-    // Optimistic update
-    const previousComments = [...comments];
-    const removeComment = (comments) => {
-      return comments.filter(comment => {
-        if (comment._id === commentId) return false;
-        if (comment.repliesPreview) {
-          comment.repliesPreview = removeComment(comment.repliesPreview);
-        }
-        return true;
-      });
-    };
-    
-    setComments(removeComment(comments));
-
-    try {
-      await deleteCommentAPI(post._id, commentId);
-      toast.success('Đã xóa bình luận');
-    } catch (error) {
-      console.error('Error deleting comment:', error);
-      setComments(previousComments); // Rollback
-      toast.error('Không thể xóa bình luận');
-    }
-  };
-
-  const sortOptions = [
-    { 
-      value: 'relevant', 
-      label: 'Phù hợp nhất', 
-      desc: 'Hiển thị bình luận của bạn bè và những bình luận có nhiều lượt tương tác nhất trước tiên.' 
-    },
-    { 
-      value: 'newest', 
-      label: 'Mới nhất', 
-      desc: 'Hiển thị tất cả bình luận, mới nhất trước tiên.' 
-    },
-    { 
-      value: 'all', 
-      label: 'Tất cả bình luận', 
-      desc: 'Hiển thị tất cả bình luận, bao gồm cả nội dung có thể là spam.' 
-    }
-  ];
-
-  const currentSort = sortOptions.find(opt => opt.value === sortBy);
 
   return (
-    <div className="bg-gray-50 border-t border-gray-200">
-      {/* Sort Dropdown */}
-      <div className="px-4 pt-4 pb-2 border-b border-gray-200 bg-white">
+    <div className="bg-white overflow-hidden">
+      {/* Sort Menu */}
+      <div className="flex items-center justify-between px-3">
         <div className="relative">
           <button
             onClick={() => setShowSortMenu(!showSortMenu)}
-            className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-1.5 text-sm text-gray-700 hover:text-gray-900 transition-colors font-medium"
           >
-            {currentSort?.label}
-            <ChevronDown size={16} className={`transform transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
+            <span>Sort: {sortBy === 'relevant' ? 'Most Relevant' : sortBy === 'newest' ? 'Newest' : 'Oldest'}</span>
+            <ChevronDown size={16} className={`transition-transform ${showSortMenu ? 'rotate-180' : ''}`} />
           </button>
 
           {showSortMenu && (
-            <div className="absolute top-full left-0 mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-20 min-w-[320px]">
-              {sortOptions.map((option) => (
+            <>
+              <div 
+                className="fixed inset-0 z-10" 
+                onClick={() => setShowSortMenu(false)}
+              />
+              <div className="absolute left-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 min-w-[180px]">
                 <button
-                  key={option.value}
                   onClick={() => {
-                    setSortBy(option.value);
+                    setSortBy('relevant');
                     setShowSortMenu(false);
                   }}
-                  className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                  className={`w-full px-4 py-2.5 text-left text-sm transition-colors ${
+                    sortBy === 'relevant' ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-700 hover:bg-gray-50'
+                  }`}
                 >
-                  <div className="flex items-start gap-3">
-                    <input
-                      type="radio"
-                      checked={sortBy === option.value}
-                      onChange={() => {}}
-                      className="mt-1"
-                    />
-                    <div>
-                      <p className="font-semibold text-sm text-gray-900">{option.label}</p>
-                      <p className="text-xs text-gray-600 mt-0.5">{option.desc}</p>
-                    </div>
-                  </div>
+                  Most Relevant
                 </button>
-              ))}
-            </div>
+                <button
+                  onClick={() => {
+                    setSortBy('newest');
+                    setShowSortMenu(false);
+                  }}
+                  className={`w-full px-4 py-2.5 text-left text-sm transition-colors ${
+                    sortBy === 'newest' ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Newest First
+                </button>
+                <button
+                  onClick={() => {
+                    setSortBy('oldest');
+                    setShowSortMenu(false);
+                  }}
+                  className={`w-full px-4 py-2.5 text-left text-sm transition-colors ${
+                    sortBy === 'oldest' ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Oldest First
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
 
-      {/* Main Comment Input */}
-      <div className="p-4 bg-white border-b border-gray-200">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
-            <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-              {currentUser?.avatar ? (
-                <img 
-                  src={currentUser.avatar} 
-                  alt={currentUser.username} 
-                  className="w-full h-full object-cover" 
-                />
-              ) : (
-                <span className="text-xs font-medium text-gray-700">
-                  {currentUser?.username?.charAt(0) || 'U'}
-                </span>
-              )}
+      {/* Comments List */}
+      <div ref={containerRef} className="max-h-[450px] overflow-y-auto">
+        <div className="px-6 pt-1 pb-0">
+          {loading && comments.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="animate-spin w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full mx-auto" />
+              <p className="text-sm text-gray-500 mt-2">Loading comments...</p>
             </div>
-          </div>
-          
-          <div className="flex-1 flex items-center gap-2 bg-gray-100 rounded-full px-4 py-2.5">
-            <input
-              type="text"
-              placeholder="Viết bình luận..."
+          ) : comments.length === 0 ? (
+            <div className="text-center py-12">
+              <MessageCircle size={48} className="mx-auto text-gray-300 mb-3" />
+              <p className="text-gray-500">No comments yet</p>
+              <p className="text-sm text-gray-400 mt-1">Be the first to comment!</p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-4">
+                {comments.map(comment => (
+                  <Comment
+                    key={comment._id}
+                    postId={post._id}
+                    comment={comment}
+                    currentUser={currentUser}
+                    onReply={handleReply}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                    onReact={handleReact}
+                    depth={0}
+                  />
+                ))}
+              </div>
+              
+              {hasMore && (
+                <div className="text-center mt-6">
+                  <button
+                    onClick={() => loadComments(false)}
+                    disabled={loading}
+                    className="px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {loading ? 'Loading...' : 'Load More Comments'}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Add Comment Input */}
+      <div className="px-6 py-3 border-t border-gray-200 bg-white">
+        <div className="flex gap-3 items-center">
+          <img 
+            src={currentUser?.avatar || `https://ui-avatars.com/api/?name=${currentUser?.username}&background=random`}
+            alt={currentUser?.username}
+            className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+          />
+          <div className="flex-1 flex items-center gap-2">
+            <textarea
+              ref={inputRef}
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                // Prevent submission during IME composition (Vietnamese, Chinese, Japanese, Korean keyboards)
+                if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                   e.preventDefault();
                   handleAddComment();
                 }
               }}
-              className="flex-1 outline-none text-gray-700 placeholder-gray-500 bg-transparent"
+              placeholder="Write a comment..."
+              className="flex-1 p-3 pr-3 text-sm text-gray-900 bg-gray-50 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white resize-none transition-all placeholder:text-gray-400"
+              rows={1}
+              style={{ minHeight: '44px', maxHeight: '200px' }}
             />
             <button
               onClick={handleAddComment}
-              disabled={!commentText.trim()}
-              className="text-blue-600 hover:text-blue-700 disabled:text-gray-400 disabled:cursor-not-allowed font-semibold text-sm"
+              disabled={!commentText.trim() || submitting}
+              className="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md flex-shrink-0"
             >
-              Gửi
+              {submitting ? 'Posting...' : 'Post Comment'}
             </button>
           </div>
         </div>
-      </div>
-
-      {/* Comments List */}
-      <div className="px-4 pb-4 max-h-[600px] overflow-y-auto">
-        {loading && comments.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-4 border-gray-200 border-t-blue-500 mx-auto mb-2"></div>
-            <p className="text-sm text-gray-500">Đang tải bình luận...</p>
-          </div>
-        ) : comments.length > 0 ? (
-          <div className="space-y-1">
-            {comments.map((comment) => (
-              <Comment
-                key={comment._id}
-                comment={comment}
-                currentUser={currentUser}
-                onReply={handleReply}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onReact={handleReact}
-                level={0}
-                postId={post._id}
-              />
-            ))}
-
-            {/* Load More Button */}
-            {hasMore && (
-              <div className="flex justify-center pt-4">
-                <button
-                  onClick={() => loadComments(false)}
-                  disabled={loading}
-                  className="px-4 py-2 text-sm font-semibold text-blue-600 hover:text-blue-700 disabled:opacity-50"
-                >
-                  {loading ? 'Đang tải...' : 'Xem thêm bình luận'}
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            <MessageCircle size={48} className="mx-auto mb-3 opacity-30" />
-            <p>Chưa có bình luận nào</p>
-            <p className="text-sm mt-1">Hãy là người đầu tiên bình luận!</p>
-          </div>
-        )}
       </div>
     </div>
   );

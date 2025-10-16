@@ -18,10 +18,11 @@ import {
 } from "../services/api";
 
 import axiosInstance from "../lib/axios";
+import { formatTime, countTotalComments } from "../lib/utils";
 import SuggestedUsers from '../components/common/SuggestedUsers';
 import CommentsSection from '../components/comment/CommentsSection';
 import { 
-  likePost as likePostAPI
+  reactToPost as reactToPostAPI
 } from "../services/api";
 
 
@@ -376,6 +377,8 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
   );
 };
 
+
+
 // Quick Create Post Component
 const CreatePostQuick = ({ onExpand, user }) => {
   return (
@@ -425,11 +428,17 @@ const CreatePostQuick = ({ onExpand, user }) => {
   );
 };
 
+
+
+
 // Enhanced Post Card Component  
-const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
+const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpdate }) => {
   const navigate = useNavigate();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [userReaction, setUserReaction] = useState(null);
+  const [reactions, setReactions] = useState({ like: 0, love: 0, haha: 0, wow: 0, sad: 0, angry: 0 });
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
   const [showOptions, setShowOptions] = useState(false);
@@ -445,24 +454,38 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
   const [loadingLikes, setLoadingLikes] = useState(false);
 
   useEffect(() => {
-    setLiked(post.likes?.includes(currentUser?._id));
-    setLikeCount(post.likes?.length || 0);
-    
-    // Count total comments including replies
-    const countComments = (comments) => {
-      let count = comments.length;
-      comments.forEach(comment => {
-        if (comment.replies && comment.replies.length > 0) {
-          count += countComments(comment.replies);
+    // Initialize reactions from post data
+    if (post.reactions) {
+      const reactionCounts = {
+        like: Array.isArray(post.reactions.like) ? post.reactions.like.length : (post.reactions.like || 0),
+        love: Array.isArray(post.reactions.love) ? post.reactions.love.length : (post.reactions.love || 0),
+        haha: Array.isArray(post.reactions.haha) ? post.reactions.haha.length : (post.reactions.haha || 0),
+        wow: Array.isArray(post.reactions.wow) ? post.reactions.wow.length : (post.reactions.wow || 0),
+        sad: Array.isArray(post.reactions.sad) ? post.reactions.sad.length : (post.reactions.sad || 0),
+        angry: Array.isArray(post.reactions.angry) ? post.reactions.angry.length : (post.reactions.angry || 0)
+      };
+      setReactions(reactionCounts);
+      
+      // Find user's reaction (only if reactions are arrays from backend)
+      const reactionTypes = ['like', 'love', 'haha', 'wow', 'sad', 'angry'];
+      for (const type of reactionTypes) {
+        if (Array.isArray(post.reactions[type]) && post.reactions[type].includes(currentUser?._id)) {
+          setUserReaction(type);
+          break;
         }
-      });
-      return count;
-    };
-    setCommentCount(countComments(post.comments || []));
+      }
+    } else {
+      // Fallback to legacy likes
+      setLiked(post.likes?.includes(currentUser?._id));
+      setLikeCount(post.likes?.length || 0);
+    }
+    
+    // Count total comments including replies using shared utility
+    setCommentCount(countTotalComments(post.comments || []));
     
     // Check if post is saved
     checkIfSaved();
-  }, [post.likes, post.comments, currentUser, post._id]);
+  }, [post.likes, post.reactions, post.comments, currentUser, post._id]);
 
   const checkIfSaved = async () => {
     try {
@@ -492,21 +515,78 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
     }
   };
 
-  const handleLike = async () => {
+  const handleReact = async (reactionType) => {
+    const oldReaction = userReaction;
+    const oldReactions = { ...reactions };
+    
     try {
-      const res = await likePostAPI(post._id);
+      // Optimistic update
+      const newReactions = { ...reactions };
+      
+      if (oldReaction) {
+        newReactions[oldReaction] = Math.max(0, newReactions[oldReaction] - 1);
+      }
+      
+      if (oldReaction !== reactionType) {
+        newReactions[reactionType] = (newReactions[reactionType] || 0) + 1;
+        setReactions(newReactions);
+        setUserReaction(reactionType);
+        
+        // Optimistic UI update - backend will provide topReactions in response
+        if (onReactionUpdate) {
+          onReactionUpdate(post._id, {
+            reactions: newReactions
+          });
+        }
+        
+        toast.success('', {
+          icon: reactionType === 'like' ? '👍' : 
+                reactionType === 'love' ? '❤️' :
+                reactionType === 'haha' ? '😂' :
+                reactionType === 'wow' ? '😮' :
+                reactionType === 'sad' ? '😢' : '😠',
+          duration: 1000,
+        });
+      } else {
+        setReactions(newReactions);
+        setUserReaction(null);
+        
+        // Optimistic UI update
+        if (onReactionUpdate) {
+          onReactionUpdate(post._id, {
+            reactions: newReactions
+          });
+        }
+      }
+      
+      // Get updated data from backend (includes topReactions)
+      const res = await reactToPostAPI(post._id, reactionType);
+      
+      // Update with server response
+      setUserReaction(res.userReaction);
+      setReactions(res.reactions);
       setLiked(res.isLiked);
       setLikeCount(res.likes);
       
-      if (res.isLiked) {
-        toast.success('', {
-          icon: '❤️',
-          duration: 1000,
+      // Update parent with backend's calculated topReactions
+      if (onReactionUpdate) {
+        onReactionUpdate(post._id, {
+          reactions: res.reactions,
+          topReactions: res.topReactions, // Use backend-calculated top reactions
+          likes: res.likes
         });
       }
     } catch (error) {
-      console.error('Error liking post:', error);
-      toast.error('Failed to like post');
+      console.error('Error reacting to post:', error);
+      // Rollback on error
+      setUserReaction(oldReaction);
+      setReactions(oldReactions);
+      if (onReactionUpdate) {
+        onReactionUpdate(post._id, {
+          reactions: oldReactions
+        });
+      }
+      toast.error('Failed to react to post');
     }
   };
 
@@ -522,6 +602,8 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
     }
   };
 
+
+  // Image Lightbox Handlers
   const openLightbox = (index) => {
     setLightboxImageIndex(index);
     setShowLightbox(true);
@@ -551,16 +633,6 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
     setLightboxImageIndex((prev) => (prev > 0 ? prev - 1 : prev));
   };
 
-  const formatTime = (date) => {
-    const now = new Date();
-    const diff = Math.floor((now - new Date(date)) / 1000);
-
-    if (diff < 60) return 'just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
-    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
 
   const handleShowLikes = async () => {
     setShowLikesModal(true);
@@ -568,10 +640,11 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
     
     try {
       const response = await axiosInstance.get(`/posts/${post._id}/likes`);
-      setLikesData(response.data.likes || []);
+      // New format: response.data.reactions is array of {user, reactionType}
+      setLikesData(response.data.reactions || []);
     } catch (error) {
-      console.error('Error fetching likes:', error);
-      toast.error(error.response?.data?.message || 'Failed to load likes');
+      console.error('Error fetching reactions:', error);
+      toast.error(error.response?.data?.message || 'Failed to load reactions');
       setShowLikesModal(false);
     } finally {
       setLoadingLikes(false);
@@ -860,26 +933,52 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
       )}
 
       {/* Reactions Summary */}
-      <div className="px-4 pt-3 pb-2 flex items-center justify-between text-sm">
+      <div className="px-3 pt-3 pb-2 flex items-center justify-between text-sm">
         <div className="flex items-center gap-2">
-          {likeCount > 0 && (
-            <button 
-              onClick={handleShowLikes}
-              className={`flex items-center gap-1.5 ${
-                post.author?._id === currentUser?._id 
-                  ? 'hover:underline cursor-pointer' 
-                  : 'cursor-default'
-              }`}
-              // disabled={post.author?._id !== currentUser?._id} // Only author can click to see who liked
-            >
-              <div className="flex items-center gap-1">
-                <span className="text-small">❤️</span>
-                {/* <span className="text-small">👍</span>
-                <span className="text-small">😊</span> */}
-              </div>
-              <span className="text-sm text-gray-700 font-medium">{likeCount} reactions</span>
-            </button>
-          )}
+          {(() => {
+            const totalReactions = Object.values(reactions).reduce((sum, count) => sum + count, 0);
+            if (totalReactions > 0) {
+              // Get top 3 reactions from backend or calculate from current state
+              let topReactions = post.topReactions || [];
+              
+              // If topReactions not provided by backend, calculate from current reactions state
+              if (!topReactions || topReactions.length === 0) {
+                const reactionArray = [
+                  { type: 'like', count: reactions.like, emoji: '👍' },
+                  { type: 'love', count: reactions.love, emoji: '❤️' },
+                  { type: 'haha', count: reactions.haha, emoji: '😂' },
+                  { type: 'wow', count: reactions.wow, emoji: '😮' },
+                  { type: 'sad', count: reactions.sad, emoji: '😢' },
+                  { type: 'angry', count: reactions.angry, emoji: '😠' }
+                ];
+                
+                topReactions = reactionArray
+                  .filter(r => r.count > 0)
+                  .sort((a, b) => b.count - a.count)
+                  .slice(0, 3)
+                  .map(r => ({ type: r.type, emoji: r.emoji }));
+              }
+              
+              return (
+                <button 
+                  onClick={handleShowLikes}
+                  className={`flex items-center gap-1.5 ${
+                    post.author?._id === currentUser?._id 
+                      ? 'hover:underline cursor-pointer' 
+                      : 'cursor-default'
+                  }`}
+                >
+                  <div className="flex items-center -space-x-1">
+                    {topReactions.map((reaction, index) => (
+                      <span key={index} className="text-base">{reaction.emoji}</span>
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-700 font-medium">{totalReactions} Reaction</span>
+                </button>
+              );
+            }
+            return null;
+          })()}
         </div>
         <div className="flex items-center gap-4 text-gray-700 font-medium">
           <button 
@@ -893,26 +992,107 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
       </div>
 
       {/* Action Buttons */}
-      <div className="px-3 pb-2 pt-1 border-t border-gray-100">
+      <div className="px-10 pb-2 pt-1 border-t border-gray-100">
         <div className="flex items-center gap-1">
-          <button
-            onClick={handleLike}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg transition-all text-sm ${
-              liked
-                ? 'text-red-500 bg-red-50 hover:bg-red-100'
-                : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <Heart className={liked ? 'fill-current' : ''} size={12} />
-            <span>Like</span>
-          </button>
+          <div className="flex-1 relative">
+            <button
+              onClick={() => {
+                if (userReaction) {
+                  handleReact(userReaction); // Toggle off current reaction
+                } else {
+                  handleReact('like'); // Default to like on click
+                }
+              }}
+              onMouseEnter={() => setShowReactionPicker(true)}
+              onMouseLeave={() => {
+                setTimeout(() => setShowReactionPicker(false), 3000);
+              }}
+              className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg transition-all text-sm ${
+                userReaction === 'like' ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' :
+                userReaction === 'love' ? 'text-red-600 bg-red-50 hover:bg-red-100' :
+                userReaction === 'haha' ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100' :
+                userReaction === 'wow' ? 'text-orange-600 bg-orange-50 hover:bg-orange-100' :
+                userReaction === 'sad' ? 'text-blue-500 bg-blue-50 hover:bg-blue-100' :
+                userReaction === 'angry' ? 'text-red-700 bg-red-50 hover:bg-red-100' :
+                'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {userReaction === 'like' && <span>👍</span>}
+              {userReaction === 'love' && <span>❤️</span>}
+              {userReaction === 'haha' && <span>😂</span>}
+              {userReaction === 'wow' && <span>😮</span>}
+              {userReaction === 'sad' && <span>😢</span>}
+              {userReaction === 'angry' && <span>😠</span>}
+              {!userReaction && <Heart size={18} />}
+              <span className="font-medium">
+                {userReaction === 'like' ? 'Like' :
+                 userReaction === 'love' ? 'Love' :
+                 userReaction === 'haha' ? 'Haha' :
+                 userReaction === 'wow' ? 'Wow' :
+                 userReaction === 'sad' ? 'Sad' :
+                 userReaction === 'angry' ? 'Angry' : 'Like'}
+              </span>
+            </button>
+
+            {/* Reaction Picker */}
+            {showReactionPicker && (
+              <div 
+                className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white rounded-full shadow-2xl border border-gray-200 px-3 py-2 flex space-x-2 z-30"
+                onMouseEnter={() => setShowReactionPicker(true)}
+                onMouseLeave={() => setShowReactionPicker(false)}
+              >
+                <button
+                  onClick={() => { handleReact('like'); setShowReactionPicker(false); }}
+                  className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                  title="Like"
+                >
+                  👍
+                </button>
+                <button
+                  onClick={() => { handleReact('love'); setShowReactionPicker(false); }}
+                  className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                  title="Love"
+                >
+                  ❤️
+                </button>
+                <button
+                  onClick={() => { handleReact('haha'); setShowReactionPicker(false); }}
+                  className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                  title="Haha"
+                >
+                  😂
+                </button>
+                <button
+                  onClick={() => { handleReact('wow'); setShowReactionPicker(false); }}
+                  className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                  title="Wow"
+                >
+                  😮
+                </button>
+                <button
+                  onClick={() => { handleReact('sad'); setShowReactionPicker(false); }}
+                  className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                  title="Sad"
+                >
+                  😢
+                </button>
+                <button
+                  onClick={() => { handleReact('angry'); setShowReactionPicker(false); }}
+                  className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                  title="Angry"
+                >
+                  😠
+                </button>
+              </div>
+            )}
+          </div>
 
           <button
             onClick={() => setShowComments(!showComments)}
             className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-all"
           >
-            <MessageCircle size={12} />
-            <span>Comment</span>
+            <MessageCircle size={18} />
+            <span className="font-medium">Comment</span>
           </button>
 
           <button
@@ -943,6 +1123,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
         <CommentsSection 
           post={post}
           currentUser={currentUser}
+          onCommentCountChange={(count) => setCommentCount(count)}
         />
       )}
 
@@ -1033,43 +1214,67 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete }) => {
                 </div>
               ) : likesData.length > 0 ? (
                 <div className="space-y-2">
-                  {likesData.map((user) => (
-                    <div 
-                      key={user._id} 
-                      className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer"
-                      onClick={() => {
-                        navigate(`/profile/${user.username}`);
-                        setShowLikesModal(false);
-                      }}
-                    >
-                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
-                        <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                          {user.avatar ? (
-                            <img 
-                              src={user.avatar} 
-                              alt={user.username} 
-                              className="w-full h-full object-cover" 
-                            />
-                          ) : (
-                            <span className="text-gray-700 font-bold">
-                              {user.username?.charAt(0).toUpperCase() || 'U'}
-                            </span>
+                  {likesData.map((reaction) => {
+                    const user = reaction.user;
+                    const reactionType = reaction.reactionType;
+                    
+                    // Map reaction types to emojis
+                    const reactionEmoji = {
+                      like: '👍',
+                      love: '❤️',
+                      haha: '😂',
+                      wow: '😮',
+                      sad: '😢',
+                      angry: '😠'
+                    }[reactionType] || '❤️';
+                    
+                    const reactionColor = {
+                      like: 'text-blue-600',
+                      love: 'text-red-500',
+                      haha: 'text-yellow-500',
+                      wow: 'text-orange-500',
+                      sad: 'text-blue-400',
+                      angry: 'text-red-700'
+                    }[reactionType] || 'text-red-500';
+                    
+                    return (
+                      <div 
+                        key={user._id} 
+                        className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer"
+                        onClick={() => {
+                          navigate(`/profile/${user.username}`);
+                          setShowLikesModal(false);
+                        }}
+                      >
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
+                          <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                            {user.avatar ? (
+                              <img 
+                                src={user.avatar} 
+                                alt={user.username} 
+                                className="w-full h-full object-cover" 
+                              />
+                            ) : (
+                              <span className="text-gray-700 font-bold">
+                                {user.username?.charAt(0).toUpperCase() || 'U'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 truncate">
+                            {user.username || user.name || 'User'}
+                          </p>
+                          {user.name && user.name !== user.username && (
+                            <p className="text-sm text-gray-500 truncate">{user.name}</p>
                           )}
                         </div>
+                        <div className={`text-2xl ${reactionColor}`}>
+                          <span>{reactionEmoji}</span>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">
-                          {user.username || user.name || 'User'}
-                        </p>
-                        {user.name && user.name !== user.username && (
-                          <p className="text-sm text-gray-500 truncate">{user.name}</p>
-                        )}
-                      </div>
-                      <div className="text-red-500">
-                        <Heart className="fill-current" size={20} />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-12 text-gray-500">
@@ -1139,6 +1344,12 @@ export default function HomePage() {
   const handlePostUpdate = (updatedPost) => {
     setPosts(prev => prev.map(post => 
       post._id === updatedPost._id ? updatedPost : post
+    ));
+  };
+
+  const handleReactionUpdate = (postId, updates) => {
+    setPosts(prev => prev.map(post => 
+      post._id === postId ? { ...post, ...updates } : post
     ));
   };
 
@@ -1271,6 +1482,7 @@ export default function HomePage() {
                   currentUser={user}
                   onPostUpdate={handlePostUpdate}
                   onPostDelete={handlePostDelete}
+                  onReactionUpdate={handleReactionUpdate}
                 />
               ))}
 

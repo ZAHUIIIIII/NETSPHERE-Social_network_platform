@@ -1,3 +1,25 @@
+// Format time for posts/comments (relative time)
+export function formatTime(date) {
+  const now = new Date();
+  const targetDate = new Date(date);
+  const diffMs = now - targetDate;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m`;
+  if (diffHours < 24) return `${diffHours}h`;
+  if (diffDays < 7) return `${diffDays}d`;
+  
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: targetDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+  }).format(targetDate);
+}
+
+// Format time for messages (absolute time with context)
 export function formatMessageTime(date) {
   const messageDate = new Date(date);
   const now = new Date();
@@ -40,4 +62,20 @@ export function formatMessageTime(date) {
       hour12: true,
     });
   }
+}
+
+// Count total comments including nested replies
+export function countTotalComments(comments) {
+  if (!comments || !Array.isArray(comments)) return 0;
+  
+  let count = 0;
+  comments.forEach(comment => {
+    count++; // Count the comment itself
+    // Count all nested replies recursively
+    const replies = comment.repliesPreview || comment.replies || [];
+    if (replies.length > 0) {
+      count += countTotalComments(replies);
+    }
+  });
+  return count;
 }

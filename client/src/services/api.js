@@ -11,8 +11,8 @@ export const getPosts = async (skip = 0, limit = 20) => {
   }
 };
 
-export const likePost = async (postId) => {
-  const response = await axiosInstance.post(`/posts/${postId}/like`);
+export const reactToPost = async (postId, reactionType = 'like') => {
+  const response = await axiosInstance.post(`/posts/${postId}/react`, { type: reactionType });
   return response.data;
 };
 
@@ -92,8 +92,8 @@ export const deleteComment = async (postId, commentId) => {
 };
 
 // ==================== COMMENTS - REACTIONS ====================
-export const reactToComment = async (postId, commentId, type = 'like') => {
-  const { data } = await axiosInstance.post(`/posts/${postId}/comment/${commentId}/react`, { type });
+export const reactToComment = async (postId, commentId, { reactionType = 'like' }) => {
+  const { data } = await axiosInstance.post(`/posts/${postId}/comment/${commentId}/react`, { type: reactionType });
   return data; // { userReaction, reactions, likes, isLiked }
 };
 
@@ -101,6 +101,12 @@ export const reactToComment = async (postId, commentId, type = 'like') => {
 export const likeComment = async (postId, commentId) => {
   const { data } = await axiosInstance.post(`/posts/${postId}/comment/${commentId}/like`);
   return data;
+};
+
+// ==================== COMMENTS - PIN ====================
+export const pinComment = async (postId, commentId) => {
+  const { data } = await axiosInstance.post(`/posts/${postId}/comment/${commentId}/pin`);
+  return data; // { ok: true, isPinned: boolean, message }
 };
 
 // ==================== SEARCH ====================
