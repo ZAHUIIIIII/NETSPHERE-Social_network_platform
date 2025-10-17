@@ -148,13 +148,21 @@ const CommentsSection = ({ post, currentUser, onCommentCountChange }) => {
     setSubmitting(true);
 
     try {
-      const newComment = await addCommentAPI(post._id, { 
+      const response = await addCommentAPI(post._id, { 
         content: savedCommentText,
         parentId: null
       });
 
+      // Backend returns { comment: {...} }, extract the comment
+      const newComment = response.comment || response;
+      
+      // Initialize empty replies array for new root comments
+      if (!newComment.replies) {
+        newComment.replies = [];
+      }
+
       // ✅ Add new comment at the top (newest first)
-      setComments(prev => [...prev, newComment]);
+      setComments(prev => [newComment, ...prev]);
       
       toast.success('Comment added!');
     } catch (error) {
@@ -173,12 +181,15 @@ const CommentsSection = ({ post, currentUser, onCommentCountChange }) => {
     const { parentId, replyToUserId, replyToCommentId, content } = replyData;
     
     try {
-      const newReply = await addCommentAPI(post._id, {
+      const response = await addCommentAPI(post._id, {
         content,
         parentId, // Always points to root
         replyToUserId,
         replyToCommentId
       });
+
+      // Backend returns { comment: {...} }, extract the comment
+      const newReply = response.comment || response;
 
       // ✅ Add reply to the replies array
       setComments(prev => prev.map(comment => {
@@ -204,14 +215,14 @@ const CommentsSection = ({ post, currentUser, onCommentCountChange }) => {
   };
 
   const toggleReplies = async (rootCommentId) => {
-    const isExpanded = expandedReplies[rootCommentId];
+    const comment = comments.find(c => c._id === rootCommentId);
+    const isCurrentlyExpanded = expandedReplies[rootCommentId] || comment?.replies?.length > 0;
     
-    if (isExpanded) {
-      // Collapse
+    if (isCurrentlyExpanded) {
+      // Collapse - just update the expanded state
       setExpandedReplies(prev => ({ ...prev, [rootCommentId]: false }));
     } else {
       // Expand - fetch replies if not already loaded
-      const comment = comments.find(c => c._id === rootCommentId);
       if (!comment.replies || comment.replies.length === 0) {
         try {
           const result = await fetchReplies(post._id, rootCommentId, { limit: 100 });
@@ -410,7 +421,7 @@ const CommentsSection = ({ post, currentUser, onCommentCountChange }) => {
                         onClick={() => toggleReplies(comment._id)}
                         className="ml-10 mt-2 flex items-center gap-1 text-xs text-blue-600 hover:underline font-medium"
                       >
-                        {expandedReplies[comment._id] ? (
+                        {(expandedReplies[comment._id] !== false) && comment.replies?.length > 0 ? (
                           <>
                             <ChevronUp size={14} />
                             <span>Hide {comment.replyCount} {comment.replyCount === 1 ? 'reply' : 'replies'}</span>
@@ -424,8 +435,8 @@ const CommentsSection = ({ post, currentUser, onCommentCountChange }) => {
                       </button>
                     )}
 
-                    {/* Replies (Level 2) */}
-                    {expandedReplies[comment._id] && comment.replies && comment.replies.length > 0 && (
+                    {/* Replies - Show if expanded OR if replies already loaded from backend */}
+                    {(expandedReplies[comment._id] !== false) && comment.replies && comment.replies.length > 0 && (
                       <div className="space-y-3 mt-2">
                         {comment.replies.map(reply => (
                           <Comment

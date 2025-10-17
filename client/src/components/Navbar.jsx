@@ -1,9 +1,12 @@
+// client/src/components/Navbar.jsx
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
+import { useNotificationStore } from '../store/useNotificationStore';
 
 const Navbar = ({ isCollapsed, setIsCollapsed }) => {
   const { authUser, logout } = useAuthStore();
+  const { unreadCount } = useNotificationStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -108,12 +111,14 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
+                {/* Hardcoded message count - you can connect this to a message store if needed */}
                 {isCollapsed && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">2</span>}
               </div>
               {!isCollapsed && <span className="font-medium">Messages</span>}
               {!isCollapsed && <span className="absolute right-3 top-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">2</span>}
             </Link>
             
+            {/* ✅ REAL-TIME NOTIFICATIONS */}
             <Link 
               to="/notifications" 
               className={`flex items-center px-3 py-2 rounded-lg transition-colors relative ${isCollapsed ? 'justify-center' : 'space-x-3'} ${
@@ -127,10 +132,18 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.73 21a2 2 0 01-3.46 0"/>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z"/>
                 </svg>
-                {isCollapsed && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>}
+                {isCollapsed && unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </div>
               {!isCollapsed && <span className="font-medium">Notifications</span>}
-              {!isCollapsed && <span className="absolute right-3 top-2 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">3</span>}
+              {!isCollapsed && unreadCount > 0 && (
+                <span className="absolute right-3 top-2 bg-red-500 text-white text-xs rounded-full min-w-[16px] h-4 flex items-center justify-center px-1">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </Link>
             
             <Link 
