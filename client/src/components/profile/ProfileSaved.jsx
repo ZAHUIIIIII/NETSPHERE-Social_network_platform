@@ -96,63 +96,68 @@ const ProfileSaved = ({ userId }) => {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {savedPosts.map((post) => (
-        <div
-          key={post._id}
-          className="group cursor-pointer overflow-hidden bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative"
-        >
-          <div 
-            className="relative aspect-square"
-            onClick={() => navigate(`/post/${post._id}`)}
+      {savedPosts.map((post) => {
+        // Use comment count from post data (V2 system)
+        const commentCount = post.comments?.length || 0;
+        
+        return (
+          <div
+            key={post._id}
+            className="group cursor-pointer overflow-hidden bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative"
           >
-            {post.images && post.images[0] ? (
-              <img
-                src={post.images[0]}
-                alt="Saved post"
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 p-6">
-                <p className="text-gray-700 text-sm line-clamp-6 text-center font-medium">
-                  {post.content}
-                </p>
-              </div>
-            )}
+            <div 
+              className="relative aspect-square"
+              onClick={() => navigate(`/post/${post._id}`)}
+            >
+              {post.images && post.images[0] ? (
+                <img
+                  src={post.images[0]}
+                  alt="Saved post"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 p-6">
+                  <p className="text-gray-700 text-sm line-clamp-6 text-center font-medium">
+                    {post.content}
+                  </p>
+                </div>
+              )}
 
-            {/* Hover Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-              <div className="flex items-center justify-center space-x-6 text-white mb-2">
-                <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                  <Heart className="h-5 w-5" fill="currentColor" />
-                  <span className="font-semibold">{post.likes?.length || 0}</span>
-                </div>
-                <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
-                  <MessageCircle className="h-5 w-5" fill="currentColor" />
-                  <span className="font-semibold">{post.comments?.length || 0}</span>
+              {/* Hover Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+                <div className="flex items-center justify-center space-x-6 text-white mb-2">
+                  <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                    <Heart className="h-5 w-5" fill="currentColor" />
+                    <span className="font-semibold">{post.likes?.length || 0}</span>
+                  </div>
+                  <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                    <MessageCircle className="h-5 w-5" fill="currentColor" />
+                    <span className="font-semibold">{commentCount}</span>
+                  </div>
                 </div>
               </div>
+
+              {/* Multiple Images Indicator */}
+              {post.images && post.images.length > 1 && (
+                <div className="absolute top-3 left-3">
+                  <div className="bg-black/70 text-white px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-sm">
+                    📷 {post.images.length}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Multiple Images Indicator */}
-            {post.images && post.images.length > 1 && (
-              <div className="absolute top-3 left-3">
-                <div className="bg-black/70 text-white px-3 py-1.5 rounded-full text-xs font-bold backdrop-blur-sm">
-                  📷 {post.images.length}
-                </div>
-              </div>
-            )}
+            {/* Unsave Button */}
+            <button
+              onClick={(e) => handleUnsave(post._id, e)}
+              className="absolute top-3 right-3 p-2.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 z-10"
+              title="Remove from saved"
+            >
+              <Trash2 size={16} />
+            </button>
           </div>
-
-          {/* Unsave Button - ADD THIS */}
-          <button
-            onClick={(e) => handleUnsave(post._id, e)}
-            className="absolute top-3 right-3 p-2.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 z-10"
-            title="Remove from saved"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

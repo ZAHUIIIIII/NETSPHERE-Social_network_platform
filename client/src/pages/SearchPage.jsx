@@ -307,26 +307,30 @@ const SearchPage = () => {
     </div>
   );
 
-  const PostResult = ({ post }) => (
-    <div 
-      onClick={() => navigate(`/post/${post._id}`)}
-      className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer"
-    >
-      <div className="p-4 flex items-start justify-between">
-        <div className="flex items-start gap-3">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
-            <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-              {post.author?.avatar ? (
-                <img src={post.author.avatar} alt={post.author.username} className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-gray-700 font-bold text-sm">
-                  {post.author?.username?.charAt(0).toUpperCase() || 'U'}
-                </span>
-              )}
+  const PostResult = ({ post }) => {
+    // Use comment count from post data (will be accurate from V2 system)
+    const commentCount = post.comments?.length || 0;
+    
+    return (
+      <div 
+        onClick={() => navigate(`/post/${post._id}`)}
+        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer"
+      >
+        <div className="p-4 flex items-start justify-between">
+          <div className="flex items-start gap-3">
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
+              <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                {post.author?.avatar ? (
+                  <img src={post.author.avatar} alt={post.author.username} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-gray-700 font-bold text-sm">
+                    {post.author?.username?.charAt(0).toUpperCase() || 'U'}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">{post.author?.username || 'Anonymous'}</h3>
+            <div>
+              <h3 className="font-semibold text-gray-900">{post.author?.username || 'Anonymous'}</h3>
             <p className="text-xs text-gray-500">{formatTime(post.createdAt)}</p>
           </div>
         </div>
@@ -351,11 +355,12 @@ const SearchPage = () => {
         </span>
         <span className="flex items-center gap-1">
           <MessageCircle size={16} />
-          {formatNumber(post.comments?.length || 0)}
+          {formatNumber(commentCount)}
         </span>
       </div>
     </div>
   );
+};
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -8,6 +8,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import axiosInstance from '../lib/axios';
 import toast from 'react-hot-toast';
 import { formatTime, formatMessageTime } from '../lib/utils';
+import CommentsSection from '../components/comment/CommentsSection';
 
 const PostDetailPage = () => {
   const { postId } = useParams();
@@ -29,6 +30,7 @@ const PostDetailPage = () => {
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [likesData, setLikesData] = useState([]);
   const [loadingLikes, setLoadingLikes] = useState(false);
+  const [commentCount, setCommentCount] = useState(0);
 
   useEffect(() => {
     fetchPost();
@@ -514,7 +516,7 @@ const PostDetailPage = () => {
               )}
             </div>
             <div className="flex items-center gap-4 text-gray-700 font-medium">
-              <span>{post.comments?.length || 0} {post.comments?.length === 1 ? 'comment' : 'comments'}</span>
+              <span>{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</span>
               <span>{post.shares || 0} shares</span>
             </div>
           </div>
@@ -561,7 +563,20 @@ const PostDetailPage = () => {
           </div>
 
           {/* Comments Section */}
-          <div className="border-t border-gray-100 bg-gray-50">
+          <div className="border-t border-gray-100">
+            <div className="p-4">
+              <CommentsSection 
+                post={post} 
+                onCommentCountChange={setCommentCount}
+              />
+            </div>
+          </div>
+          
+          {/* Legacy Comment Section (Hidden) - Keep for reference */}
+          {false && (
+            <>
+              {/* Old Comments Section (Legacy) */}
+              <div className="border-t border-gray-100 bg-gray-50">
             {/* Add Comment */}
             <div className="p-4 bg-white border-b border-gray-200">
               <div className="flex items-start gap-3">
@@ -668,6 +683,8 @@ const PostDetailPage = () => {
               )}
             </div>
           </div>
+            </>
+          )}
         </div>
 
         {/* Likes Modal - Only for Post Owner */}

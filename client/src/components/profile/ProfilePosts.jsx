@@ -32,50 +32,55 @@ const ProfilePosts = ({ posts, isOwnProfile, onPostsUpdate }) => {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      {posts.map((post) => (
-        <div
-          key={post._id}
-          className="group cursor-pointer overflow-hidden bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
-          onClick={() => navigate(`/post/${post._id}`)}
-        >
-          <div className="relative aspect-square">
-            {post.images && post.images[0] ? (
-              <img
-                src={post.images[0]}
-                alt="User post"
-                className="w-full h-full object-cover transition-transform group-hover:scale-105"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 p-4">
-                <p className="text-gray-600 text-sm line-clamp-6 text-center">
-                  {post.content}
-                </p>
-              </div>
-            )}
+      {posts.map((post) => {
+        // Use comment count from post data (V2 system)
+        const commentCount = post.comments?.length || 0;
+        
+        return (
+          <div
+            key={post._id}
+            className="group cursor-pointer overflow-hidden bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
+            onClick={() => navigate(`/post/${post._id}`)}
+          >
+            <div className="relative aspect-square">
+              {post.images && post.images[0] ? (
+                <img
+                  src={post.images[0]}
+                  alt="User post"
+                  className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 p-4">
+                  <p className="text-gray-600 text-sm line-clamp-6 text-center">
+                    {post.content}
+                  </p>
+                </div>
+              )}
 
-            {/* Hover Overlay */}
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-4 text-white">
-              <div className="flex items-center space-x-1">
-                <Heart className="h-5 w-5" fill="currentColor" />
-                <span className="font-semibold">{post.likes?.length || 0}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <MessageCircle className="h-5 w-5" fill="currentColor" />
-                <span className="font-semibold">{post.comments?.length || 0}</span>
-              </div>
-            </div>
-
-            {/* Multiple Images Indicator */}
-            {post.images && post.images.length > 1 && (
-              <div className="absolute top-2 right-2">
-                <div className="bg-black/60 text-white px-2 py-1 rounded text-xs font-medium backdrop-blur-sm">
-                  1/{post.images.length}
+              {/* Hover Overlay */}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-4 text-white">
+                <div className="flex items-center space-x-1">
+                  <Heart className="h-5 w-5" fill="currentColor" />
+                  <span className="font-semibold">{post.likes?.length || 0}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <MessageCircle className="h-5 w-5" fill="currentColor" />
+                  <span className="font-semibold">{commentCount}</span>
                 </div>
               </div>
-            )}
+
+              {/* Multiple Images Indicator */}
+              {post.images && post.images.length > 1 && (
+                <div className="absolute top-2 right-2">
+                  <div className="bg-black/60 text-white px-2 py-1 rounded text-xs font-medium backdrop-blur-sm">
+                    1/{post.images.length}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

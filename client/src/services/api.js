@@ -11,8 +11,8 @@ export const getPosts = async (skip = 0, limit = 20) => {
   }
 };
 
-export const reactToPost = async (postId, reactionType = 'like') => {
-  const response = await axiosInstance.post(`/posts/${postId}/react`, { type: reactionType });
+export const likePost = async (postId) => {
+  const response = await axiosInstance.post(`/posts/${postId}/like`);
   return response.data;
 };
 
@@ -52,6 +52,16 @@ export const savePost = async (postId) => {
   }
 };
 
+export const reactToPost = async (postId, reactionType) => {
+  try {
+    const response = await axiosInstance.post(`/posts/${postId}/react`, { type: reactionType });
+    return response.data;
+  } catch (error) {
+    console.error('Error reacting to post:', error);
+    throw error;
+  }
+};
+
 export const checkPostSaved = async (postId) => {
   try {
     const response = await axiosInstance.get(`/posts/${postId}/saved-status`);
@@ -62,38 +72,51 @@ export const checkPostSaved = async (postId) => {
   }
 };
 
-// ==================== COMMENTS ====================
-
-export const fetchComments = async (postId, { sort = 'newest', limit = 20, cursor = '' } = {}) => {
+// ==================== COMMENTS - LISTING & PAGINATION ====================
+export const fetchComments = async (postId, { sort = 'relevant', limit = 20, cursor = '' } = {}) => {
   const url = `/posts/${postId}/comments?sort=${sort}&limit=${limit}&cursor=${encodeURIComponent(cursor)}`;
   const { data } = await axiosInstance.get(url);
-  return data;
+  return data; // { items, nextCursor }
 };
 
-export const fetchReplies = async (postId, rootCommentId, { limit = 10, cursor = '' } = {}) => {
-  const url = `/posts/${postId}/comments/${rootCommentId}/replies?limit=${limit}&cursor=${encodeURIComponent(cursor)}`;
+export const fetchReplies = async (postId, commentId, { limit = 10, cursor = '' } = {}) => {
+  const url = `/posts/${postId}/comments/${commentId}/replies?limit=${limit}&cursor=${encodeURIComponent(cursor)}`;
   const { data } = await axiosInstance.get(url);
-  return data;
+  return data; // { items, nextCursor }
 };
 
-export const addComment = async (postId, body) => {
-  const { data } = await axiosInstance.post(`/posts/${postId}/comment`, body);
-  return data;
+// ==================== COMMENTS - CRUD ====================
+export const addComment = async (postId, { content, parentId = null }) => {
+  const { data } = await axiosInstance.post(`/posts/${postId}/comment`, { content, parentId });
+  return data; // { comment }
 };
 
 export const editComment = async (postId, commentId, content) => {
   const { data } = await axiosInstance.patch(`/posts/${postId}/comment/${commentId}`, { content });
-  return data;
+  return data; // { comment }
 };
 
 export const deleteComment = async (postId, commentId) => {
   const { data } = await axiosInstance.delete(`/posts/${postId}/comment/${commentId}`);
+  return data; // { ok: true }
+};
+
+// ==================== COMMENTS - REACTIONS ====================
+export const reactToComment = async (postId, commentId, type = 'like') => {
+  const { data } = await axiosInstance.post(`/posts/${postId}/comment/${commentId}/react`, { type });
+  return data; // { userReaction, reactions, likes, isLiked }
+};
+
+// Legacy like mapping – keep compatibility
+export const likeComment = async (postId, commentId) => {
+  const { data } = await axiosInstance.post(`/posts/${postId}/comment/${commentId}/like`);
   return data;
 };
 
-export const reactToComment = async (postId, commentId, { reactionType }) => {
-  const { data } = await axiosInstance.post(`/posts/${postId}/comment/${commentId}/react`, { type: reactionType });
-  return data;
+// ==================== COMMENTS - PIN ====================
+export const pinComment = async (postId, commentId) => {
+  const { data } = await axiosInstance.post(`/posts/${postId}/comment/${commentId}/pin`);
+  return data; // { ok: true, isPinned: boolean, message }
 };
 
 // ==================== SEARCH ====================

@@ -116,8 +116,28 @@ export function shortTimeLabel(dateISO) {
   return sameYear ? `${dStr} ${hhmm}` : `${dStr} ${d.getFullYear()}`;
 }
 
-// Count total comments including nested replies
+// ==================== DEPRECATED FUNCTIONS ====================
+// Count total comments including nested replies (Legacy system only)
+// For V2 unlimited nesting system, use countTotalComments from commentApi.js
 export function countTotalComments(comments) {
+  if (!comments || !Array.isArray(comments)) return 0;
+  
+  // For embedded comments (legacy system):
+  // Only count root-level comments + their direct replies (two-level system)
+  let count = 0;
+  
+  comments.forEach(comment => {
+    count++; // Count the comment itself
+    
+    // In the embedded system, replies are at the same level with parentId
+    // Don't recursively count - they're already in the flat array
+  });
+  
+  return count;
+}
+
+// Alternative: Deep recursive count (if needed for nested structures)
+export function countTotalCommentsRecursive(comments) {
   if (!comments || !Array.isArray(comments)) return 0;
   
   let count = 0;
@@ -126,7 +146,7 @@ export function countTotalComments(comments) {
     // Count all nested replies recursively
     const replies = comment.repliesPreview || comment.replies || [];
     if (replies.length > 0) {
-      count += countTotalComments(replies);
+      count += countTotalCommentsRecursive(replies);
     }
   });
   return count;

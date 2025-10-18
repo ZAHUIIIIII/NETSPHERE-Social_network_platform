@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { MoreHorizontal, Edit2, Trash2, Send, X } from 'lucide-react';
+import { MoreHorizontal, Edit2, Trash2, Send, X, Reply } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { shortTimeLabel } from '../../lib/utils';
 
@@ -29,224 +30,182 @@ const Comment = ({
   onEdit,
   onDelete,
   onReact,
-  depth = 0
+  level = 0 // 0 = root, 1 = reply (visual only, can be nested infinitely in data)
 }) => {
   const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [replyContent, setReplyContent] = useState('');
+  const [showMenu, setShowMenu] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
-  const [isSubmittingReply, setIsSubmittingReply] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isOwnComment = currentUser?._id === comment.user?._id;
-  const isRootComment = depth === 0;
+  const isOwnComment = currentUser?._id === comment.author?._id;
+
+  // ==================== HANDLERS ====================
 
   const handleReact = (reactionType) => {
     onReact(comment._id, reactionType);
     setShowReactionPicker(false);
   };
 
-  const handleEdit = () => {
-    if (editContent.trim() && editContent !== comment.content) {
-      onEdit(comment._id, editContent.trim());
+  const handleEdit = async () => {
+    if (!editContent.trim() || editContent === comment.content) {
       setIsEditing(false);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onEdit(comment._id, editContent.trim());
+      setIsEditing(false);
+      toast.success('Comment updated');
+    } catch (error) {
+      toast.error('Failed to update comment');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleReply = async () => {
-    if (replyContent.trim() && !isSubmittingReply) {
-      setIsSubmittingReply(true);
-      try {
-        // Pass target comment info for reply metadata
-        await onReply({
-          parentId: comment.parentId || comment._id, // Always point to root
-          replyToUserId: comment.user._id,
-          replyToCommentId: comment._id,
-          content: replyContent.trim()
-        });
-        setReplyContent('');
-        setIsReplying(false);
-      } catch (error) {
-        console.error('Failed to submit reply:', error);
-        toast.error('Failed to post reply');
-      } finally {
-        setIsSubmittingReply(false);
-      }
+    if (!replyContent.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      await onReply(replyContent.trim());
+      setReplyContent('');
+      setIsReplying(false);
+      toast.success('Reply posted');
+    } catch (error) {
+      toast.error('Failed to post reply');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleDelete = () => {
-    onDelete(comment._id);
-    setShowDeleteDialog(false);
+  const handleDelete = async () => {
+    setIsSubmitting(true);
+    try {
+      await onDelete(comment._id);
+      setShowDeleteDialog(false);
+      toast.success('Comment deleted');
+    } catch (error) {
+      toast.error('Failed to delete comment');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  // Calculate total reactions
-  const totalReactions = Object.values(comment.reactions || {}).reduce((sum, count) => sum + count, 0);
+  // ==================== REACTION SUMMARY ====================
 
-  // Get top 2 reaction types for display
+  const totalReactions = Object.values(comment.reactions || {}).reduce((sum, count) => sum + count, 0);
   const topReactions = Object.entries(comment.reactions || {})
     .filter(([_, count]) => count > 0)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 2)
     .map(([type]) => type);
 
-  return (
-    <>
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        className={`${depth > 0 ? 'ml-10 mt-3' : ''}`}
-      >
-        <div className="flex space-x-2">
-          {/* Avatar */}
-          <img
-            src={comment.user?.avatar || `https://ui-avatars.com/api/?name=${comment.user?.name}&background=random`}
-            alt={comment.user?.name}
-            className="h-8 w-8 rounded-full object-cover flex-shrink-0"
-          />
+  // ==================== RENDER ====================
 
-          <div className="flex-1 min-w-0">
-            {/* Comment bubble */}
-            <div className="inline-block bg-gray-100 rounded-2xl px-3 py-2 max-w-full">
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className="relative"
+    >
+      <div className="flex gap-2">
+        {/* Avatar */}
+        <Link to={`/profile/${comment.author?.username}`} className="flex-shrink-0">
+          <img
+            src={comment.author?.avatar || '/avatar-placeholder.png'}
+            alt={comment.author?.username || 'Unknown'}
+            className="w-8 h-8 rounded-full object-cover"
+          />
+        </Link>
+
+        {/* Comment Content */}
+        <div className="flex-1 min-w-0">
+          {/* Comment Bubble */}
+          <div className="inline-block max-w-full relative">
+            <div className="rounded-2xl px-3 py-2 bg-[#f0f2f5] relative">
+              {/* Content */}
               {isEditing ? (
                 <div className="space-y-2">
                   <textarea
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
-                    className="w-full min-h-[60px] p-2 bg-white text-gray-900 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 resize-none text-sm"
+                    rows="3"
+                    disabled={isSubmitting}
                     autoFocus
                   />
-                  <div className="flex space-x-2">
+                  <div className="flex gap-2">
                     <button
                       onClick={handleEdit}
-                      className="px-3 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600"
+                      disabled={isSubmitting || !editContent.trim()}
+                      className="px-3.5 py-1.5 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      Save
+                      {isSubmitting ? 'Saving...' : 'Save'}
                     </button>
                     <button
                       onClick={() => {
-                        setEditContent(comment.content);
                         setIsEditing(false);
+                        setEditContent(comment.content);
                       }}
-                      className="px-3 py-1.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-100"
+                      disabled={isSubmitting}
+                      className="px-3.5 py-1.5 bg-gray-200 text-gray-800 rounded-lg text-sm font-medium hover:bg-gray-300 transition-colors"
                     >
                       Cancel
                     </button>
                   </div>
                 </div>
               ) : (
-                <>
-                  <p className="font-semibold text-sm text-gray-900 mb-0.5">
-                    {comment.user?.name}
-                    {comment.isEdited && (
-                      <span className="ml-1 text-xs text-gray-500 font-normal">(edited)</span>
-                    )}
-                  </p>
-                  <p className="text-sm text-gray-900 whitespace-pre-wrap break-words">
-                    {/* Show "Replying to" inline with comment text for Level 2 */}
-                    {comment.replyToSnapshot && (
+                <div>
+                  {/* Username */}
+                  <Link 
+                    to={`/profile/${comment.author?.username}`}
+                    className="font-semibold text-sm hover:underline text-gray-900 block mb-0.5"
+                  >
+                    {comment.author?.username || 'Unknown'}
+                  </Link>
+                  
+                  {/* Comment text */}
+                  <p className="text-sm whitespace-pre-wrap break-words text-gray-900">
+                    {comment.isDeleted ? (
+                      <span className="italic text-gray-500">
+                        (comment deleted)
+                      </span>
+                    ) : (
                       <>
-                        <a 
-                          href={`/profile/${comment.replyToSnapshot.username || comment.replyToSnapshot.name}`}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            window.location.href = `/profile/${comment.replyToSnapshot.username || comment.replyToSnapshot.name}`;
-                          }}
-                          className="font-semibold text-gray-900 hover:underline cursor-pointer"
-                        >
-                          {comment.replyToSnapshot.name}
-                        </a>
-                        {' '}
+                        {/* Reply To User - Inline like Facebook */}
+                        {comment.replyToSnapshot && (
+                          <>
+                            <Link 
+                              to={`/profile/${comment.replyToSnapshot.username}`}
+                              className="font-bold hover:underline text-gray-900"
+                            >
+                              {comment.replyToSnapshot.username}
+                            </Link>
+                            {' '}
+                          </>
+                        )}
+                        {comment.content}
                       </>
                     )}
-                    {comment.content}
                   </p>
-                </>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center space-x-3 mt-1 px-3">
-              {/* Reaction Button with Picker */}
-              <div className="relative">
-                <button
-                  onClick={() => {
-                    if (comment.userReaction) {
-                      handleReact(comment.userReaction); // Toggle off
-                    } else {
-                      handleReact('like'); // Default like
-                    }
-                  }}
-                  onMouseEnter={() => setShowReactionPicker(true)}
-                  onMouseLeave={() => setTimeout(() => setShowReactionPicker(false), 200)}
-                  className={`text-xs font-semibold transition-colors hover:underline ${
-                    comment.userReaction ? REACTION_COLORS[comment.userReaction] : 'text-gray-600'
-                  }`}
-                >
-                  {comment.userReaction ? comment.userReaction.charAt(0).toUpperCase() + comment.userReaction.slice(1) : 'Like'}
-                </button>
-
-                {/* Reaction Picker */}
-                {showReactionPicker && (
-                  <div 
-                    className="absolute bottom-full left-0 mb-2 bg-white rounded-full shadow-xl border border-gray-200 px-2 py-2 flex space-x-1 z-30"
-                    onMouseEnter={() => setShowReactionPicker(true)}
-                    onMouseLeave={() => setShowReactionPicker(false)}
-                  >
-                    {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => (
-                      <button
-                        key={type}
-                        onClick={() => handleReact(type)}
-                        className="hover:scale-125 transition-transform text-xl p-1 rounded-full hover:bg-gray-100"
-                        title={type.charAt(0).toUpperCase() + type.slice(1)}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Reaction Summary */}
-              {totalReactions > 0 && (
-                <div className="flex items-center space-x-1">
-                  {topReactions.map(type => (
-                    <span key={type} className="text-sm">{REACTION_EMOJIS[type]}</span>
-                  ))}
-                  <span className="text-xs text-gray-600">{totalReactions}</span>
                 </div>
               )}
 
-              <span className="text-xs text-gray-400">·</span>
-
-              {/* Reply button - only show if not at max depth */}
-              {depth < 1 && (
-                <button
-                  onClick={() => setIsReplying(!isReplying)}
-                  className="text-xs text-gray-600 font-semibold hover:underline"
-                >
-                  Reply
-                </button>
-              )}
-
-              <span className="text-xs text-gray-400">·</span>
-
-              {/* Time label (no hover tooltip) */}
-              <span className="text-xs text-gray-500">
-                {shortTimeLabel(comment.createdAt)}
-              </span>
-
-              {/* Edit/Delete menu for own comments */}
-              {isOwnComment && !isEditing && (
-                <>
-                  <span className="text-xs text-gray-400">·</span>
+              {/* Three dots menu - bottom right corner */}
+              {isOwnComment && !isEditing && !comment.isDeleted && (
+                <div className="absolute top-2 right-2">
                   <div className="relative group">
-                    <button className="text-gray-500 hover:text-gray-700 transition-colors">
-                      <MoreHorizontal className="h-3.5 w-3.5" />
+                    <button className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-200/50">
+                      <MoreHorizontal className="w-3.5 h-3.5" />
                     </button>
-                    <div className="absolute right-0 bottom-full mb-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                    <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
                       <button
                         onClick={() => setIsEditing(true)}
                         className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 text-gray-700"
@@ -261,97 +220,170 @@ const Comment = ({
                       </button>
                     </div>
                   </div>
-                </>
+                </div>
               )}
             </div>
 
-            {/* Reply Input */}
-            {isReplying && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-3"
-              >
-                <div className="flex space-x-2 items-start">
-                  <img
-                    src={currentUser?.avatar || `https://ui-avatars.com/api/?name=${currentUser?.username}&background=random`}
-                    alt={currentUser?.username}
-                    className="h-8 w-8 rounded-full object-cover flex-shrink-0"
-                  />
-                  <div className="flex-1 flex items-start space-x-2">
-                    <div className="flex-1 relative">
-                      <textarea
-                        value={replyContent}
-                        onChange={(e) => setReplyContent(e.target.value)}
-                        placeholder={`Reply to ${comment.user?.name}...`}
-                        className="w-full min-h-[44px] max-h-[200px] resize-none p-3 pr-12 bg-gray-100 text-gray-900 border-2 border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-colors"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                            e.preventDefault();
-                            handleReply();
-                          }
-                        }}
-                        rows={1}
-                      />
-                    </div>
-                    <button
-                      onClick={handleReply}
-                      disabled={!replyContent.trim() || isSubmittingReply}
-                      className="p-2.5 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                      title="Send reply"
+            {/* Reaction Summary - Bottom Right Corner of Bubble */}
+            {totalReactions > 0 && !isEditing && (
+              <div className="absolute -bottom-2 -right-1 flex items-center gap-1 bg-white rounded-full px-1.5 py-0.5 shadow-sm border border-gray-200">
+                <div className="flex items-center -space-x-0.5">
+                  {topReactions.map((type) => (
+                    <span 
+                      key={type} 
+                      className="text-xs"
                     >
-                      {isSubmittingReply ? (
-                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                      ) : (
-                        <Send className="h-4 w-4" />
-                      )}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsReplying(false);
-                        setReplyContent('');
-                      }}
-                      className="p-2.5 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition-colors"
-                      title="Cancel"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
+                      {REACTION_EMOJIS[type]}
+                    </span>
+                  ))}
                 </div>
-              </motion.div>
+                <span className="text-xs text-gray-700 font-medium">
+                  {totalReactions}
+                </span>
+              </div>
             )}
           </div>
+
+          {/* Actions Bar - Time · Like · Reply */}
+          {!isEditing && !comment.isDeleted && (
+            <div className="flex items-center gap-2 mt-1 ml-3 text-xs">
+              {/* Time */}
+              <span className="text-gray-500 font-medium">
+                {shortTimeLabel(new Date(comment.createdAt))}
+              </span>
+
+              <span className="text-gray-400">·</span>
+
+              {/* Reaction Button */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowReactionPicker(!showReactionPicker)}
+                  className={`font-semibold hover:underline ${
+                    comment.userReaction
+                      ? REACTION_COLORS[comment.userReaction]
+                      : 'text-gray-600'
+                  }`}
+                >
+                  {comment.userReaction ? REACTION_EMOJIS[comment.userReaction] : 'Like'}
+                </button>
+
+                {/* Reaction Picker */}
+                {showReactionPicker && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-10" 
+                      onClick={() => setShowReactionPicker(false)}
+                    />
+                    <div className="absolute left-0 bottom-full mb-2 bg-white border border-gray-200 rounded-full shadow-lg px-2 py-1.5 flex gap-1 z-20">
+                      {Object.entries(REACTION_EMOJIS).map(([type, emoji]) => (
+                        <button
+                          key={type}
+                          onClick={() => handleReact(type)}
+                          className="hover:scale-125 transition-transform text-lg p-1"
+                          title={type}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <span className="text-gray-400">·</span>
+
+              {/* Reply Button */}
+              <button
+                onClick={() => setIsReplying(!isReplying)}
+                className="font-semibold text-gray-600 hover:underline"
+              >
+                Reply
+              </button>
+            </div>
+          )}
+
+          {/* Reply Input */}
+          {isReplying && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-3 flex gap-2"
+            >
+              <img
+                src={currentUser?.avatar || '/avatar-placeholder.png'}
+                alt={currentUser?.username || 'You'}
+                className="w-8 h-8 rounded-full object-cover"
+              />
+              <div className="flex-1 space-y-2">
+                <div className="relative">
+                  <textarea
+                    value={replyContent}
+                    onChange={(e) => setReplyContent(e.target.value)}
+                    placeholder={`Reply to ${comment.author?.username || 'this comment'}...`}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-[#f0f2f5] resize-none text-sm"
+                    rows="2"
+                    disabled={isSubmitting}
+                    autoFocus
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleReply}
+                    disabled={isSubmitting || !replyContent.trim()}
+                    className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isSubmitting ? 'Posting...' : 'Reply'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsReplying(false);
+                      setReplyContent('');
+                    }}
+                    disabled={isSubmitting}
+                    className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md text-sm font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </div>
-      </motion.div>
+      </div>
 
       {/* Delete Confirmation Dialog */}
       {showDeleteDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-2">Delete Comment</h3>
-            <p className="text-gray-600 mb-4">
-              Are you sure you want to delete this comment? This action cannot be undone.
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl"
+          >
+            <h3 className="text-lg font-bold mb-2 text-gray-900">Delete Comment?</h3>
+            <p className="text-sm text-gray-600 mb-6">
+              This action cannot be undone. Your comment will be permanently deleted.
             </p>
-            <div className="flex justify-end space-x-2">
+            <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowDeleteDialog(false)}
-                className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
+                disabled={isSubmitting}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                disabled={isSubmitting}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium disabled:opacity-50 transition-colors"
               >
-                Delete
+                {isSubmitting ? 'Deleting...' : 'Delete'}
               </button>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
-    </>
+    </motion.div>
   );
 };
 

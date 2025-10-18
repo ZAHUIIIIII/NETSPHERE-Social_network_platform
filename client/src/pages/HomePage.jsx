@@ -14,16 +14,18 @@ import {
   createPost, 
   uploadPostImages,
   savePost as savePostAPI,
-  checkPostSaved
+  checkPostSaved,
+  reactToPost as reactToPostAPI
 } from "../services/api";
 
 import axiosInstance from "../lib/axios";
-import { formatTime, countTotalComments } from "../lib/utils";
+import { formatTime } from "../lib/utils";
 import SuggestedUsers from '../components/common/SuggestedUsers';
 import CommentsSection from '../components/comment/CommentsSection';
-import { 
-  reactToPost as reactToPostAPI
-} from "../services/api";
+import { countTotalComments, listRootComments } from "../services/commentApi";
+// import { 
+//   likePost as likePostAPI
+// } from "../services/api";
 
 
 // Enhanced Create Post Component
@@ -441,6 +443,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
+  const [loadingCommentCount, setLoadingCommentCount] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -480,12 +483,29 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
       setLikeCount(post.likes?.length || 0);
     }
     
-    // Count total comments including replies using shared utility
-    setCommentCount(countTotalComments(post.comments || []));
+    // Fetch accurate comment count on mount
+    fetchInitialCommentCount();
     
     // Check if post is saved
     checkIfSaved();
   }, [post.likes, post.reactions, post.comments, currentUser, post._id]);
+
+  const fetchInitialCommentCount = async () => {
+    try {
+      // Fetch first page of root comments to get initial count estimate
+      // The accurate count will be updated when CommentsSection loads
+      const data = await listRootComments(post._id, {
+        limit: 20,
+        after: ''
+      });
+      const totalCount = countTotalComments(data.items);
+      setCommentCount(totalCount);
+    } catch (error) {
+      console.error('Error fetching comment count:', error);
+      // Silently fail, count will be updated when comments are opened
+      setCommentCount(0);
+    }
+  };
 
   const checkIfSaved = async () => {
     try {
@@ -996,17 +1016,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
         <div className="flex items-center gap-1">
           <div className="flex-1 relative">
             <button
-              onClick={() => {
-                if (userReaction) {
-                  handleReact(userReaction); // Toggle off current reaction
-                } else {
-                  handleReact('like'); // Default to like on click
-                }
-              }}
-              onMouseEnter={() => setShowReactionPicker(true)}
-              onMouseLeave={() => {
-                setTimeout(() => setShowReactionPicker(false), 3000);
-              }}
+              onClick={() => setShowReactionPicker(!showReactionPicker)}
               className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg transition-all text-sm ${
                 userReaction === 'like' ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' :
                 userReaction === 'love' ? 'text-red-600 bg-red-50 hover:bg-red-100' :
@@ -1034,56 +1044,61 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
               </span>
             </button>
 
-            {/* Reaction Picker */}
+            {/* Reaction Picker - Click to open/close */}
             {showReactionPicker && (
-              <div 
-                className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white rounded-full shadow-2xl border border-gray-200 px-3 py-2 flex space-x-2 z-30"
-                onMouseEnter={() => setShowReactionPicker(true)}
-                onMouseLeave={() => setShowReactionPicker(false)}
-              >
-                <button
-                  onClick={() => { handleReact('like'); setShowReactionPicker(false); }}
-                  className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
-                  title="Like"
+              <>
+                {/* Backdrop to close picker */}
+                <div 
+                  className="fixed inset-0 z-20" 
+                  onClick={() => setShowReactionPicker(false)}
+                />
+                <div 
+                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white rounded-full shadow-2xl border border-gray-200 px-3 py-2 flex space-x-2 z-30"
                 >
-                  👍
-                </button>
-                <button
-                  onClick={() => { handleReact('love'); setShowReactionPicker(false); }}
-                  className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
-                  title="Love"
-                >
-                  ❤️
-                </button>
-                <button
-                  onClick={() => { handleReact('haha'); setShowReactionPicker(false); }}
-                  className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
-                  title="Haha"
-                >
-                  😂
-                </button>
-                <button
-                  onClick={() => { handleReact('wow'); setShowReactionPicker(false); }}
-                  className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
-                  title="Wow"
-                >
-                  😮
-                </button>
-                <button
-                  onClick={() => { handleReact('sad'); setShowReactionPicker(false); }}
-                  className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
-                  title="Sad"
-                >
-                  😢
-                </button>
-                <button
-                  onClick={() => { handleReact('angry'); setShowReactionPicker(false); }}
-                  className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
-                  title="Angry"
-                >
-                  😠
-                </button>
-              </div>
+                  <button
+                    onClick={() => { handleReact('like'); setShowReactionPicker(false); }}
+                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                    title="Like"
+                  >
+                    👍
+                  </button>
+                  <button
+                    onClick={() => { handleReact('love'); setShowReactionPicker(false); }}
+                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                    title="Love"
+                  >
+                    ❤️
+                  </button>
+                  <button
+                    onClick={() => { handleReact('haha'); setShowReactionPicker(false); }}
+                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                    title="Haha"
+                  >
+                    😂
+                  </button>
+                  <button
+                    onClick={() => { handleReact('wow'); setShowReactionPicker(false); }}
+                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                    title="Wow"
+                  >
+                    😮
+                  </button>
+                  <button
+                    onClick={() => { handleReact('sad'); setShowReactionPicker(false); }}
+                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                    title="Sad"
+                  >
+                    😢
+                  </button>
+                  <button
+                    onClick={() => { handleReact('angry'); setShowReactionPicker(false); }}
+                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                    title="Angry"
+                  >
+                    😠
+                  </button>
+                </div>
+              </>
             )}
           </div>
 
@@ -1122,7 +1137,6 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
       {showComments && (
         <CommentsSection 
           post={post}
-          currentUser={currentUser}
           onCommentCountChange={(count) => setCommentCount(count)}
         />
       )}
