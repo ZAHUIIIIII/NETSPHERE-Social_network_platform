@@ -2,33 +2,31 @@ import express from 'express';
 import { protectRoute } from '../middleware/auth.middleware.js';
 import {
   createComment,
+  listRootComments,
+  listThreadReplies,
   editComment,
-  deleteComment,
-  reactToComment,
-  getComments,
-  getReplies
+  softDeleteComment,
+  reactToComment
 } from '../controllers/comment.controller.js';
 
 const router = express.Router();
 
-router.use(protectRoute);
+// Create comment (root or reply)
+router.post('/:postId/comments', protectRoute, createComment);
 
-// Create comment or reply
-router.post('/:postId/comment', createComment);
+// List root comments for a post
+router.get('/:postId/comments', protectRoute, listRootComments);
+
+// Get all replies in a thread (under one root comment)
+router.get('/:postId/comments/:rootId/thread', protectRoute, listThreadReplies);
 
 // Edit comment
-router.patch('/:postId/comment/:commentId', editComment);
+router.patch('/comments/:id', protectRoute, editComment);
 
-// Delete comment (soft delete)
-router.delete('/:postId/comment/:commentId', deleteComment);
+// Soft delete comment
+router.delete('/comments/:id', protectRoute, softDeleteComment);
 
-// Toggle reaction
-router.post('/:postId/comment/:commentId/react', reactToComment);
-
-// Get root comments with pagination
-router.get('/:postId/comments', getComments);
-
-// Get replies for a root comment
-router.get('/:postId/comments/:rootCommentId/replies', getReplies);
+// React to comment
+router.post('/comments/:id/reactions', protectRoute, reactToComment);
 
 export default router;

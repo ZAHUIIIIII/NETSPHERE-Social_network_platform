@@ -89,7 +89,7 @@ const Comment = ({
     try {
       await onDelete(comment._id);
       setShowDeleteDialog(false);
-      toast.success('Comment deleted');
+      toast.success('Comment deleted');level === 0
     } catch (error) {
       toast.error('Failed to delete comment');
     } finally {

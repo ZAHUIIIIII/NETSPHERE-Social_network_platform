@@ -1,6 +1,6 @@
 import axiosInstance from '../lib/axios';
 
-const API_BASE = '/posts'; // V2 unlimited nesting system (standard path)
+const API_BASE = '/posts'; // Unlimited nesting comment system (standard path)
 
 // ==================== CREATE COMMENT ====================
 

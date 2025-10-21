@@ -308,7 +308,7 @@ const SearchPage = () => {
   );
 
   const PostResult = ({ post }) => {
-    // Use comment count from post data (will be accurate from V2 system)
+    // Use comment count from post data (will be accurate from unlimited nesting system)
     const commentCount = post.comments?.length || 0;
     
     return (

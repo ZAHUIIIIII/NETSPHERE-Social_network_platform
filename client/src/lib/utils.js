@@ -118,7 +118,7 @@ export function shortTimeLabel(dateISO) {
 
 // ==================== DEPRECATED FUNCTIONS ====================
 // Count total comments including nested replies (Legacy system only)
-// For V2 unlimited nesting system, use countTotalComments from commentApi.js
+// For unlimited nesting system, use countTotalComments from commentApi.js
 export function countTotalComments(comments) {
   if (!comments || !Array.isArray(comments)) return 0;
   

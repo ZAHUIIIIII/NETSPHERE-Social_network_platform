@@ -97,7 +97,7 @@ const ProfileSaved = ({ userId }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {savedPosts.map((post) => {
-        // Use comment count from post data (V2 system)
+        // Use comment count from post data (unlimited nesting system)
         const commentCount = post.comments?.length || 0;
         
         return (
