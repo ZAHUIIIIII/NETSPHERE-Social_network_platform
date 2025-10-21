@@ -17,24 +17,27 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
   const [followingCount, setFollowingCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
 
-  // Update counts whenever user prop changes
+  // Update counts and following status whenever user prop changes
   useEffect(() => {
     if (user) {
       const newFollowersCount = Array.isArray(user.followers) ? user.followers.length : 0;
       const newFollowingCount = Array.isArray(user.following) ? user.following.length : 0;
+      const newIsFollowing = user.isFollowing || false;
       
-      // Only update if counts actually changed
-      if (followersCount !== newFollowersCount) {
-        setFollowersCount(newFollowersCount);
-      }
-      if (followingCount !== newFollowingCount) {
-        setFollowingCount(newFollowingCount);
-      }
-      if (isFollowing !== user.isFollowing) {
-        setIsFollowing(user.isFollowing || false);
-      }
+      console.log('ProfileHeader - Updating state:', {
+        username: user.username,
+        newIsFollowing,
+        newFollowersCount,
+        newFollowingCount,
+        userIsFollowing: user.isFollowing
+      });
+      
+      // Update all states
+      setFollowersCount(newFollowersCount);
+      setFollowingCount(newFollowingCount);
+      setIsFollowing(newIsFollowing);
     }
-  }, [user?.username]);
+  }, [user?.username, user?.isFollowing, user?.followers?.length, user?.following?.length]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -119,17 +122,36 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
 
   const handleFollowersModalClose = () => {
     setShowFollowersModal(false);
-    // Optionally refresh counts after modal close
-    if (user) {
-      setFollowersCount(user.followers?.length || 0);
-    }
   };
 
   const handleFollowingModalClose = () => {
     setShowFollowingModal(false);
-    // Optionally refresh counts after modal close
-    if (user) {
-      setFollowingCount(user.following?.length || 0);
+  };
+
+  const handleModalCountChange = ({ type, change }) => {
+    // IMPORTANT: Only update counts if viewing own profile
+    // When viewing another user's profile, their counts should NOT change
+    // when current user follows/unfollows people in their lists
+    if (!isOwnProfile) {
+      console.log('ProfileHeader - Ignoring count change (not own profile):', {
+        isOwnProfile,
+        type,
+        change,
+        message: 'Not updating another users counts'
+      });
+      return;
+    }
+    
+    console.log('ProfileHeader - Updating own profile count:', {
+      type,
+      change
+    });
+    
+    // Update the appropriate count based on the type
+    if (type === 'following') {
+      setFollowingCount(prev => Math.max(0, prev + change));
+    } else if (type === 'followers') {
+      setFollowersCount(prev => Math.max(0, prev + change));
     }
   };
 
@@ -309,6 +331,7 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
           type="followers"
           userName={user.username}
           onClose={handleFollowersModalClose}
+          onCountChange={handleModalCountChange}
         />
       )}
 
@@ -319,6 +342,7 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
           type="following"
           userName={user.username}
           onClose={handleFollowingModalClose}
+          onCountChange={handleModalCountChange}
         />
       )}
     </div>

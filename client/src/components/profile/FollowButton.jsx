@@ -8,6 +8,16 @@ const FollowButton = ({ userId, initialIsFollowing, onFollowChange }) => {
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Update local state when prop changes (important for when navigating between profiles)
+  React.useEffect(() => {
+    console.log('FollowButton - Prop changed:', {
+      userId,
+      initialIsFollowing,
+      currentIsFollowing: isFollowing
+    });
+    setIsFollowing(initialIsFollowing);
+  }, [initialIsFollowing, userId]);
+
   const handleFollowToggle = async (e) => {
     e.stopPropagation();
     setIsLoading(true);
@@ -59,8 +69,7 @@ const FollowButton = ({ userId, initialIsFollowing, onFollowChange }) => {
       ) : isFollowing ? (
         <>
           <UserMinus className="w-4 h-4" />
-          <span className="hidden sm:inline">Following</span>
-          <span className="sm:hidden">Following</span>
+          <span>Unfollow</span>
         </>
       ) : (
         <>

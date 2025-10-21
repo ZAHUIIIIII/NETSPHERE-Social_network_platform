@@ -1,6 +1,6 @@
 // client/src/components/common/SuggestedUsers.jsx
 import React, { useState, useEffect } from 'react';
-import { Users, Loader } from 'lucide-react';
+import { Users, Loader, Sparkles } from 'lucide-react';
 import axiosInstance from '../../lib/axios';
 import UserCard from './UserCard';
 import toast from 'react-hot-toast';
@@ -27,11 +27,18 @@ const SuggestedUsers = ({ limit = 5 }) => {
   };
 
   const handleFollowChange = (userId, data) => {
-    // Update the user in the list
+    // Update the user in the list with new follow status and follower count
     setUsers(prevUsers =>
       prevUsers.map(user =>
         user._id === userId
-          ? { ...user, isFollowing: data.isFollowing }
+          ? { 
+              ...user, 
+              isFollowing: data.isFollowing,
+              // Update follower count based on follow action
+              followersCount: data.isFollowing 
+                ? (user.followersCount || 0) + 1 
+                : Math.max(0, (user.followersCount || 0) - 1)
+            }
           : user
       )
     );
@@ -39,8 +46,8 @@ const SuggestedUsers = ({ limit = 5 }) => {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm p-6">
-        <div className="flex justify-center">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="flex justify-center items-center py-8">
           <Loader className="w-6 h-6 animate-spin text-blue-500" />
         </div>
       </div>
@@ -52,21 +59,41 @@ const SuggestedUsers = ({ limit = 5 }) => {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Users className="w-5 h-5 text-gray-700" />
-        <h2 className="text-lg font-bold text-gray-900">Suggested for you</h2>
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
+      {/* Header with gradient */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <div className="p-2 bg-white rounded-lg shadow-sm">
+            <Sparkles className="w-5 h-5 text-purple-500" />
+          </div>
+          <h2 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Suggested for you
+          </h2>
+        </div>
       </div>
 
-      <div className="space-y-2">
-        {users.map((user) => (
-          <UserCard
+      {/* Users list */}
+      <div className="divide-y divide-gray-100">
+        {users.map((user, index) => (
+          <div
             key={user._id}
-            user={user}
-            showFollowButton={true}
-            onFollowChange={(data) => handleFollowChange(user._id, data)}
-          />
+            className="animate-fadeIn"
+            style={{ animationDelay: `${index * 50}ms` }}
+          >
+            <UserCard
+              user={user}
+              showFollowButton={true}
+              onFollowChange={(data) => handleFollowChange(user._id, data)}
+            />
+          </div>
         ))}
+      </div>
+
+      {/* Footer */}
+      <div className="px-6 py-3 bg-gray-50 border-t border-gray-100">
+        <p className="text-xs text-gray-500 text-center">
+          Based on your activity and connections
+        </p>
       </div>
     </div>
   );

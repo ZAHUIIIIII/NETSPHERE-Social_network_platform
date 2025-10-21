@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import FollowButton from './FollowButton';
 import { useAuthStore } from '../../store/useAuthStore';
 
-const FollowersModal = ({ userId, type, onClose, userName }) => {
+const FollowersModal = ({ userId, type, onClose, userName, onCountChange }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -40,9 +40,34 @@ const FollowersModal = ({ userId, type, onClose, userName }) => {
     navigate(`/profile/${username}`);
   };
 
-  const handleFollowChange = (userId, data) => {
-    // Optionally refresh the list or update the count
-    fetchUsers();
+  const handleFollowChange = (targetUserId, data) => {
+    console.log('FollowersModal - Follow change:', {
+      modalType: type,
+      profileUserId: userId,
+      targetUserId,
+      newFollowStatus: data.isFollowing,
+      message: `Current user ${data.isFollowing ? 'followed' : 'unfollowed'} targetUser. ProfileUser's ${type} list is NOT modified.`
+    });
+    
+    // Update local users list immediately for better UX
+    // Only update isFollowing status - don't remove users from list
+    setUsers(prevUsers => 
+      prevUsers.map(u => 
+        u._id === targetUserId ? { ...u, isFollowing: data.isFollowing } : u
+      )
+    );
+
+    // Notify parent component about count change
+    // This updates the CURRENT USER's following count, not the profile user's
+    if (onCountChange) {
+      if (data.isFollowing) {
+        // Current user followed someone - increase current user's following count
+        onCountChange({ type: 'following', change: 1 });
+      } else {
+        // Current user unfollowed someone - decrease current user's following count
+        onCountChange({ type: 'following', change: -1 });
+      }
+    }
   };
 
   return (
@@ -127,7 +152,12 @@ const FollowersModal = ({ userId, type, onClose, userName }) => {
                       </div>
                     </div>
 
-                    {/* Follow Button - Don't show for own profile */}
+                    {/* Follow/Unfollow Button Logic:
+                        - Show Follow button if current user doesn't follow this person
+                        - Show Unfollow button if current user already follows this person
+                        - Don't show button for current user's own profile
+                        - This allows current user to manage THEIR OWN follows, not the profile user's
+                    */}
                     {authUser?._id !== user._id && (
                       <div className="ml-3">
                         <FollowButton
