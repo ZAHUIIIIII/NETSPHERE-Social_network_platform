@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MoreHorizontal, Edit2, Trash2, Send, X, Reply } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -41,7 +41,33 @@ const Comment = ({
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Refs for textareas
+  const editTextareaRef = useRef(null);
+  const replyTextareaRef = useRef(null);
+
   const isOwnComment = currentUser?._id === comment.author?._id;
+
+  // Set cursor to end when editing starts
+  useEffect(() => {
+    if (isEditing && editTextareaRef.current) {
+      const textarea = editTextareaRef.current;
+      // Focus the textarea
+      textarea.focus();
+      // Set cursor to the end
+      const length = textarea.value.length;
+      textarea.setSelectionRange(length, length);
+    }
+  }, [isEditing]);
+
+  // Set cursor to end when replying starts
+  useEffect(() => {
+    if (isReplying && replyTextareaRef.current) {
+      const textarea = replyTextareaRef.current;
+      textarea.focus();
+      const length = textarea.value.length;
+      textarea.setSelectionRange(length, length);
+    }
+  }, [isReplying]);
 
   // ==================== HANDLERS ====================
 
@@ -134,12 +160,12 @@ const Comment = ({
               {isEditing ? (
                 <div className="space-y-2">
                   <textarea
+                    ref={editTextareaRef}
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 resize-none text-sm"
                     rows="3"
                     disabled={isSubmitting}
-                    autoFocus
                   />
                   <div className="flex gap-2">
                     <button
@@ -318,13 +344,13 @@ const Comment = ({
               <div className="flex-1 space-y-2">
                 <div className="relative">
                   <textarea
+                    ref={replyTextareaRef}
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}
                     placeholder={`Reply to ${comment.author?.username || 'this comment'}...`}
                     className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-[#f0f2f5] resize-none text-sm"
                     rows="2"
                     disabled={isSubmitting}
-                    autoFocus
                   />
                 </div>
                 <div className="flex gap-2">
