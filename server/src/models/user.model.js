@@ -9,8 +9,29 @@ const userSchema = new mongoose.Schema({
   username: {
     type: String,
     required: true,
+    minlength: 2,
+    maxlength: 20,
+    validate: {
+      validator: function(v) {
+          if (typeof v !== 'string') return false;
+          const s = String(v).normalize('NFC').trim();
+          if (s.length === 0) return false;
+          // periods are not allowed
+          if (s.includes('.')) return false;
+          // allowed characters: letters (incl. accents), numbers and spaces
+          if (!/^[\p{L}\p{N} ]+$/u.test(s)) return false;
+          return true;
+        },
+      message: props => `${props.value} is not a valid username. Use 2-20 characters: letters, numbers, and spaces. Periods are not allowed.`
+    }
+  },
+
+  // canonical username used for uniqueness checks: lowercased and with periods removed
+  usernameKey: {
+    type: String,
+    required: true,
     unique: true,
-    minlength: 3,
+    index: true,
   },
   birthday: {
     type: Date,
@@ -150,6 +171,50 @@ userSchema.pre('findOneAndDelete', async function(next) {
     if (user) {
       await user.remove();
     }
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Normalize username into usernameKey (lowercase, remove periods) and enforce forbidden words/suffixes
+userSchema.pre('validate', async function(next) {
+  try {
+    if (this.username) {
+      // normalize and trim for storage/display
+      const normalized = String(this.username).normalize('NFC').trim();
+      this.username = normalized;
+
+      // create canonical key: lowercase, remove periods
+      const key = normalized.toLowerCase().replace(/\./g, '');
+
+      // expanded forbidden words and domain-like suffixes
+      const forbidden = [
+        'admin','support','root','system','postmaster','webmaster',
+        'contact','security','abuse','mail','smtp','ftp','api',
+        'help','info','billing','test'
+      ];
+      const forbiddenSuffixes = ['.com', '.net', '.org', '.io', '.app', '.dev', '.me'];
+
+      // check forbidden exact words
+      if (forbidden.includes(key)) {
+        const err = new Error('Username contains a forbidden word');
+        err.name = 'ValidationError';
+        return next(err);
+      }
+
+      // also reject usernames that end with domain suffix when periods removed
+      for (const s of forbiddenSuffixes) {
+        if (key.endsWith(s.replace('.', ''))) {
+          const err = new Error('Username cannot look like a domain');
+          err.name = 'ValidationError';
+          return next(err);
+        }
+      }
+
+      this.usernameKey = key;
+    }
+
     next();
   } catch (error) {
     next(error);

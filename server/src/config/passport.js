@@ -28,22 +28,45 @@ function ensureGoogleStrategy() {
                     try {
                         const email = profile.emails[0].value;
                         const googleAvatar = profile.photos && profile.photos[0] && profile.photos[0].value;
-                        
-                        // Check if user already exists
+                        // normalize display name and create canonical key
+                        const displayName = profile.displayName ? String(profile.displayName).normalize('NFC').trim() : '';
+                        const normalized = displayName || `user_${profile.id}`;
+                        const usernameKey = normalized.toLowerCase().replace(/\./g, '');
+
+                        // Check if user already exists by email
                         let user = await User.findOne({ email });
 
                         if (!user) {
-                            // Create new user with Google profile data
-                            user = await User.create({
-                                username: profile.displayName || `user_${profile.id}`,
-                                email,
-                                avatar: googleAvatar || '',
-                                birthday: new Date('2000-01-01'), // Default birthday
-                                gender: 'other', // Default gender for Google users
-                                password: 'google-oauth-dummy', // Dummy password for Google users
-                                googleId: profile.id,
-                                isGoogleUser: true
-                            });
+                            // ensure no collision on usernameKey (should be rare)
+                            const existingByKey = await User.findOne({ usernameKey });
+                            if (existingByKey) {
+                                // fallback to a safe unique username
+                                const fallback = `user_${profile.id}`;
+                                user = await User.create({
+                                    username: fallback,
+                                    usernameKey: fallback.toLowerCase().replace(/\./g, ''),
+                                    email,
+                                    avatar: googleAvatar || '',
+                                    birthday: new Date('2000-01-01'),
+                                    gender: 'other',
+                                    password: 'google-oauth-dummy',
+                                    googleId: profile.id,
+                                    isGoogleUser: true
+                                });
+                            } else {
+                                // Create new user with Google profile data
+                                user = await User.create({
+                                    username: normalized,
+                                    usernameKey,
+                                    email,
+                                    avatar: googleAvatar || '',
+                                    birthday: new Date('2000-01-01'), // Default birthday
+                                    gender: 'other', // Default gender for Google users
+                                    password: 'google-oauth-dummy', // Dummy password for Google users
+                                    googleId: profile.id,
+                                    isGoogleUser: true
+                                });
+                            }
 
                         } else {
                             // Update existing user with Google data if not already set

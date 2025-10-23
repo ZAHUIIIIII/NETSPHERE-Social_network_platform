@@ -9,6 +9,27 @@ const tempRegistrationSchema = new mongoose.Schema({
   username: {
     type: String,
     required: true,
+    minlength: 2,
+    maxlength: 20,
+    validate: {
+      validator: function(v) {
+        if (typeof v !== 'string') return false;
+        const s = v.normalize('NFC');
+        // periods are not allowed
+        if (s.includes('.')) return false;
+        // allowed characters: letters (incl. accents), numbers and spaces
+        if (!/^[\p{L}\p{N} ]+$/u.test(s)) return false;
+        return true;
+      },
+      message: props => `${props.value} is not a valid username. Use 2-20 characters: letters, numbers, and spaces. Periods are not allowed.`
+    }
+  },
+  usernameKey: {
+    type: String,
+    required: true,
+    unique: true,
+    sparse: true,
+    index: true,
   },
   birthday: {
     type: Date,

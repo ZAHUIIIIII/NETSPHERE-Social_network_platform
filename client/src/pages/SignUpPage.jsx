@@ -47,12 +47,13 @@ export default function SignUpPage() {
     let errors = {};
     
     if (step === 0) {
-      if (!form.username.trim()) {
+      const username = (form.username || '').normalize('NFC').trim();
+      if (!username.trim()) {
         errors.username = 'Username is required.';
-      } else if (form.username.length < 3) {
-        errors.username = 'Username must be at least 3 characters.';
-      } else if (/\s/.test(form.username)) {
-        errors.username = 'Username cannot contain spaces.';
+      } else if (username.length < 2 || username.length > 20) {
+        errors.username = 'Username must be 2 to 20 characters.';
+      } else if (!/^[\p{L}\p{N} ]+$/u.test(username)) {
+        errors.username = 'Only letters, numbers, and spaces are allowed.';
       }
     }
     

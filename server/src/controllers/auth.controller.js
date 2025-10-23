@@ -10,14 +10,18 @@ import passport, { ensureGoogleStrategy } from '../config/passport.js';
 export const registerInitiate = async (req, res) => {
     const { username, birthday, gender, email } = req.body;
     try {
-        // Check if user already exists
+        // Create canonical usernameKey (lowercase, remove periods, trim)
+        const usernameKey = username ? username.toLowerCase().replace(/\./g, '').trim() : '';
+
+        // Check if user or temp registration already exists by email or canonical username
         const existingUser = await User.findOne({ 
-            $or: [{ email }, { username }] 
+            $or: [{ email }, { usernameKey }] 
         });
-        
-        if (existingUser) {
+        const existingTemp = await TempRegistration.findOne({ usernameKey });
+
+        if (existingUser || existingTemp) {
             return res.status(400).json({ 
-                message: existingUser.email === email ? "Email already in use." : "Username already taken." 
+                message: existingUser?.email === email ? "Email already in use." : "Username already taken." 
             });
         }
 
@@ -31,6 +35,7 @@ export const registerInitiate = async (req, res) => {
         if (tempReg) {
             // Update existing temp registration
             tempReg.username = username;
+            tempReg.usernameKey = usernameKey;
             tempReg.birthday = birthday;
             tempReg.gender = gender;
             tempReg.verificationCode = verificationCode;
@@ -40,6 +45,7 @@ export const registerInitiate = async (req, res) => {
             // Create new temp registration
             tempReg = new TempRegistration({
                 username,
+                usernameKey,
                 birthday,
                 gender,
                 email,
