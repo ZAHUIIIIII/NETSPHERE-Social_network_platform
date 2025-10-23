@@ -1,6 +1,7 @@
 // server/src/controllers/search.controller.js
 import Post from '../models/post.model.js';
 import User from '../models/user.model.js';
+import Comment from '../models/comment.model.js';
 import mongoose from 'mongoose';
 
 export const search = async (req, res) => {
@@ -102,12 +103,23 @@ export const search = async (req, res) => {
         {
           $addFields: {
             likesCount: { $size: { $ifNull: ['$likes', []] } },
-            commentsCount: { $size: { $ifNull: ['$comments', []] } }
+            // Calculate total reactions count
+            totalReactions: {
+              $add: [
+                { $size: { $ifNull: ['$reactions.like', []] } },
+                { $size: { $ifNull: ['$reactions.love', []] } },
+                { $size: { $ifNull: ['$reactions.haha', []] } },
+                { $size: { $ifNull: ['$reactions.wow', []] } },
+                { $size: { $ifNull: ['$reactions.sad', []] } },
+                { $size: { $ifNull: ['$reactions.angry', []] } }
+              ]
+            }
           }
         },
         { $sort: sortOptions },
         { $skip: Number(skip) },
         { $limit: Number(limit) },
+        // Lookup author info
         {
           $lookup: {
             from: 'users',
@@ -117,16 +129,50 @@ export const search = async (req, res) => {
           }
         },
         { $unwind: '$author' },
+        // Lookup comment count from Comment collection
+        {
+          $lookup: {
+            from: 'comments',
+            let: { postId: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$postId', '$$postId'] },
+                      { $eq: ['$isDeleted', false] }
+                    ]
+                  }
+                }
+              },
+              { $count: 'total' }
+            ],
+            as: 'commentData'
+          }
+        },
+        {
+          $addFields: {
+            commentCount: {
+              $ifNull: [
+                { $arrayElemAt: ['$commentData.total', 0] },
+                0
+              ]
+            }
+          }
+        },
         {
           $project: {
             content: 1,
             images: 1,
             likes: 1,
             comments: 1,
+            reactions: 1, // Include reactions object
             privacy: 1,
             createdAt: 1,
             likesCount: 1,
-            commentsCount: 1,
+            commentCount: 1, // Actual count from Comment collection
+            commentsCount: '$commentCount', // Alias for backwards compatibility
+            totalReactions: 1,
             'author._id': 1,
             'author.username': 1,
             'author.avatar': 1

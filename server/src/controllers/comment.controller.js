@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import Comment from '../models/comment.model.js';
+import Post from '../models/post.model.js';
 import User from '../models/user.model.js';
 import { io } from '../lib/socket.js';
 import { createNotification } from './notification.controller.js';
@@ -180,7 +181,19 @@ export const createComment = async (req, res) => {
     try {
       if (!immediateParent) {
         // Top-level comment: notify post author
-        // TODO: Get post author and notify if not self
+        const post = await Post.findById(postId).select('author').lean();
+        if (post && post.author && post.author.toString() !== authorId.toString()) {
+          await createNotification({
+            recipient: post.author,
+            sender: authorId,
+            type: 'comment',
+            post: postId,
+            comment: doc._id,
+            metadata: {
+              commentContent: content.substring(0, 100)
+            }
+          });
+        }
       } else if (replyToSnapshot?.userId) {
         // Reply: notify parent comment author
         if (replyToSnapshot.userId.toString() !== authorId.toString()) {
@@ -193,13 +206,6 @@ export const createComment = async (req, res) => {
             metadata: {
               commentContent: content.substring(0, 100)
             }
-          });
-          
-          io.to(`user:${replyToSnapshot.userId}`).emit('notification:new', {
-            type: 'reply',
-            postId,
-            commentId: doc._id,
-            actorId: authorId
           });
         }
       }

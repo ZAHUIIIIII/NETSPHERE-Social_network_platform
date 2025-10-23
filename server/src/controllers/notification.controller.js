@@ -1,5 +1,6 @@
 // server/src/controllers/notification.controller.js
 import Notification from '../models/notification.model.js';
+import User from '../models/user.model.js';
 import { getReceiverSocketId, io } from '../lib/socket.js';
 
 // Create a notification and emit it via socket
@@ -8,6 +9,15 @@ export const createNotification = async (data) => {
     // Don't create notification if sender and recipient are the same
     if (data.sender.toString() === data.recipient.toString()) {
       return null;
+    }
+
+    // Check if recipient has muted this post
+    if (data.post) {
+      const recipient = await User.findById(data.recipient).select('mutedPosts');
+      if (recipient && recipient.mutedPosts.includes(data.post.toString())) {
+        console.log('Notification skipped - post is muted by recipient');
+        return null;
+      }
     }
 
     // Create notification using model's static method
@@ -91,6 +101,34 @@ export const markAsRead = async (req, res) => {
     });
   } catch (error) {
     console.error('Error marking notification as read:', error);
+    res.status(500).json({ message: 'Error updating notification' });
+  }
+};
+
+// Mark notification as unread
+export const markAsUnread = async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+    const userId = req.user._id;
+
+    const notification = await Notification.findOneAndUpdate(
+      { _id: notificationId, recipient: userId },
+      { read: false },
+      { new: true }
+    );
+
+    if (!notification) {
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+
+    const unreadCount = await Notification.getUnreadCount(userId);
+
+    res.json({
+      notification,
+      unreadCount
+    });
+  } catch (error) {
+    console.error('Error marking notification as unread:', error);
     res.status(500).json({ message: 'Error updating notification' });
   }
 };

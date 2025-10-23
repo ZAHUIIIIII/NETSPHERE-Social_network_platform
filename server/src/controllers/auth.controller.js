@@ -268,7 +268,7 @@ export const checkAuth = async (req, res) => {
             return res.status(401).json({ message: "Not authorized" });
         }
 
-        // Send only necessary user data
+        // Send only necessary user data including following/followers for follow button state
         return res.json({
             _id: req.user._id,
             username: req.user.username,
@@ -276,6 +276,8 @@ export const checkAuth = async (req, res) => {
             birthday: req.user.birthday,
             gender: req.user.gender,
             avatar: req.user.avatar,
+            following: req.user.following || [],
+            followers: req.user.followers || [],
             createdAt: req.user.createdAt
         });
     } catch (error) {

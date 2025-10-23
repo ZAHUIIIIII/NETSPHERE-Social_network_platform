@@ -1,5 +1,6 @@
 import Post from '../models/post.model.js';
 import User from '../models/user.model.js';
+import Comment from '../models/comment.model.js';
 import cloudinary from '../lib/cloudinary.js';
 import { createNotification } from './notification.controller.js';
 
@@ -148,7 +149,7 @@ export const uploadImages = async (req, res) => {
 export const updatePost = async (req, res) => {
   try {
     const { postId } = req.params;
-    const { content, privacy } = req.body;
+    const { content, privacy, images, location, feeling } = req.body;
 
     const post = await Post.findById(postId);
 
@@ -161,8 +162,12 @@ export const updatePost = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to update this post' });
     }
 
+    // Update all fields
     post.content = content;
-    if (privacy) post.privacy = privacy;
+    if (privacy !== undefined) post.privacy = privacy;
+    if (images !== undefined) post.images = images;
+    if (location !== undefined) post.location = location;
+    if (feeling !== undefined) post.feeling = feeling;
 
     await post.save();
     await post.populate('author', 'username name avatar');
@@ -382,13 +387,33 @@ export const getSavedPosts = async (req, res) => {
       options: {
         sort: { createdAt: -1 }
       }
-    });
+    }).lean();
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    res.json({ posts: user.savedPosts || [] });
+    // For each saved post, fetch only root comments with totalDescendants
+    const postsWithComments = await Promise.all(
+      (user.savedPosts || []).map(async (post) => {
+        const rootComments = await Comment.find({
+          postId: post._id,
+          logicalDepth: 0,
+          isDeleted: false
+        })
+        .select('_id totalDescendants')
+        .lean();
+
+        return {
+          ...post,
+          comments: rootComments,
+          // Include reactions if available
+          reactions: post.reactions || {}
+        };
+      })
+    );
+
+    res.json({ posts: postsWithComments });
   } catch (error) {
     console.error('Error in getSavedPosts:', error);
     res.status(500).json({ message: 'Error fetching saved posts' });
@@ -534,5 +559,72 @@ export const reactToPost = async (req, res) => {
   } catch (error) {
     console.error('Error in reactToPost:', error);
     res.status(500).json({ message: 'Error processing reaction' });
+  }
+};
+
+// Mute post notifications
+export const mutePostNotifications = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user._id;
+
+    // Check if post exists
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Add post to user's mutedPosts array if not already there
+    const user = await User.findById(userId);
+    if (!user.mutedPosts.includes(postId)) {
+      user.mutedPosts.push(postId);
+      await user.save();
+    }
+
+    res.json({ 
+      message: 'Post notifications muted',
+      isMuted: true
+    });
+  } catch (error) {
+    console.error('Error muting post notifications:', error);
+    res.status(500).json({ message: 'Error muting notifications' });
+  }
+};
+
+// Unmute post notifications
+export const unmutePostNotifications = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user._id;
+
+    // Remove post from user's mutedPosts array
+    await User.findByIdAndUpdate(
+      userId,
+      { $pull: { mutedPosts: postId } }
+    );
+
+    res.json({ 
+      message: 'Post notifications unmuted',
+      isMuted: false
+    });
+  } catch (error) {
+    console.error('Error unmuting post notifications:', error);
+    res.status(500).json({ message: 'Error unmuting notifications' });
+  }
+};
+
+// Check if post notifications are muted
+export const checkPostMutedStatus = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user._id;
+
+    const user = await User.findById(userId).select('mutedPosts');
+    const isMuted = user.mutedPosts.includes(postId);
+
+    res.json({ isMuted });
+  } catch (error) {
+    console.error('Error checking muted status:', error);
+    res.status(500).json({ message: 'Error checking status' });
   }
 };

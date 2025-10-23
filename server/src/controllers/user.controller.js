@@ -1,5 +1,6 @@
 import User from '../models/user.model.js';
 import Post from '../models/post.model.js';
+import Comment from '../models/comment.model.js';
 import cloudinary from '../lib/cloudinary.js';
 import { createNotification } from './notification.controller.js';
 
@@ -81,15 +82,29 @@ export const getUserPosts = async (req, res) => {
       .skip(Number(skip))
       .limit(Number(limit))
       .populate('author', 'username name avatar')
-      .populate({
-        path: 'comments',
-        populate: {
-          path: 'author',
-          select: 'username name avatar'
-        }
-      });
+      .lean();
 
-    res.json({ posts });
+    // For each post, fetch only root comments with totalDescendants
+    const postsWithComments = await Promise.all(
+      posts.map(async (post) => {
+        const rootComments = await Comment.find({
+          postId: post._id,
+          logicalDepth: 0,
+          isDeleted: false
+        })
+        .select('_id totalDescendants')
+        .lean();
+
+        return {
+          ...post,
+          comments: rootComments,
+          // Include reactions if available
+          reactions: post.reactions || {}
+        };
+      })
+    );
+
+    res.json({ posts: postsWithComments });
   } catch (error) {
     console.error('Error in getUserPosts:', error);
     res.status(500).json({ message: 'Error fetching user posts' });
@@ -332,10 +347,23 @@ export const getSavedPosts = async (req, res) => {
 
     const user = await User.findById(userId).populate({
       path: 'savedPosts',
-      populate: {
-        path: 'author',
-        select: 'username avatar'
-      }
+      populate: [
+        {
+          path: 'author',
+          select: 'username avatar'
+        },
+        {
+          path: 'likes',
+          select: '_id'
+        },
+        {
+          path: 'comments',
+          populate: {
+            path: 'author',
+            select: 'username name avatar'
+          }
+        }
+      ]
     });
 
     res.json({ posts: user.savedPosts || [] });

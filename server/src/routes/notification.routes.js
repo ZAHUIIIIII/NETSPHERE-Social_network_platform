@@ -4,6 +4,7 @@ import { protectRoute } from '../middleware/auth.middleware.js';
 import {
   getNotifications,
   markAsRead,
+  markAsUnread,
   markAllAsRead,
   deleteNotification,
   getUnreadCount
@@ -22,6 +23,9 @@ router.get('/unread-count', getUnreadCount);
 
 // Mark notification as read
 router.patch('/:notificationId/read', markAsRead);
+
+// Mark notification as unread
+router.patch('/:notificationId/unread', markAsUnread);
 
 // Mark all as read
 router.patch('/mark-all-read', markAllAsRead);

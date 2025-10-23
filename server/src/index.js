@@ -65,7 +65,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
-app.use('/api/posts', commentRoutes); // Unlimited nesting comment system - mount FIRST to take priority
+app.use('/api/posts', commentRoutes); 
 app.use('/api/posts', postRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/search', searchRoutes);
