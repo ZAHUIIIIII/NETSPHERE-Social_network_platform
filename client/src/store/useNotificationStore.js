@@ -48,15 +48,33 @@ export const useNotificationStore = create((set, get) => ({
   // Mark notification as read
   markAsRead: async (notificationId) => {
     try {
+      console.log('📝 Store: Marking notification as read:', notificationId);
       const res = await axiosInstance.patch(`/notifications/${notificationId}/read`);
+      console.log('📝 Store: API response received, updating state');
       set((state) => ({
         notifications: state.notifications.map(n =>
           n._id === notificationId ? { ...n, read: true } : n
         ),
         unreadCount: res.data.unreadCount
       }));
+      console.log('✅ Store: State updated, notification marked as read');
     } catch (error) {
-      console.error('Error marking notification as read:', error);
+      console.error('❌ Store: Error marking notification as read:', error);
+    }
+  },
+
+  // Mark notification as unread
+  markAsUnread: async (notificationId) => {
+    try {
+      const res = await axiosInstance.patch(`/notifications/${notificationId}/unread`);
+      set((state) => ({
+        notifications: state.notifications.map(n =>
+          n._id === notificationId ? { ...n, read: false } : n
+        ),
+        unreadCount: res.data.unreadCount
+      }));
+    } catch (error) {
+      console.error('Error marking notification as unread:', error);
     }
   },
 

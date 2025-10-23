@@ -26,6 +26,17 @@ export const createPost = async (postData) => {
   }
 };
 
+export const updatePost = async (postId, postData) => {
+  try {
+    const response = await axiosInstance.put(`/posts/${postId}`, postData);
+    // Backend returns { post }, extract the post
+    return response.data.post || response.data;
+  } catch (error) {
+    console.error('Error updating post:', error);
+    throw error;
+  }
+};
+
 export const uploadPostImages = async (files, onProgress) => {
   try {
     const formData = new FormData();

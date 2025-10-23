@@ -160,42 +160,44 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col sm:flex-row gap-6">
           {/* Avatar */}
-          <div className="relative flex-shrink-0">
-            <div className="w-36 h-36 rounded-full overflow-hidden bg-gray-100 ring-4 ring-gray-200">
-              {(selectedImg || user?.avatar) ? (
-                <img
-                  src={selectedImg || user.avatar}
-                  alt={user.username}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
-                  <span className="text-white font-bold text-5xl">
-                    {user?.username?.charAt(0).toUpperCase()}
-                  </span>
+          <div className="flex-shrink-0">
+            <div className="relative w-36 h-36 rounded-full overflow-visible bg-gray-100 ring-4 ring-gray-200">
+              <div className="w-full h-full rounded-full overflow-hidden">
+                {(selectedImg || user?.avatar) ? (
+                  <img
+                    src={selectedImg || user.avatar}
+                    alt={user.username}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                    <span className="text-white font-bold text-5xl">
+                      {user?.username?.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {isOwnProfile && (
+                <div className="absolute bottom-0 right-0">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    id="avatar-upload"
+                    onChange={handleImageUpload}
+                    disabled={isUpdatingProfile}
+                  />
+                  <label htmlFor="avatar-upload" className="cursor-pointer">
+                    <div className={`w-10 h-10 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center shadow-lg transition-all border-2 border-gray-200 ${
+                      isUpdatingProfile ? 'animate-pulse' : ''
+                    }`}>
+                      <Camera className="h-5 w-5 text-gray-700" />
+                    </div>
+                  </label>
                 </div>
               )}
             </div>
-
-            {isOwnProfile && (
-              <div className="absolute bottom-1 right-1">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  id="avatar-upload"
-                  onChange={handleImageUpload}
-                  disabled={isUpdatingProfile}
-                />
-                <label htmlFor="avatar-upload" className="cursor-pointer">
-                  <div className={`w-10 h-10 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center shadow-lg transition-all border-2 border-gray-200 ${
-                    isUpdatingProfile ? 'animate-pulse' : ''
-                  }`}>
-                    <Camera className="h-5 w-5 text-gray-700" />
-                  </div>
-                </label>
-              </div>
-            )}
           </div>
 
           {/* User Info */}

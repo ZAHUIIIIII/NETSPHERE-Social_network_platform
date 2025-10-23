@@ -2,6 +2,7 @@
 import React from 'react';
 import { Heart, MessageCircle, Grid as GridIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { countTotalComments } from '../../services/commentApi';
 
 const ProfilePosts = ({ posts, isOwnProfile, onPostsUpdate }) => {
   const navigate = useNavigate();
@@ -33,8 +34,22 @@ const ProfilePosts = ({ posts, isOwnProfile, onPostsUpdate }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {posts.map((post) => {
-        // Use comment count from post data (unlimited nesting system)
-        const commentCount = post.comments?.length || 0;
+        // Calculate total reactions count (all reaction types)
+        let totalReactions = 0;
+        if (post.reactions) {
+          totalReactions = Object.values(post.reactions).reduce((sum, reactionArray) => {
+            return sum + (Array.isArray(reactionArray) ? reactionArray.length : 0);
+          }, 0);
+        } else {
+          // Fallback to legacy likes
+          totalReactions = post.likes?.length || 0;
+        }
+
+        // Calculate total comment count (root comments + all descendants)
+        let commentCount = 0;
+        if (post.comments && Array.isArray(post.comments)) {
+          commentCount = countTotalComments(post.comments);
+        }
         
         return (
           <div
@@ -61,7 +76,7 @@ const ProfilePosts = ({ posts, isOwnProfile, onPostsUpdate }) => {
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-4 text-white">
                 <div className="flex items-center space-x-1">
                   <Heart className="h-5 w-5" fill="currentColor" />
-                  <span className="font-semibold">{post.likes?.length || 0}</span>
+                  <span className="font-semibold">{totalReactions}</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <MessageCircle className="h-5 w-5" fill="currentColor" />

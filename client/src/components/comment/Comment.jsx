@@ -26,13 +26,14 @@ const REACTION_COLORS = {
 const Comment = ({ 
   comment, 
   currentUser, 
+  isReplying = false,
+  onToggleReply,
   onReply, 
   onEdit,
   onDelete,
   onReact,
   level = 0 // 0 = root, 1 = reply (visual only, can be nested infinitely in data)
 }) => {
-  const [isReplying, setIsReplying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
   const [replyContent, setReplyContent] = useState('');
@@ -59,13 +60,16 @@ const Comment = ({
     }
   }, [isEditing]);
 
-  // Set cursor to end when replying starts
+  // Set cursor to end when replying starts and clear content when closing
   useEffect(() => {
     if (isReplying && replyTextareaRef.current) {
       const textarea = replyTextareaRef.current;
       textarea.focus();
       const length = textarea.value.length;
       textarea.setSelectionRange(length, length);
+    } else if (!isReplying) {
+      // Clear reply content when reply form is closed
+      setReplyContent('');
     }
   }, [isReplying]);
 
@@ -101,7 +105,7 @@ const Comment = ({
     try {
       await onReply(replyContent.trim());
       setReplyContent('');
-      setIsReplying(false);
+      onToggleReply?.(); // Close the reply form
       toast.success('Reply posted');
     } catch (error) {
       toast.error('Failed to post reply');
@@ -163,6 +167,14 @@ const Comment = ({
                     ref={editTextareaRef}
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (editContent.trim() && !isSubmitting) {
+                          handleEdit();
+                        }
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 resize-none text-sm"
                     rows="3"
                     disabled={isSubmitting}
@@ -189,13 +201,38 @@ const Comment = ({
                 </div>
               ) : (
                 <div>
-                  {/* Username */}
-                  <Link 
-                    to={`/profile/${comment.author?.username}`}
-                    className="font-semibold text-sm hover:underline text-gray-900 block mb-0.5"
-                  >
-                    {comment.author?.username || 'Unknown'}
-                  </Link>
+                  {/* Username and Three Dots Menu Row */}
+                  <div className="flex items-center justify-between mb-0.5">
+                    <Link 
+                      to={`/profile/${comment.author?.username}`}
+                      className="font-semibold text-sm hover:underline text-gray-900"
+                    >
+                      {comment.author?.username || 'Unknown'}
+                    </Link>
+                    
+                    {/* Three dots menu - aligned with username */}
+                    {isOwnComment && !comment.isDeleted && (
+                      <div className="relative group">
+                        <button className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-200/50">
+                          <MoreHorizontal className="w-3.5 h-3.5" />
+                        </button>
+                        <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                          <button
+                            onClick={() => setIsEditing(true)}
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 text-gray-700"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => setShowDeleteDialog(true)}
+                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   
                   {/* Comment text */}
                   <p className="text-sm whitespace-pre-wrap break-words text-gray-900">
@@ -221,31 +258,6 @@ const Comment = ({
                       </>
                     )}
                   </p>
-                </div>
-              )}
-
-              {/* Three dots menu - bottom right corner */}
-              {isOwnComment && !isEditing && !comment.isDeleted && (
-                <div className="absolute top-2 right-2">
-                  <div className="relative group">
-                    <button className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-200/50">
-                      <MoreHorizontal className="w-3.5 h-3.5" />
-                    </button>
-                    <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                      <button
-                        onClick={() => setIsEditing(true)}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 text-gray-700"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => setShowDeleteDialog(true)}
-                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
                 </div>
               )}
             </div>
@@ -320,7 +332,7 @@ const Comment = ({
 
               {/* Reply Button */}
               <button
-                onClick={() => setIsReplying(!isReplying)}
+                onClick={onToggleReply}
                 className="font-semibold text-gray-600 hover:underline"
               >
                 Reply
@@ -347,6 +359,14 @@ const Comment = ({
                     ref={replyTextareaRef}
                     value={replyContent}
                     onChange={(e) => setReplyContent(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (replyContent.trim() && !isSubmitting) {
+                          handleReply();
+                        }
+                      }
+                    }}
                     placeholder={`Reply to ${comment.author?.username || 'this comment'}...`}
                     className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-[#f0f2f5] resize-none text-sm"
                     rows="2"
@@ -363,7 +383,7 @@ const Comment = ({
                   </button>
                   <button
                     onClick={() => {
-                      setIsReplying(false);
+                      onToggleReply?.();
                       setReplyContent('');
                     }}
                     disabled={isSubmitting}

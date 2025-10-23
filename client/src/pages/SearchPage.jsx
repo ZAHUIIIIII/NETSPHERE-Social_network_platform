@@ -52,6 +52,18 @@ const SearchPage = () => {
       setHasSearched(false); // Reset to trigger search
       handleSearch(urlQuery);
     }
+
+    // Listen for post updates (reactions, comments)
+    const handlePostUpdate = (event) => {
+      const { postId, updates } = event.detail;
+      updatePostInResults(postId, updates);
+    };
+
+    window.addEventListener('postUpdated', handlePostUpdate);
+
+    return () => {
+      window.removeEventListener('postUpdated', handlePostUpdate);
+    };
   }, []); // Only run once on mount
 
   // Handle URL query changes
@@ -98,6 +110,30 @@ const SearchPage = () => {
       // Clear corrupted data
       localStorage.removeItem('recentSearches');
     }
+  };
+
+  const updatePostInResults = (postId, updates) => {
+    setSearchResults(prev => {
+      const updatedPosts = prev.posts.map(post => {
+        if (post._id === postId) {
+          return {
+            ...post,
+            ...updates,
+            // Update reactions if provided
+            reactions: updates.reactions || post.reactions,
+            // Update comment count if provided
+            commentCount: updates.commentCount !== undefined ? updates.commentCount : post.commentCount,
+            comments: updates.comments || post.comments
+          };
+        }
+        return post;
+      });
+
+      return {
+        ...prev,
+        posts: updatedPosts
+      };
+    });
   };
 
   const fetchSuggestions = useCallback(async (query) => {
@@ -162,8 +198,8 @@ const SearchPage = () => {
       // Save to recent searches
       saveRecentSearch(trimmedQuery);
 
-      // Determine search type based on query and active tab
-      let searchType = activeTab === 'all' ? undefined : activeTab;
+      // Determine search type based on query ONLY (not activeTab)
+      let searchType = undefined; // Always search 'all' by default
       let processedQuery = trimmedQuery;
       
       // If query starts with #, search posts and remove # for API
@@ -177,6 +213,9 @@ const SearchPage = () => {
         searchType = 'users';
         processedQuery = trimmedQuery.substring(1); // Remove @ symbol
         setActiveTab('users'); // Switch to users tab
+      } else {
+        // For regular searches, always fetch all results and set tab to 'all'
+        setActiveTab('all');
       }
 
       // Map filter sortBy to API parameter
@@ -261,10 +300,8 @@ const SearchPage = () => {
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
-    // Re-search with new tab filter if we have results
-    if (hasSearched && searchQuery.trim()) {
-      handleSearch(searchQuery);
-    }
+    // Don't re-search, just switch tab to filter existing results
+    // The results are already fetched with type='all' initially
   };
 
   const formatNumber = (num) => {
@@ -308,8 +345,28 @@ const SearchPage = () => {
   );
 
   const PostResult = ({ post }) => {
-    // Use comment count from post data (will be accurate from unlimited nesting system)
-    const commentCount = post.comments?.length || 0;
+    // Initialize reactions with proper structure
+    const initialReactions = post.reactions || { like: [], love: [], haha: [], wow: [], sad: [], angry: [] };
+    const initialCommentCount = post.commentCount || post.commentsCount || post.comments?.length || 0;
+    
+    // Use state for real-time updates
+    const [localReactions, setLocalReactions] = useState(initialReactions);
+    const [localCommentCount, setLocalCommentCount] = useState(initialCommentCount);
+    
+    // Update local state when post prop changes
+    useEffect(() => {
+      if (post.reactions) {
+        setLocalReactions(post.reactions);
+      }
+      
+      const newCommentCount = post.commentCount || post.commentsCount || post.comments?.length || 0;
+      setLocalCommentCount(newCommentCount);
+    }, [post, post.reactions, post.commentCount, post.commentsCount, post.comments]);
+
+    // Calculate total reactions from local state
+    const totalReactions = Object.values(localReactions).reduce((sum, reactionArray) => {
+      return sum + (Array.isArray(reactionArray) ? reactionArray.length : (reactionArray || 0));
+    }, 0);
     
     return (
       <div 
@@ -351,11 +408,11 @@ const SearchPage = () => {
       <div className="px-4 py-3 flex items-center gap-6 text-sm text-gray-600 border-t border-gray-100">
         <span className="flex items-center gap-1">
           <Heart size={16} />
-          {formatNumber(post.likes?.length || 0)}
+          {formatNumber(totalReactions)}
         </span>
         <span className="flex items-center gap-1">
           <MessageCircle size={16} />
-          {formatNumber(commentCount)}
+          {formatNumber(localCommentCount)}
         </span>
       </div>
     </div>

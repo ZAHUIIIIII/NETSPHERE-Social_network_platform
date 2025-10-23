@@ -1,14 +1,23 @@
 // client/src/components/Navbar.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { useNotificationStore } from '../store/useNotificationStore';
+import CreatePostModal from './CreatePostModal';
 
 const Navbar = ({ isCollapsed, setIsCollapsed }) => {
   const { authUser, logout } = useAuthStore();
-  const { unreadCount } = useNotificationStore();
+  const { unreadCount, fetchNotifications } = useNotificationStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const [showCreatePost, setShowCreatePost] = useState(false);
+
+  // Fetch initial unread count when component mounts
+  useEffect(() => {
+    if (authUser) {
+      fetchNotifications(false);
+    }
+  }, [authUser, fetchNotifications]);
 
   const handleLogout = async () => {
     try {
@@ -62,7 +71,10 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
 
         {/* Create Post Button */}
         <div className="p-3">
-          <button className={`w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg transition-colors flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
+          <button 
+            onClick={() => setShowCreatePost(true)}
+            className={`w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg transition-colors flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}
+          >
             <span className="text-lg">+</span>
             {!isCollapsed && <span className="font-medium">Create Post</span>}
           </button>
@@ -237,6 +249,17 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
           </button>
         </div>
       </div>
+
+      {/* Create Post Modal */}
+      <CreatePostModal
+        isOpen={showCreatePost}
+        onClose={() => setShowCreatePost(false)}
+        user={authUser}
+        onPostCreated={() => {
+          // Optionally refresh posts or show success message
+          // If on home page, could trigger a refresh
+        }}
+      />
     </nav>
   );
 };

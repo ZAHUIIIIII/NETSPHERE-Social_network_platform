@@ -17,9 +17,10 @@ const PostDetailPage = () => {
   
   const [post, setPost] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLiked, setIsLiked] = useState(false);
+  const [userReaction, setUserReaction] = useState(null);
+  const [reactions, setReactions] = useState({ like: 0, love: 0, haha: 0, wow: 0, sad: 0, angry: 0 });
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [likesCount, setLikesCount] = useState(0);
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -32,6 +33,20 @@ const PostDetailPage = () => {
   const [loadingLikes, setLoadingLikes] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
 
+  const handleCommentCountChange = (newCount) => {
+    setCommentCount(newCount);
+    
+    // Emit event for other pages to update
+    window.dispatchEvent(new CustomEvent('postUpdated', {
+      detail: {
+        postId: postId,
+        updates: {
+          commentCount: newCount
+        }
+      }
+    }));
+  };
+
   useEffect(() => {
     fetchPost();
   }, [postId]);
@@ -43,8 +58,38 @@ const PostDetailPage = () => {
       const postData = response.data;
       
       setPost(postData);
-      setIsLiked(postData.likes?.includes(authUser._id) || false);
-      setLikesCount(postData.likes?.length || 0);
+      
+      // Initialize reactions from post data
+      if (postData.reactions) {
+        const reactionCounts = {
+          like: Array.isArray(postData.reactions.like) ? postData.reactions.like.length : (postData.reactions.like || 0),
+          love: Array.isArray(postData.reactions.love) ? postData.reactions.love.length : (postData.reactions.love || 0),
+          haha: Array.isArray(postData.reactions.haha) ? postData.reactions.haha.length : (postData.reactions.haha || 0),
+          wow: Array.isArray(postData.reactions.wow) ? postData.reactions.wow.length : (postData.reactions.wow || 0),
+          sad: Array.isArray(postData.reactions.sad) ? postData.reactions.sad.length : (postData.reactions.sad || 0),
+          angry: Array.isArray(postData.reactions.angry) ? postData.reactions.angry.length : (postData.reactions.angry || 0)
+        };
+        setReactions(reactionCounts);
+        
+        // Check user's reaction
+        if (postData.userReaction) {
+          setUserReaction(postData.userReaction);
+        } else {
+          // Fallback: check each reaction array
+          for (const [type, users] of Object.entries(postData.reactions)) {
+            if (Array.isArray(users) && users.includes(authUser._id)) {
+              setUserReaction(type);
+              break;
+            }
+          }
+        }
+      } else if (postData.likes) {
+        // Fallback for old likes array
+        setReactions(prev => ({ ...prev, like: postData.likes.length }));
+        if (postData.likes.includes(authUser._id)) {
+          setUserReaction('like');
+        }
+      }
       
       // Check if post is saved
       const savedResponse = await axiosInstance.get(`/posts/${postId}/saved-status`);
@@ -59,13 +104,74 @@ const PostDetailPage = () => {
   };
 
   const handleLike = async () => {
+    // Use first reaction type as default (like)
+    await handleReact('like');
+  };
+
+  const handleReact = async (reactionType) => {
+    const oldReaction = userReaction;
+    const oldReactions = { ...reactions };
+    const oldPost = { ...post };
+    
     try {
-      const response = await axiosInstance.post(`/posts/${postId}/like`);
-      setIsLiked(response.data.isLiked);
-      setLikesCount(response.data.likes);
+      // Optimistic update
+      const newReactions = { ...reactions };
+      
+      if (oldReaction) {
+        newReactions[oldReaction] = Math.max(0, newReactions[oldReaction] - 1);
+      }
+      
+      if (oldReaction !== reactionType) {
+        newReactions[reactionType] = (newReactions[reactionType] || 0) + 1;
+        setReactions(newReactions);
+        setUserReaction(reactionType);
+        
+        toast.success('', {
+          icon: reactionType === 'like' ? '👍' : 
+                reactionType === 'love' ? '❤️' :
+                reactionType === 'haha' ? '😂' :
+                reactionType === 'wow' ? '😮' :
+                reactionType === 'sad' ? '😢' : '😠',
+          duration: 1000,
+        });
+      } else {
+        setReactions(newReactions);
+        setUserReaction(null);
+      }
+      
+      // Get updated data from backend
+      const res = await axiosInstance.post(`/posts/${postId}/react`, { type: reactionType });
+      
+      // Update with server response
+      setUserReaction(res.data.userReaction);
+      setReactions(res.data.reactions);
+      
+      // Update post with new reaction data including topReactions
+      setPost(prev => ({
+        ...prev,
+        reactions: res.data.reactions,
+        topReactions: res.data.topReactions,
+        likes: res.data.likes
+      }));
+
+      // Emit event for other pages (HomePage, SearchPage) to update
+      window.dispatchEvent(new CustomEvent('postUpdated', {
+        detail: {
+          postId: postId,
+          updates: {
+            reactions: res.data.reactions,
+            topReactions: res.data.topReactions,
+            likes: res.data.likes
+          }
+        }
+      }));
     } catch (error) {
-      console.error('Error liking post:', error);
-      toast.error('Failed to like post');
+      console.error('Error reacting to post:', error);
+      // Rollback on error
+      setUserReaction(oldReaction);
+      setReactions(oldReactions);
+      setPost(oldPost);
+      toast.error('Failed to react to post');
     }
   };
 
@@ -168,10 +274,11 @@ const PostDetailPage = () => {
     
     try {
       const response = await axiosInstance.get(`/posts/${postId}/likes`);
-      setLikesData(response.data.likes || []);
+      // New format: response.data.reactions is array of {user, reactionType}
+      setLikesData(response.data.reactions || []);
     } catch (error) {
-      console.error('Error fetching likes:', error);
-      toast.error('Failed to load likes');
+      console.error('Error fetching reactions:', error);
+      toast.error(error.response?.data?.message || 'Failed to load reactions');
       setShowLikesModal(false);
     } finally {
       setLoadingLikes(false);
@@ -494,26 +601,52 @@ const PostDetailPage = () => {
           )}
 
           {/* Reactions Summary */}
-          <div className="px-4 pt-3 pb-2 flex items-center justify-between text-sm">
+          <div className="px-3 pt-3 pb-2 flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
-              {likesCount > 0 && (
-                <button 
-                  onClick={handleShowLikes}
-                  className={`flex items-center gap-1.5 ${
-                    post.author?._id === authUser?._id 
-                      ? 'hover:underline cursor-pointer' 
-                      : 'cursor-default'
-                  }`}
-                  disabled={post.author?._id !== authUser?._id}
-                >
-                  <div className="flex items-center gap-1">
-                    <span className="text-small">❤️</span>
-                    <span className="text-small">👍</span>
-                    <span className="text-small">😊</span>
-                  </div>
-                  <span className="text-sm text-gray-700 font-medium">{likesCount}</span>
-                </button>
-              )}
+              {(() => {
+                const totalReactions = Object.values(reactions).reduce((sum, count) => sum + count, 0);
+                if (totalReactions > 0) {
+                  // Get top 3 reactions from backend or calculate from current state
+                  let topReactions = post.topReactions || [];
+                  
+                  // If topReactions not provided by backend, calculate from current reactions state
+                  if (!topReactions || topReactions.length === 0) {
+                    const reactionArray = [
+                      { type: 'like', count: reactions.like, emoji: '👍' },
+                      { type: 'love', count: reactions.love, emoji: '❤️' },
+                      { type: 'haha', count: reactions.haha, emoji: '😂' },
+                      { type: 'wow', count: reactions.wow, emoji: '😮' },
+                      { type: 'sad', count: reactions.sad, emoji: '😢' },
+                      { type: 'angry', count: reactions.angry, emoji: '😠' }
+                    ];
+                    
+                    topReactions = reactionArray
+                      .filter(r => r.count > 0)
+                      .sort((a, b) => b.count - a.count)
+                      .slice(0, 3)
+                      .map(r => ({ type: r.type, emoji: r.emoji }));
+                  }
+                  
+                  return (
+                    <button 
+                      onClick={handleShowLikes}
+                      className={`flex items-center gap-1.5 ${
+                        post.author?._id === authUser?._id 
+                          ? 'hover:underline cursor-pointer' 
+                          : 'cursor-default'
+                      }`}
+                    >
+                      <div className="flex items-center -space-x-1">
+                        {topReactions.map((reaction, index) => (
+                          <span key={index} className="text-base">{reaction.emoji}</span>
+                        ))}
+                      </div>
+                      <span className="text-sm text-gray-700 font-medium">{totalReactions} Reaction</span>
+                    </button>
+                  );
+                }
+                return null;
+              })()}
             </div>
             <div className="flex items-center gap-4 text-gray-700 font-medium">
               <span>{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</span>
@@ -522,30 +655,106 @@ const PostDetailPage = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="px-3 pb-2 pt-1 border-t border-gray-100">
+          <div className="px-10 pb-2 pt-1 border-t border-gray-100">
             <div className="flex items-center gap-1">
-              <button
-                onClick={handleLike}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg transition-all text-sm font-medium ${
-                  isLiked
-                    ? 'text-red-500 bg-red-50 hover:bg-red-100'
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
-              >
-                <Heart className={isLiked ? 'fill-current' : ''} size={18} />
-                <span>Like</span>
-              </button>
+              <div className="flex-1 relative">
+                <button
+                  onClick={() => setShowReactionPicker(!showReactionPicker)}
+                  className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg transition-all text-sm ${
+                    userReaction === 'like' ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' :
+                    userReaction === 'love' ? 'text-red-600 bg-red-50 hover:bg-red-100' :
+                    userReaction === 'haha' ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100' :
+                    userReaction === 'wow' ? 'text-orange-600 bg-orange-50 hover:bg-orange-100' :
+                    userReaction === 'sad' ? 'text-blue-500 bg-blue-50 hover:bg-blue-100' :
+                    userReaction === 'angry' ? 'text-red-700 bg-red-50 hover:bg-red-100' :
+                    'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {userReaction === 'like' && <span>👍</span>}
+                  {userReaction === 'love' && <span>❤️</span>}
+                  {userReaction === 'haha' && <span>😂</span>}
+                  {userReaction === 'wow' && <span>😮</span>}
+                  {userReaction === 'sad' && <span>😢</span>}
+                  {userReaction === 'angry' && <span>😠</span>}
+                  {!userReaction && <Heart size={18} />}
+                  <span className="font-medium">
+                    {userReaction === 'like' ? 'Like' :
+                     userReaction === 'love' ? 'Love' :
+                     userReaction === 'haha' ? 'Haha' :
+                     userReaction === 'wow' ? 'Wow' :
+                     userReaction === 'sad' ? 'Sad' :
+                     userReaction === 'angry' ? 'Angry' : 'Like'}
+                  </span>
+                </button>
 
-              <button className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-all font-medium">
+                {/* Reaction Picker - Click to open/close */}
+                {showReactionPicker && (
+                  <>
+                    {/* Backdrop to close picker */}
+                    <div 
+                      className="fixed inset-0 z-20" 
+                      onClick={() => setShowReactionPicker(false)}
+                    />
+                    <div 
+                      className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white rounded-full shadow-2xl border border-gray-200 px-3 py-2 flex space-x-2 z-30"
+                    >
+                      <button
+                        onClick={() => { handleReact('like'); setShowReactionPicker(false); }}
+                        className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                        title="Like"
+                      >
+                        👍
+                      </button>
+                      <button
+                        onClick={() => { handleReact('love'); setShowReactionPicker(false); }}
+                        className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                        title="Love"
+                      >
+                        ❤️
+                      </button>
+                      <button
+                        onClick={() => { handleReact('haha'); setShowReactionPicker(false); }}
+                        className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                        title="Haha"
+                      >
+                        😂
+                      </button>
+                      <button
+                        onClick={() => { handleReact('wow'); setShowReactionPicker(false); }}
+                        className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                        title="Wow"
+                      >
+                        😮
+                      </button>
+                      <button
+                        onClick={() => { handleReact('sad'); setShowReactionPicker(false); }}
+                        className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                        title="Sad"
+                      >
+                        😢
+                      </button>
+                      <button
+                        onClick={() => { handleReact('angry'); setShowReactionPicker(false); }}
+                        className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                        title="Angry"
+                      >
+                        😠
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <button className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-all">
                 <MessageCircle size={18} />
-                <span>Comment</span>
+                <span className="font-medium">Comment</span>
               </button>
 
               <button
                 onClick={handleShare}
-                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-all font-medium"
+                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-all"
               >
-                <Share2 size={18} />
+                <Share2 size={12} />
                 <span>Share</span>
               </button>
 
@@ -567,7 +776,7 @@ const PostDetailPage = () => {
             <div className="p-4">
               <CommentsSection 
                 post={post} 
-                onCommentCountChange={setCommentCount}
+                onCommentCountChange={handleCommentCountChange}
               />
             </div>
           </div>
@@ -716,43 +925,67 @@ const PostDetailPage = () => {
                   </div>
                 ) : likesData.length > 0 ? (
                   <div className="space-y-2">
-                    {likesData.map((user) => (
-                      <div 
-                        key={user._id} 
-                        className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer"
-                        onClick={() => {
-                          navigate(`/profile/${user.username}`);
-                          setShowLikesModal(false);
-                        }}
-                      >
-                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
-                          <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                            {user.avatar ? (
-                              <img 
-                                src={user.avatar} 
-                                alt={user.username} 
-                                className="w-full h-full object-cover" 
-                              />
-                            ) : (
-                              <span className="text-gray-700 font-bold">
-                                {user.username?.charAt(0).toUpperCase() || 'U'}
-                              </span>
+                    {likesData.map((reaction) => {
+                      const user = reaction.user;
+                      const reactionType = reaction.reactionType;
+                      
+                      // Map reaction types to emojis
+                      const reactionEmoji = {
+                        like: '👍',
+                        love: '❤️',
+                        haha: '😂',
+                        wow: '😮',
+                        sad: '😢',
+                        angry: '😠'
+                      }[reactionType] || '❤️';
+                      
+                      const reactionColor = {
+                        like: 'text-blue-600',
+                        love: 'text-red-500',
+                        haha: 'text-yellow-500',
+                        wow: 'text-orange-500',
+                        sad: 'text-blue-400',
+                        angry: 'text-red-700'
+                      }[reactionType] || 'text-red-500';
+                      
+                      return (
+                        <div 
+                          key={user._id} 
+                          className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer"
+                          onClick={() => {
+                            navigate(`/profile/${user.username}`);
+                            setShowLikesModal(false);
+                          }}
+                        >
+                          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
+                            <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                              {user.avatar ? (
+                                <img 
+                                  src={user.avatar} 
+                                  alt={user.username} 
+                                  className="w-full h-full object-cover" 
+                                />
+                              ) : (
+                                <span className="text-gray-700 font-bold">
+                                  {user.username?.charAt(0).toUpperCase() || 'U'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 truncate">
+                              {user.username || user.name || 'User'}
+                            </p>
+                            {user.name && user.name !== user.username && (
+                              <p className="text-sm text-gray-500 truncate">{user.name}</p>
                             )}
                           </div>
+                          <div className={`text-2xl ${reactionColor}`}>
+                            <span>{reactionEmoji}</span>
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 truncate">
-                            {user.username || user.name || 'User'}
-                          </p>
-                          {user.name && user.name !== user.username && (
-                            <p className="text-sm text-gray-500 truncate">{user.name}</p>
-                          )}
-                        </div>
-                        <div className="text-red-500">
-                          <Heart className="fill-current" size={20} />
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-center py-12 text-gray-500">

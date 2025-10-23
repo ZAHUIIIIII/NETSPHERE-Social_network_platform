@@ -22,6 +22,7 @@ import axiosInstance from "../lib/axios";
 import { formatTime } from "../lib/utils";
 import SuggestedUsers from '../components/common/SuggestedUsers';
 import CommentsSection from '../components/comment/CommentsSection';
+import EditPostModal from '../components/EditPostModal';
 import { countTotalComments, listRootComments } from "../services/commentApi";
 // import { 
 //   likePost as likePostAPI
@@ -70,9 +71,9 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
 
     const validFiles = files.filter(file => {
       const isValid = file.type.startsWith('image/');
-      const isUnderLimit = file.size <= 5 * 1024 * 1024; // 5MB
+      const isUnderLimit = file.size <= 20 * 1024 * 1024; // 20MB
       if (!isValid) toast.error(`${file.name} is not an image`);
-      if (!isUnderLimit) toast.error(`${file.name} exceeds 5MB limit`);
+      if (!isUnderLimit) toast.error(`${file.name} exceeds 20MB limit`);
       return isValid && isUnderLimit;
     });
 
@@ -455,6 +456,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
   const [showLikesModal, setShowLikesModal] = useState(false);
   const [likesData, setLikesData] = useState([]);
   const [loadingLikes, setLoadingLikes] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     // Initialize reactions from post data
@@ -740,7 +742,13 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-10 animate-scaleIn">
               {post.author?._id === currentUser?._id && (
                 <>
-                  <button className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm">
+                  <button 
+                    onClick={() => {
+                      setShowOptions(false);
+                      setShowEditModal(true);
+                    }}
+                    className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
+                  >
                     Edit post
                   </button>
                   <button 
@@ -1301,6 +1309,17 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
           </div>
         </div>
       )}
+
+      {/* Edit Post Modal */}
+      <EditPostModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        post={post}
+        onPostUpdated={(updatedPost) => {
+          onPostUpdate?.(updatedPost);
+          setShowEditModal(false);
+        }}
+      />
     </div>
   );
 };
@@ -1391,6 +1410,28 @@ export default function HomePage() {
       fetchPosts();
     }
   }, [loading]);
+
+  // Listen for post created event from Navbar
+  useEffect(() => {
+    const handlePostCreated = () => {
+      console.log('📝 New post created, refreshing feed...');
+      fetchPosts(0, 10); // Refresh the feed
+    };
+
+    window.addEventListener('postCreated', handlePostCreated);
+    return () => window.removeEventListener('postCreated', handlePostCreated);
+  }, []);
+
+  // Listen for post updates (reactions, comments) from PostDetailPage
+  useEffect(() => {
+    const handlePostUpdate = (event) => {
+      const { postId, updates } = event.detail;
+      handleReactionUpdate(postId, updates);
+    };
+
+    window.addEventListener('postUpdated', handlePostUpdate);
+    return () => window.removeEventListener('postUpdated', handlePostUpdate);
+  }, []);
 
   // Infinite scroll
   useEffect(() => {

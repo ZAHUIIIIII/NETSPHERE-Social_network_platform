@@ -30,6 +30,22 @@ const ProfilePage = () => {
     }
   }, [username]);
 
+  // Listen for post created event from Navbar
+  useEffect(() => {
+    if (!isOwnProfile) return; // Only refresh on own profile
+    
+    const handlePostCreated = async () => {
+      console.log('📝 New post created, refreshing profile posts...');
+      if (profileUser?._id) {
+        const userPosts = await getUserPosts(profileUser._id);
+        setPosts(userPosts || []);
+      }
+    };
+
+    window.addEventListener('postCreated', handlePostCreated);
+    return () => window.removeEventListener('postCreated', handlePostCreated);
+  }, [isOwnProfile, profileUser?._id]);
+
   const fetchProfile = async () => {
     try {
       // Only show loading on initial load

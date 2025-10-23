@@ -1,7 +1,8 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { useNotificationStore } from '../store/useNotificationStore';
+import { axiosInstance } from '../lib/axios';
 import { 
   Heart, 
   MessageCircle, 
@@ -20,10 +21,13 @@ import {
   Eye,
   Image as ImageIcon,
   BellOff,
-  Reply
+  Reply,
+  UserCheck,
+  UserMinus
 } from 'lucide-react';
 import { formatTime } from '../lib/utils';
 import toast from 'react-hot-toast';
+import { useFollow } from '../hooks/useFollow';
 
 const NotificationPage = () => {
   const { authUser } = useAuthStore();
@@ -33,6 +37,7 @@ const NotificationPage = () => {
     isLoading,
     fetchNotifications,
     markAsRead,
+    markAsUnread,
     markAllAsRead,
     deleteNotification: deleteNotificationFromStore
   } = useNotificationStore();
@@ -41,19 +46,157 @@ const NotificationPage = () => {
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'unread', 'mentions', 'likes', 'follows'
   const [sortBy, setSortBy] = useState('recent'); // 'recent' or 'unread'
   const [showSettings, setShowSettings] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null); // Track which notification menu is open
+  const [followStates, setFollowStates] = useState({}); // Track follow state for each user
+  const [followLoading, setFollowLoading] = useState({}); // Track loading state for follow buttons
+  const initializedRef = useRef(false); // Track if we've done initial setup
+  const recentlyMarkedAsRead = useRef(new Set()); // Track recently marked notifications
 
   useEffect(() => {
-    if (authUser) {
+    if (authUser && !initializedRef.current) {
       fetchNotifications(false);
+      initializedRef.current = true;
     }
-  }, [authUser]);
+  }, []); // Only run once on mount
+
+  // Clear unread count badge when entering the page (but don't mark notifications as read)
+  useEffect(() => {
+    if (authUser) {
+      // Set unread count to 0 in the store (for navbar badge)
+      // But don't actually mark notifications as read in the backend
+      const { setUnreadCount } = useNotificationStore.getState();
+      setUnreadCount(0);
+    }
+
+    // When leaving the page, restore the actual unread count
+    return () => {
+      // Only refetch on unmount, not on every authUser change
+      const currentAuthUser = useAuthStore.getState().authUser;
+      if (currentAuthUser) {
+        fetchNotifications(false);
+      }
+    };
+  }, []); // Only run on mount/unmount
+
+  // Listen for real-time notification updates
+  const lastRefetchTime = useRef(0);
+  
+  useEffect(() => {
+    const handleNewNotification = (event) => {
+      // Only refresh if it's actually a new notification (not from our own follow action)
+      const notification = event.detail;
+      
+      console.log('📥 New notification event received:', {
+        type: notification?.type,
+        senderId: notification?.sender?._id,
+        currentUserId: authUser?._id,
+        isSelf: notification?.sender?._id === authUser?._id
+      });
+      
+      // Don't refetch if we're the sender (our own follow action)
+      if (notification?.sender?._id === authUser?._id) {
+        console.log('⏭️ Ignoring own notification');
+        return;
+      }
+      
+      // Prevent rapid refetches (debounce 500ms)
+      const now = Date.now();
+      if (now - lastRefetchTime.current < 500) {
+        console.log('⏸️ Skipping refetch - too soon after last refetch');
+        return;
+      }
+      
+      // Don't refetch if we just marked notifications as read
+      if (recentlyMarkedAsRead.current.size > 0) {
+        console.log('⏸️ Skipping refetch - recently marked notifications as read:', 
+          Array.from(recentlyMarkedAsRead.current));
+        return;
+      }
+      
+      lastRefetchTime.current = now;
+      
+      console.log('🔄 Refetching notifications from server');
+      // Refresh notifications when a new one arrives from someone else
+      const { fetchNotifications } = useNotificationStore.getState();
+      fetchNotifications(false);
+    };
+
+    const handleUnreadCountUpdate = () => {
+      // The store is already updated by App.jsx, no need to refetch
+      // This just ensures any UI updates happen
+    };
+
+    window.addEventListener('newNotification', handleNewNotification);
+    window.addEventListener('unreadCountUpdate', handleUnreadCountUpdate);
+
+    return () => {
+      window.removeEventListener('newNotification', handleNewNotification);
+      window.removeEventListener('unreadCountUpdate', handleUnreadCountUpdate);
+    };
+  }, [authUser?._id]); // Add authUser._id to deps to have access to it
+
+  // Initialize follow states from notifications - ONLY ONCE
+  const followStatesInitialized = useRef(false);
+  
+  useEffect(() => {
+    if (!authUser || notifications.length === 0 || followStatesInitialized.current) return;
+    
+    const states = {};
+    
+    // First, try to get from authUser.following
+    notifications.forEach(notification => {
+      if (notification.type === 'follow' && notification.sender?._id) {
+        const senderId = notification.sender._id.toString();
+        
+        // Check if authUser is following this sender
+        const isFollowing = authUser?.following?.some(followingId => {
+          // Handle both object IDs and string IDs
+          const followingIdStr = typeof followingId === 'object' 
+            ? (followingId._id || followingId.toString())
+            : followingId.toString();
+          
+          return followingIdStr === senderId;
+        }) || false;
+        
+        states[senderId] = isFollowing;
+      }
+    });
+    
+    setFollowStates(states);
+    followStatesInitialized.current = true;
+  }, [authUser, notifications]); // Initialize when we have both authUser and notifications
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (openMenuId && !e.target.closest('[data-dropdown-menu]') && !e.target.closest('[data-dropdown-trigger]')) {
+        setOpenMenuId(null);
+      }
+    };
+
+    if (openMenuId) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [openMenuId]);
 
   const handleMarkAsRead = async (notificationId, e) => {
     e.stopPropagation();
     try {
       await markAsRead(notificationId);
+      setOpenMenuId(null); // Close menu after marking
     } catch (error) {
       toast.error('Failed to mark as read');
+    }
+  };
+
+  const handleMarkAsUnread = async (notificationId, e) => {
+    e.stopPropagation();
+    try {
+      await markAsUnread(notificationId);
+      setOpenMenuId(null); // Close menu after marking
+    } catch (error) {
+      toast.error('Failed to mark as unread');
     }
   };
 
@@ -71,10 +214,118 @@ const NotificationPage = () => {
     try {
       await deleteNotificationFromStore(notificationId);
       toast.success('Notification deleted');
+      setOpenMenuId(null); // Close menu after delete
     } catch (error) {
       toast.error('Failed to delete notification');
     }
   };
+
+  const handleTurnOffPostNotifications = async (notification, e) => {
+    e.stopPropagation();
+    try {
+      if (!notification.post?._id) {
+        toast.error('Cannot mute notifications for this post');
+        return;
+      }
+      
+      await axiosInstance.post(`/posts/${notification.post._id}/mute-notifications`);
+      toast.success('Post notifications turned off');
+      setOpenMenuId(null);
+    } catch (error) {
+      toast.error('Failed to turn off notifications');
+    }
+  };
+
+  const handleFollowToggle = async (userId, e, notificationId = null) => {
+    e.stopPropagation();
+    e.preventDefault();
+    
+    // Set loading state
+    setFollowLoading(prev => ({ ...prev, [userId]: true }));
+    
+    try {
+      const isCurrentlyFollowing = followStates[userId];
+      
+      if (isCurrentlyFollowing) {
+        // Unfollow
+        await axiosInstance.post(`/users/${userId}/unfollow`);
+        setFollowStates(prev => ({ ...prev, [userId]: false }));
+        
+        // Update authUser following list
+        const updatedFollowing = authUser.following.filter(id => {
+          const idStr = typeof id === 'object' ? id._id || id.toString() : id.toString();
+          return idStr !== userId.toString();
+        });
+        
+        useAuthStore.setState({ 
+          authUser: { ...authUser, following: updatedFollowing } 
+        });
+        
+        toast.success('Unfollowed successfully');
+      } else {
+        // Follow
+        await axiosInstance.post(`/users/${userId}/follow`);
+        setFollowStates(prev => ({ ...prev, [userId]: true }));
+        
+        // Update authUser following list
+        const updatedFollowing = [...(authUser.following || []), userId];
+        
+        useAuthStore.setState({ 
+          authUser: { ...authUser, following: updatedFollowing } 
+        });
+        
+        toast.success('Followed successfully');
+      }
+      
+      // Mark notification as read if notification ID is provided
+      if (notificationId) {
+        try {
+          console.log('🔔 Marking notification as read:', notificationId);
+          
+          // Add to recently marked set to prevent refetch from overwriting
+          recentlyMarkedAsRead.current.add(notificationId);
+          
+          // Remove from set after 2 seconds
+          setTimeout(() => {
+            recentlyMarkedAsRead.current.delete(notificationId);
+          }, 2000);
+          
+          await markAsRead(notificationId);
+          console.log('✅ Notification marked as read successfully');
+        } catch (markReadError) {
+          console.error('❌ Failed to mark notification as read:', markReadError);
+          // Remove from set if marking failed
+          recentlyMarkedAsRead.current.delete(notificationId);
+          // Don't throw error, just log it - the follow action was successful
+        }
+      }
+    } catch (error) {
+      // If already following error, update state to reflect that
+      if (error.response?.data?.message === 'Already following this user') {
+        setFollowStates(prev => ({ ...prev, [userId]: true }));
+        toast.error('Already following this user');
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to update follow status');
+      }
+    } finally {
+      setFollowLoading(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+
+  const handleToggleMenu = (notificationId, e) => {
+    e.stopPropagation();
+    setOpenMenuId(openMenuId === notificationId ? null : notificationId);
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (openMenuId) setOpenMenuId(null);
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openMenuId]);
 
   const handleNotificationClick = async (notification) => {
     // Mark as read if unread
@@ -149,6 +400,36 @@ const NotificationPage = () => {
     }
   };
 
+  // Get badge emoji for notification type
+  const getNotificationBadge = (notification) => {
+    switch (notification.type) {
+      case 'like':
+        return '❤️';
+      case 'reaction':
+        const reactionEmojis = {
+          like: '👍',
+          love: '❤️',
+          haha: '😂',
+          wow: '😮',
+          sad: '😢',
+          angry: '😠'
+        };
+        return reactionEmojis[notification.reactionType] || '👍';
+      case 'comment':
+        return '💬';
+      case 'reply':
+        return '↩️';
+      case 'follow':
+        return '👤';
+      case 'mention':
+        return '@';
+      case 'share':
+        return '🔄';
+      default:
+        return '🔔';
+    }
+  };
+
   // Filter notifications based on active tab
   const filteredNotifications = useMemo(() => {
     return notifications.filter(notification => {
@@ -204,9 +485,9 @@ const NotificationPage = () => {
   const getTabCount = (tab) => {
     switch (tab) {
       case 'unread': return notifications.filter(n => !n.read).length;
-      case 'mentions': return notifications.filter(n => n.type === 'mention').length;
-      case 'likes': return notifications.filter(n => n.type === 'like' || n.type === 'reaction').length;
-      case 'follows': return notifications.filter(n => n.type === 'follow').length;
+      case 'mentions': return notifications.filter(n => n.type === 'mention' && !n.read).length;
+      case 'likes': return notifications.filter(n => (n.type === 'like' || n.type === 'reaction') && !n.read).length;
+      case 'follows': return notifications.filter(n => n.type === 'follow' && !n.read).length;
       default: return notifications.length;
     }
   };
@@ -215,26 +496,40 @@ const NotificationPage = () => {
     if (groupNotifications.length === 0) return null;
 
     return (
-      <div className="mb-6">
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-1">
+      <div className="mb-4">
+        <h3 className="text-[11px] font-medium text-gray-500 uppercase tracking-wider px-1">
           {title}
         </h3>
-        <div className="space-y-0">
+        <div className="space-y-2">
           {groupNotifications.map((notification) => (
             <div
               key={notification._id}
-              onClick={() => handleNotificationClick(notification)}
-              className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors border-b border-gray-100 ${
-                !notification.read ? 'bg-blue-50/50' : ''
+              onClick={(e) => {
+                console.log('🖱️ NOTIFICATION CARD CLICKED', {
+                  notificationType: notification.type,
+                  clickTarget: e.target.tagName
+                });
+                
+                // Don't navigate if clicking on button or button area
+                const clickedButton = e.target.closest('button');
+                const clickedButtonArea = e.target.closest('.follow-button-area');
+                
+                if (clickedButton || clickedButtonArea) {
+                  console.log('🛑 CLICK ON BUTTON - Preventing navigation');
+                  e.stopPropagation();
+                  e.preventDefault();
+                  return;
+                }
+                
+                console.log('➡️ NAVIGATING - Clicked outside button area');
+                handleNotificationClick(notification);
+              }}
+              className={`relative p-3 bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md cursor-pointer transition-all duration-200 ${
+                !notification.read ? 'border-l-4 border-l-blue-600' : ''
               }`}
             >
-              <div className="flex items-start gap-3">
-                {/* Notification Type Icon */}
-                <div className={`w-10 h-10 rounded-full bg-white border-2 ${!notification.read ? 'border-blue-200' : 'border-gray-200'} flex items-center justify-center flex-shrink-0`}>
-                  {getNotificationIcon(notification.type)}
-                </div>
-
-                {/* Sender Avatar */}
+              <div className="flex items-start gap-2">
+                {/* Avatar with emoji badge overlay */}
                 <div className="relative flex-shrink-0">
                   <img
                     src={
@@ -242,97 +537,168 @@ const NotificationPage = () => {
                       `https://ui-avatars.com/api/?name=${notification.sender?.username || 'User'}`
                     }
                     alt=""
-                    className="w-10 h-10 rounded-full object-cover"
+                    className="w-9 h-9 rounded-full object-cover ring-1 ring-white"
                   />
+                  {/* Notification type emoji badge */}
+                  <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white flex items-center justify-center shadow-lg border border-gray-200">
+                    <span className="text-xs">
+                      {getNotificationBadge(notification)}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2 mb-0.5">
                     <div className="flex-1">
-                      <p className="text-sm text-gray-900">
-                        <span className="font-semibold hover:underline cursor-pointer">
+                      <p className="text-xs leading-snug">
+                        <span className="font-semibold text-gray-900 hover:underline">
                           {notification.sender?.username || 'Someone'}
                         </span>
-                        {' '}
-                        <span className="text-gray-600">
+                        <span className="text-gray-600 ml-1">
                           {getNotificationMessage(notification)}
                         </span>
                       </p>
 
-                      {/* Post Preview */}
-                      {notification.metadata?.postContent && (
-                        <p className="text-xs text-gray-500 mt-1 line-clamp-1 bg-gray-100 rounded px-2 py-1 inline-block max-w-md">
-                          "{notification.metadata.postContent}"
-                        </p>
-                      )}
+                      {/* Timestamp */}
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        {formatTime(new Date(notification.createdAt))}
+                      </p>
 
-                      {/* Timestamp and Status */}
-                      <div className="flex items-center gap-2 mt-1">
-                        <p className="text-xs text-gray-400">
-                          {formatTime(new Date(notification.createdAt))}
-                        </p>
-                        {!notification.read && (
-                          <>
-                            <span className="text-gray-300">•</span>
-                            <span className="text-xs text-blue-600 font-medium">New</span>
-                          </>
-                        )}
-                      </div>
+                      {/* Follow Status for follow notifications */}
+                      {notification.type === 'follow' && notification.sender?._id && (
+                        <div className="mt-2 follow-button-area" onClick={(e) => e.stopPropagation()}>
+                          {followStates[notification.sender._id] ? (
+                            // Static "Following" badge (non-interactive)
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-gray-50 text-gray-600 border border-gray-200">
+                              <UserCheck className="w-3.5 h-3.5" />
+                              <span>Following</span>
+                            </div>
+                          ) : (
+                            // Interactive "Follow Back" button
+                            <button
+                              type="button"
+                              onClick={(e) => handleFollowToggle(notification.sender._id, e, notification._id)}
+                              disabled={followLoading[notification.sender._id]}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {followLoading[notification.sender._id] ? (
+                                <>
+                                  <Loader className="w-3.5 h-3.5 animate-spin" />
+                                  <span>Loading...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <UserPlus className="w-3.5 h-3.5" />
+                                  <span>Follow Back</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex items-center gap-1">
-                      {!notification.read && (
-                        <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
+                    {/* Actions menu - Always visible */}
+                    <div className="flex items-center gap-1 relative flex-shrink-0">
+                      <button
+                        data-dropdown-trigger
+                        onClick={(e) => handleToggleMenu(notification._id, e)}
+                        className={`p-1.5 rounded-full transition-all ${
+                          openMenuId === notification._id 
+                            ? 'bg-blue-100 text-blue-700' 
+                            : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'
+                        }`}
+                        title="More options"
+                      >
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+
+                      {/* Dropdown Menu */}
+                      {openMenuId === notification._id && (
+                        <div 
+                          data-dropdown-menu
+                          className="absolute right-0 top-full mt-1.5 bg-white rounded-lg shadow-2xl border border-gray-200 py-1.5 min-w-[240px] z-[100]"
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ 
+                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+                          }}
+                        >
+                          {/* Mark as Read/Unread */}
+                          <button
+                            onClick={(e) => notification.read ? handleMarkAsUnread(notification._id, e) : handleMarkAsRead(notification._id, e)}
+                            className="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-blue-50 flex items-center gap-2.5 transition-colors"
+                          >
+                            {notification.read ? (
+                              <>
+                                <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                                  <Eye className="w-3.5 h-3.5 text-blue-600" />
+                                </div>
+                                <span className="font-medium">Mark as unread</span>
+                              </>
+                            ) : (
+                              <>
+                                <div className="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                                  <Check className="w-3.5 h-3.5 text-green-600" />
+                                </div>
+                                <span className="font-medium">Mark as read</span>
+                              </>
+                            )}
+                          </button>
+
+                          {/* Delete Notification */}
+                          <button
+                            onClick={(e) => handleDeleteNotification(notification._id, e)}
+                            className="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-red-50 flex items-center gap-2.5 transition-colors"
+                          >
+                            <div className="w-7 h-7 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                              <Trash2 className="w-3.5 h-3.5 text-red-600" />
+                            </div>
+                            <span className="font-medium">Delete notification</span>
+                          </button>
+
+                          {/* Turn off post notifications (only for post-related notifications) */}
+                          {(notification.type === 'comment' || 
+                            notification.type === 'reply' || 
+                            notification.type === 'reaction' || 
+                            notification.type === 'like') && notification.post && (
+                            <button
+                              onClick={(e) => handleTurnOffPostNotifications(notification, e)}
+                              className="w-full px-3 py-2 text-left text-xs text-gray-700 hover:bg-amber-50 flex items-center gap-2.5 border-t border-gray-100 transition-colors"
+                            >
+                              <div className="w-7 h-7 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                                <BellOff className="w-3.5 h-3.5 text-amber-600" />
+                              </div>
+                              <span className="font-medium">Mute this post</span>
+                            </button>
+                          )}
+                        </div>
                       )}
-                      <button
-                        onClick={(e) => handleDeleteNotification(notification._id, e)}
-                        className="p-1.5 hover:bg-gray-200 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4 text-gray-500" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                        }}
-                        className="p-1.5 hover:bg-gray-200 rounded-full transition-colors"
-                      >
-                        <MoreHorizontal className="w-4 h-4 text-gray-500" />
-                      </button>
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  {notification.type === 'follow' && (
-                    <div className="flex gap-2 mt-3">
-                      <button className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                        Follow Back
-                      </button>
-                      <button className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs rounded-lg hover:bg-gray-200 transition-colors font-medium">
-                        View Profile
-                      </button>
+                  {/* Comment/Reply Content Preview */}
+                  {(notification.type === 'comment' || notification.type === 'reply') && notification.metadata?.commentContent && (
+                    <div className="mt-2 p-2 bg-white rounded-lg border border-gray-200 shadow-sm">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <MessageCircle className="w-3 h-3 text-gray-400" />
+                        <p className="text-[11px] text-gray-500 font-medium">
+                          {notification.type === 'comment' ? 'Comment' : 'Reply'}
+                        </p>
+                      </div>
+                      <p className="text-xs text-gray-700 leading-relaxed line-clamp-2">
+                        "{notification.metadata.commentContent}"
+                      </p>
                     </div>
                   )}
 
-                  {notification.type === 'comment' && (
-                    <div className="flex gap-2 mt-3">
-                      <button className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center gap-1">
-                        <Reply className="w-3 h-3" />
-                        Reply
-                      </button>
-                      <button className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs rounded-lg hover:bg-gray-200 transition-colors font-medium">
-                        View Post
-                      </button>
-                    </div>
-                  )}
-
-                  {(notification.type === 'like' || notification.type === 'mention' || notification.type === 'reaction') && (
-                    <div className="flex gap-2 mt-3">
-                      <button className="px-3 py-1.5 bg-gray-100 text-gray-700 text-xs rounded-lg hover:bg-gray-200 transition-colors font-medium">
-                        View Post
-                      </button>
+                  {/* Post Preview */}
+                  {notification.metadata?.postContent && (
+                    <div className="mt-2 flex items-start gap-2 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                      <ImageIcon className="w-3 h-3 text-gray-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-[11px] text-gray-600 line-clamp-2 leading-relaxed">
+                        {notification.metadata.postContent}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -346,23 +712,22 @@ const NotificationPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto p-4">
+      <div className="max-w-3xl mx-auto px-4 py-4">
         {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-4">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
               <div className="relative">
-                <Bell className="w-8 h-8 text-blue-600" />
+                <Bell className="w-6 h-6 text-blue-600" />
                 {unreadCount > 0 && (
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
                     {unreadCount > 9 ? '9+' : unreadCount}
                   </div>
                 )}
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
-                <p className="text-sm text-gray-500 mt-0.5">
+                <h1 className="text-xl font-bold text-gray-900">Notifications</h1>
+                <p className="text-xs text-gray-500">
                   {unreadCount > 0 
                     ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`
                     : 'You\'re all caught up!'
@@ -375,96 +740,110 @@ const NotificationPage = () => {
               <button
                 onClick={handleMarkAllAsRead}
                 disabled={unreadCount === 0}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <CheckCheck className="w-4 h-4" />
+                <CheckCheck className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Mark all read</span>
               </button>
               
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-1.5 text-gray-600 hover:text-gray-900 transition-colors"
               >
-                <Settings className="w-5 h-5" />
+                <Settings className="w-4 h-4" />
               </button>
             </div>
           </div>
 
           {/* Filter Tabs */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="flex items-center justify-between gap-3 bg-white rounded-lg shadow-sm border border-gray-200 px-3 py-1.5">
+            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
               <button
                 onClick={() => setActiveTab('all')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                className={`relative px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
                   activeTab === 'all'
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
                 All
-                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                  activeTab === 'all' ? 'bg-blue-700' : 'bg-gray-200'
-                }`}>
-                  {getTabCount('all')}
-                </span>
               </button>
               <button
                 onClick={() => setActiveTab('unread')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+                className={`relative px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
                   activeTab === 'unread'
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
                 Unread
-                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                  activeTab === 'unread' ? 'bg-blue-700' : 'bg-gray-200'
-                }`}>
-                  {getTabCount('unread')}
-                </span>
+                {getTabCount('unread') > 0 && (
+                  <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                    activeTab === 'unread' ? 'bg-blue-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                    {getTabCount('unread')}
+                  </span>
+                )}
               </button>
               <button
                 onClick={() => setActiveTab('mentions')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-1 ${
+                className={`relative px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap flex items-center gap-1 ${
                   activeTab === 'mentions'
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                <AtSign className="w-4 h-4" />
-                <span className="hidden sm:inline">{getTabCount('mentions')}</span>
+                <AtSign className="w-3 h-3" />
+                <span>{getTabCount('mentions')}</span>
               </button>
               <button
                 onClick={() => setActiveTab('likes')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-1 ${
+                className={`relative px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
                   activeTab === 'likes'
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                <Heart className="w-4 h-4" />
-                <span className="hidden sm:inline">{getTabCount('likes')}</span>
+                <Heart className="w-3 h-3 inline" />
+                {getTabCount('likes') > 0 && (
+                  <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                    activeTab === 'likes' ? 'bg-blue-700' : 'bg-red-100 text-red-700'
+                  }`}>
+                    {getTabCount('likes')}
+                  </span>
+                )}
               </button>
               <button
                 onClick={() => setActiveTab('follows')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-1 ${
+                className={`relative px-3 py-1.5 text-xs font-medium rounded-md transition-all whitespace-nowrap ${
                   activeTab === 'follows'
                     ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                <UserPlus className="w-4 h-4" />
-                <span className="hidden sm:inline">{getTabCount('follows')}</span>
+                <UserPlus className="w-3 h-3 inline" />
+                {getTabCount('follows') > 0 && (
+                  <span className={`ml-1.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                    activeTab === 'follows' ? 'bg-blue-700' : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {getTabCount('follows')}
+                  </span>
+                )}
               </button>
             </div>
 
             {/* Sort Dropdown */}
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-500" />
+            <div className="flex items-center gap-1.5 flex-shrink-0">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                className="px-2 py-1 text-xs border-none rounded-md focus:outline-none bg-transparent text-gray-600 font-medium cursor-pointer appearance-none pr-6"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 0.25rem center',
+                  backgroundSize: '1rem'
+                }}
               >
                 <option value="recent">Most Recent</option>
                 <option value="unread">Unread First</option>
@@ -474,23 +853,28 @@ const NotificationPage = () => {
         </div>
 
         {/* Notifications List */}
-        <div className="bg-white">
+        <div className="mt-6">
           {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader className="w-8 h-8 animate-spin text-blue-600" />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex items-center justify-center py-20">
+              <div className="text-center">
+                <Loader className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
+                <p className="text-sm text-gray-500">Loading notifications...</p>
+              </div>
             </div>
           ) : sortedNotifications.length === 0 ? (
-            <div className="text-center py-16 px-4">
-              <div className="w-16 h-16 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                <BellOff className="w-8 h-8 text-gray-400" />
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-20 px-4">
+              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-4">
+                <Bell className="w-10 h-10 text-gray-400" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No notifications</h3>
-              <p className="text-gray-500 text-sm">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                {activeTab === 'unread' ? "All caught up!" : "No notifications yet"}
+              </h3>
+              <p className="text-gray-500 text-sm max-w-sm mx-auto leading-relaxed">
                 {activeTab === 'unread' 
-                  ? "You're all caught up! No unread notifications."
+                  ? "You've read all your notifications. Check back later for new updates!"
                   : activeTab === 'all'
-                  ? "No notifications yet. Start following people to see updates!"
-                  : `No ${activeTab} notifications found.`
+                  ? "When you get likes, comments, or new followers, they'll show up here."
+                  : `No ${activeTab} notifications to display.`
                 }
               </p>
             </div>
@@ -502,7 +886,6 @@ const NotificationPage = () => {
             </div>
           )}
         </div>
-      </div>
       </div>
     </div>
   );

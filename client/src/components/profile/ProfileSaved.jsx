@@ -5,6 +5,7 @@ import { savePost } from '../../services/api'; // ADD THIS
 import { Loader, Bookmark, Heart, MessageCircle, BookmarkX, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { countTotalComments } from '../../services/commentApi';
 
 const ProfileSaved = ({ userId }) => {
   const [savedPosts, setSavedPosts] = useState([]);
@@ -97,8 +98,22 @@ const ProfileSaved = ({ userId }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {savedPosts.map((post) => {
-        // Use comment count from post data (unlimited nesting system)
-        const commentCount = post.comments?.length || 0;
+        // Calculate total reactions count (all reaction types)
+        let totalReactions = 0;
+        if (post.reactions) {
+          totalReactions = Object.values(post.reactions).reduce((sum, reactionArray) => {
+            return sum + (Array.isArray(reactionArray) ? reactionArray.length : 0);
+          }, 0);
+        } else {
+          // Fallback to legacy likes
+          totalReactions = post.likes?.length || 0;
+        }
+
+        // Calculate total comment count (root comments + all descendants)
+        let commentCount = 0;
+        if (post.comments && Array.isArray(post.comments)) {
+          commentCount = countTotalComments(post.comments);
+        }
         
         return (
           <div
@@ -128,7 +143,7 @@ const ProfileSaved = ({ userId }) => {
                 <div className="flex items-center justify-center space-x-6 text-white mb-2">
                   <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
                     <Heart className="h-5 w-5" fill="currentColor" />
-                    <span className="font-semibold">{post.likes?.length || 0}</span>
+                    <span className="font-semibold">{totalReactions}</span>
                   </div>
                   <div className="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
                     <MessageCircle className="h-5 w-5" fill="currentColor" />

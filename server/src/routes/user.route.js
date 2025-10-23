@@ -8,7 +8,7 @@ const router = express.Router();
 
 const upload = multer({ 
   dest: 'uploads/temp/',
-  limits: { fileSize: 5 * 1024 * 1024 }
+  limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
 });
 
 // Profile routes

@@ -26,6 +26,7 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
   const [submitting, setSubmitting] = useState(false);
   const [rootCursor, setRootCursor] = useState(null);
   const [hasMoreRoots, setHasMoreRoots] = useState(false);
+  const [activeReplyId, setActiveReplyId] = useState(null); // Track which comment has open reply form
   const inputRef = useRef(null);
 
   // ==================== LOAD ROOT COMMENTS ====================
@@ -345,6 +346,14 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
               type="text"
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (commentText.trim() && !submitting) {
+                    handleSubmitComment(e);
+                  }
+                }
+              }}
               placeholder="Write a comment..."
               className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-[#f0f2f5]"
               disabled={submitting}
@@ -368,6 +377,8 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
             <Comment
               comment={comment}
               currentUser={authUser}
+              isReplying={activeReplyId === comment._id}
+              onToggleReply={() => setActiveReplyId(activeReplyId === comment._id ? null : comment._id)}
               onReply={(content) => handleReplySubmit(comment._id, comment._id, content)}
               onEdit={async (commentId, content) => {
                 const updated = await editComment(commentId, content);
@@ -425,6 +436,8 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
                     key={reply._id}
                     comment={reply}
                     currentUser={authUser}
+                    isReplying={activeReplyId === reply._id}
+                    onToggleReply={() => setActiveReplyId(activeReplyId === reply._id ? null : reply._id)}
                     onReply={(content) => handleReplySubmit(comment._id, reply._id, content)}
                     onEdit={async (commentId, content) => {
                       const updated = await editComment(commentId, content);
