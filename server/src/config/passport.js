@@ -26,6 +26,14 @@ function ensureGoogleStrategy() {
                 },
                 async (accessToken, refreshToken, profile, done) => {
                     try {
+                        // Debug: log minimal profile info to help diagnose missing-email cases
+                        try {
+                            const pid = profile && profile.id ? profile.id : '<no-id>';
+                            const emails = profile && profile.emails ? profile.emails.map(e => e.value) : [];
+                            console.log(`[GoogleOAuth] profile id=${pid} emails=${JSON.stringify(emails)}`);
+                        } catch (logErr) {
+                            console.warn('[GoogleOAuth] Failed to log profile info', logErr);
+                        }
                         const email = profile.emails[0].value;
                         const googleAvatar = profile.photos && profile.photos[0] && profile.photos[0].value;
                         
