@@ -44,8 +44,13 @@ function ensureGoogleStrategy() {
                         // Create canonical usernameKey (lowercase, remove periods)
                         const usernameKey = normalized.toLowerCase().replace(/\./g, '');
 
-                        // Check if user already exists by email
-                        let user = await User.findOne({ email });
+                        // First check if user exists by googleId (most reliable for OAuth)
+                        let user = await User.findOne({ googleId: profile.id });
+
+                        if (!user) {
+                            // Then check by email (for linking existing accounts)
+                            user = await User.findOne({ email });
+                        }
 
                         if (!user) {
                             // ensure no collision on usernameKey (should be rare)
