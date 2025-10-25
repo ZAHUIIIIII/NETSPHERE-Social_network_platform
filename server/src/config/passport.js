@@ -28,9 +28,12 @@ function ensureGoogleStrategy() {
                     try {
                         const email = profile.emails[0].value;
                         const googleAvatar = profile.photos && profile.photos[0] && profile.photos[0].value;
-                        // normalize display name and create canonical key
+                        
+                        // Normalize display name: NFC normalize + trim
                         const displayName = profile.displayName ? String(profile.displayName).normalize('NFC').trim() : '';
                         const normalized = displayName || `user_${profile.id}`;
+                        
+                        // Create canonical usernameKey (lowercase, remove periods)
                         const usernameKey = normalized.toLowerCase().replace(/\./g, '');
 
                         // Check if user already exists by email

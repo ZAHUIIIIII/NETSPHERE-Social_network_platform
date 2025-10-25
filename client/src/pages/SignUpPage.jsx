@@ -23,7 +23,7 @@ function validatePassword(password) {
 
 export default function SignUpPage() {
   const navigate = useNavigate();
-  const { registerInitiate, registerVerify, isSigningUp } = useAuthStore();
+  const { registerInitiate, registerVerify, isSigningUp, checkUsername } = useAuthStore();
   
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
@@ -54,6 +54,22 @@ export default function SignUpPage() {
         errors.username = 'Username must be 2 to 20 characters.';
       } else if (!/^[\p{L}\p{N} ]+$/u.test(username)) {
         errors.username = 'Only letters, numbers, and spaces are allowed.';
+      } else {
+        // Update form with trimmed username
+        setForm({ ...form, username });
+        
+        // Check username availability
+        setLoading(true);
+        try {
+          const result = await checkUsername(username);
+          if (!result.available) {
+            errors.username = result.message || 'Username already taken.';
+          }
+        } catch (err) {
+          errors.username = 'Could not verify username. Please try again.';
+        } finally {
+          setLoading(false);
+        }
       }
     }
     

@@ -10,11 +10,15 @@ import {
     checkAuth,
     googleAuth,
     googleCallback,
-    getGoogleUser
+    getGoogleUser,
+    checkUsername
 } from '../controllers/auth.controller.js';
 import { protectRoute } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
+
+// Check username availability
+router.post("/check-username", checkUsername);
 
 // Multi-step registration routes
 router.post("/register-initiate", registerInitiate);

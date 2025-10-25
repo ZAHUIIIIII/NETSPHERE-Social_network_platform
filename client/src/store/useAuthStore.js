@@ -35,6 +35,15 @@ export const useAuthStore = create((set, get) => ({
     }
 },
 
+    checkUsername: async (username) => {
+        try {
+            const res = await axiosInstance.post('/auth/check-username', { username });
+            return res.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
     registerInitiate: async (data) => {
         set({isSigningUp: true});
         try {

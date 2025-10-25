@@ -6,26 +6,92 @@ import crypto from 'crypto';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../lib/email.js';
 import passport, { ensureGoogleStrategy } from '../config/passport.js';
 
+// Helper to escape regex special chars
+const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+export const checkUsername = async (req, res) => {
+    const { username } = req.body;
+    
+    try {
+        if (!username) {
+            return res.status(400).json({ message: "Username is required" });
+        }
+
+        // Normalize and create canonical usernameKey
+        const normalized = String(username).normalize('NFC').trim();
+        const usernameKey = normalized.toLowerCase().replace(/\./g, '');
+
+        // Check usernameKey in both User and TempRegistration
+        const byKeyUser = await User.findOne({ usernameKey });
+        const byKeyTemp = await TempRegistration.findOne({ usernameKey });
+
+        // Check case-insensitive username match (extra safety)
+        const byNameUser = await User.findOne({ username: { $regex: `^${escapeRegExp(normalized)}$`, $options: 'i' } });
+        const byNameTemp = await TempRegistration.findOne({ username: { $regex: `^${escapeRegExp(normalized)}$`, $options: 'i' } });
+
+        const exists = byKeyUser || byKeyTemp || byNameUser || byNameTemp;
+
+        if (exists) {
+            return res.status(200).json({ 
+                available: false, 
+                message: "Username already taken." 
+            });
+        }
+
+        res.status(200).json({ 
+            available: true, 
+            message: "Username is available." 
+        });
+    } catch (error) {
+        console.error("Error in checkUsername:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
 
 export const registerInitiate = async (req, res) => {
     const { username, birthday, gender, email } = req.body;
     try {
-        // Create canonical usernameKey (lowercase, remove periods, trim)
-        const usernameKey = username ? username.toLowerCase().replace(/\./g, '').trim() : '';
+        // Normalize and create canonical usernameKey (NFC normalize, trim, lowercase, remove periods)
+        const normalized = username ? String(username).normalize('NFC').trim() : '';
+        const usernameKey = normalized.toLowerCase().replace(/\./g, '');
 
-        // Check if user or temp registration already exists by email or canonical username
-        const existingUser = await User.findOne({ 
-            $or: [{ email }, { usernameKey }] 
-        });
-        const existingTemp = await TempRegistration.findOne({ usernameKey });
+        // Check for duplicates comprehensively:
+        // 1. Check email in both User and TempRegistration
+        const byEmailUser = await User.findOne({ email });
+        const byEmailTemp = await TempRegistration.findOne({ email });
 
-        if (existingUser || existingTemp) {
+        if (byEmailUser || byEmailTemp) {
             return res.status(400).json({ 
-                message: existingUser?.email === email ? "Email already in use." : "Username already taken." 
+                message: "Email already in use." 
             });
         }
 
-        // Check if there's already a temp registration for this email
+        // 2. Check usernameKey (canonical) in both User and TempRegistration
+        let byKeyUser = null;
+        let byKeyTemp = null;
+        if (usernameKey) {
+            byKeyUser = await User.findOne({ usernameKey });
+            byKeyTemp = await TempRegistration.findOne({ usernameKey });
+        }
+
+        // 3. Check case-insensitive username match (extra safety check)
+        let byNameUser = null;
+        let byNameTemp = null;
+        if (normalized) {
+            byNameUser = await User.findOne({ username: { $regex: `^${escapeRegExp(normalized)}$`, $options: 'i' } });
+            byNameTemp = await TempRegistration.findOne({ username: { $regex: `^${escapeRegExp(normalized)}$`, $options: 'i' } });
+        }
+
+        const existingUser = byKeyUser || byNameUser;
+        const existingTemp = byKeyTemp || byNameTemp;
+
+        if (existingUser || existingTemp) {
+            return res.status(400).json({ 
+                message: "Username already taken." 
+            });
+        }
+
+        // Check if there's already a temp registration for this email (should be caught above, but keep for safety)
         let tempReg = await TempRegistration.findOne({ email });
         
         // Generate verification code
@@ -34,7 +100,7 @@ export const registerInitiate = async (req, res) => {
 
         if (tempReg) {
             // Update existing temp registration
-            tempReg.username = username;
+            tempReg.username = normalized;
             tempReg.usernameKey = usernameKey;
             tempReg.birthday = birthday;
             tempReg.gender = gender;
@@ -44,7 +110,7 @@ export const registerInitiate = async (req, res) => {
         } else {
             // Create new temp registration
             tempReg = new TempRegistration({
-                username,
+                username: normalized,
                 usernameKey,
                 birthday,
                 gender,
@@ -101,9 +167,10 @@ export const registerVerify = async (req, res) => {
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(password, salt);
 
-            // Create user
+            // Create user (pre-validate hook will set usernameKey)
             const newUser = new User({
                 username: tempReg.username,
+                usernameKey: tempReg.usernameKey,
                 birthday: tempReg.birthday,
                 gender: tempReg.gender,
                 email: tempReg.email,
