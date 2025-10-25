@@ -251,9 +251,8 @@ export const logout = (req, res) => {
         res.cookie("token", "", { 
             maxAge: 0,
             httpOnly: true,
-            // Use lax for development and 'none' for production to match how cookies are set
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-            secure: process.env.NODE_ENV === 'production'
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'development',
         });
         res.status(200).json({ message: "Logged out successfully" });
     } catch (error) {
@@ -432,10 +431,8 @@ export const googleCallback = (req, res, next) => {
         res.cookie('token', token, {
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
             httpOnly: true,
-            // Allow top-level navigations (OAuth redirects) to set the cookie in dev
-            // Use 'none' in production to allow cross-site requests (requires secure)
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-            secure: process.env.NODE_ENV === 'production'
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'development'
         });
 
         // Redirect to frontend with success and user info
