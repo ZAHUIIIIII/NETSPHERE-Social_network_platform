@@ -361,7 +361,7 @@ export const checkAuth = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
     try {
-        const { avatar, bio, website, phone } = req.body;
+        const { avatar, bio, website, phone, location, work, username } = req.body;
         const userId = req.user._id;
 
         // Build update object with only provided fields
@@ -370,16 +370,175 @@ export const updateProfile = async (req, res) => {
         if (bio !== undefined) updateData.bio = bio;
         if (website !== undefined) updateData.website = website;
         if (phone !== undefined) updateData.phone = phone;
+        if (location !== undefined) updateData.location = location;
+        if (work !== undefined) updateData.work = work;
+
+        // Handle username update with validation
+        if (username !== undefined && username !== req.user.username) {
+            // Normalize and validate username
+            const normalized = String(username).normalize('NFC').trim();
+            
+            // Basic validation
+            if (normalized.length < 2 || normalized.length > 35) {
+                return res.status(400).json({ 
+                    message: "Username must be between 2 and 35 characters" 
+                });
+            }
+
+            // Check for periods
+            if (normalized.includes('.')) {
+                return res.status(400).json({ 
+                    message: "Periods are not allowed in usernames" 
+                });
+            }
+
+            // Check allowed characters: letters, numbers, and spaces
+            if (!/^[\p{L}\p{N} ]+$/u.test(normalized)) {
+                return res.status(400).json({ 
+                    message: "Username can only contain letters, numbers, and spaces" 
+                });
+            }
+
+            // Create canonical key for uniqueness check
+            const usernameKey = normalized.toLowerCase().replace(/\./g, '');
+
+            // Check forbidden words
+            const forbidden = [
+                'admin','support','root','system','postmaster','webmaster',
+                'contact','security','abuse','mail','smtp','ftp','api',
+                'help','info','billing','test'
+            ];
+            if (forbidden.includes(usernameKey)) {
+                return res.status(400).json({ 
+                    message: "Username contains a forbidden word" 
+                });
+            }
+
+            // Check domain-like suffixes
+            const forbiddenSuffixes = ['.com', '.net', '.org', '.io', '.app', '.dev', '.me'];
+            for (const suffix of forbiddenSuffixes) {
+                if (usernameKey.endsWith(suffix.replace('.', ''))) {
+                    return res.status(400).json({ 
+                        message: "Username cannot look like a domain" 
+                    });
+                }
+            }
+
+            // Check if usernameKey already exists (excluding current user)
+            const existingUser = await User.findOne({ 
+                usernameKey,
+                _id: { $ne: userId }
+            });
+
+            if (existingUser) {
+                return res.status(400).json({ 
+                    message: "Username is already taken" 
+                });
+            }
+
+            // Add username and usernameKey to update
+            updateData.username = normalized;
+            updateData.usernameKey = usernameKey;
+        }
 
         const updatedUser = await User.findByIdAndUpdate(
             userId, 
             updateData, 
-            { new: true }
+            { new: true, runValidators: true }
         ).select("-password");
 
         res.status(200).json(updatedUser);
     } catch (error) {
         console.error("Error in updateProfile:", error);
+        
+        // Handle validation errors
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ 
+                message: Object.values(error.errors)[0].message 
+            });
+        }
+        
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Update Privacy Settings
+export const updatePrivacySettings = async (req, res) => {
+    try {
+        const { showEmail } = req.body;
+        const userId = req.user._id;
+
+        // Build update object with only provided fields
+        const updateData = {};
+        if (showEmail !== undefined) updateData.showEmail = showEmail;
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId, 
+            updateData, 
+            { new: true, runValidators: true }
+        ).select("-password");
+
+        res.status(200).json(updatedUser);
+    } catch (error) {
+        console.error("Error in updatePrivacySettings:", error);
+        res.status(500).json({ message: "Internal server error" });
+    }
+};
+
+// Change Password
+export const changePassword = async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        const userId = req.user._id;
+
+        // Check if user is a Google user
+        if (req.user.isGoogleUser) {
+            return res.status(400).json({ 
+                message: "Google users cannot change password. Please manage your password through Google." 
+            });
+        }
+
+        // Validate inputs
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ 
+                message: "Current password and new password are required" 
+            });
+        }
+
+        // Validate new password length
+        if (newPassword.length < 10) {
+            return res.status(400).json({ 
+                message: "New password must be at least 10 characters long" 
+            });
+        }
+
+        // Get user with password
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Verify current password
+        const isPasswordCorrect = await bcrypt.compare(currentPassword, user.password);
+        if (!isPasswordCorrect) {
+            return res.status(400).json({ 
+                message: "Current password is incorrect" 
+            });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update password
+        user.password = hashedPassword;
+        await user.save();
+
+        res.status(200).json({ 
+            message: "Password changed successfully" 
+        });
+    } catch (error) {
+        console.error("Error in changePassword:", error);
         res.status(500).json({ message: "Internal server error" });
     }
 };
@@ -432,7 +591,7 @@ export const googleCallback = (req, res, next) => {
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
             httpOnly: true,
             sameSite: 'strict',
-            secure: process.env.NODE_ENV === 'development'
+            secure: process.env.NODE_ENV === 'production'
         });
 
         // Redirect to frontend with success and user info

@@ -104,15 +104,17 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
         content: content.trim(),
         images: imageUrls,
         privacy,
-        ...(location && { location }),
+        ...(location.trim() && { location: location.trim() }),
         ...(feeling && { feeling })
       };
 
-      await createPost(postData);
+      const newPost = await createPost(postData);
       toast.success('Post created successfully! 🎉');
       
-      // Emit custom event to notify HomePage to refresh posts
-      window.dispatchEvent(new CustomEvent('postCreated'));
+      // Emit custom event to notify HomePage to refresh posts with the new post data
+      window.dispatchEvent(new CustomEvent('postCreated', {
+        detail: { post: newPost }
+      }));
       
       // Reset form
       setContent('');
@@ -327,8 +329,8 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
                 <div className="relative group">
                   <button
                     onClick={() => {
-                      const loc = prompt('Enter location:');
-                      if (loc) setLocation(loc);
+                      const loc = prompt('Enter location:', location);
+                      if (loc !== null) setLocation(loc.trim());
                     }}
                     className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                     disabled={isPosting}

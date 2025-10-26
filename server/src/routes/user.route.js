@@ -18,6 +18,7 @@ router.get('/:userId/posts', protectRoute, userController.getUserPosts);
 // Follow routes
 router.post('/:userId/follow', protectRoute, userController.followUser);
 router.post('/:userId/unfollow', protectRoute, userController.unfollowUser);
+router.delete('/:followerId/remove-follower', protectRoute, userController.removeFollower);
 router.get('/:userId/followers', protectRoute, userController.getFollowers);
 router.get('/:userId/following', protectRoute, userController.getFollowing);
 

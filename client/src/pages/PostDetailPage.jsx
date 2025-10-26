@@ -9,6 +9,7 @@ import axiosInstance from '../lib/axios';
 import toast from 'react-hot-toast';
 import { formatTime, formatMessageTime } from '../lib/utils';
 import CommentsSection from '../components/comment/CommentsSection';
+import EditPostModal from '../components/EditPostModal';
 
 const PostDetailPage = () => {
   const { postId } = useParams();
@@ -32,6 +33,7 @@ const PostDetailPage = () => {
   const [likesData, setLikesData] = useState([]);
   const [loadingLikes, setLoadingLikes] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const handleCommentCountChange = (newCount) => {
     setCommentCount(newCount);
@@ -289,6 +291,25 @@ const PostDetailPage = () => {
     ? post.content.slice(0, 300) + '...' 
     : post?.content;
 
+  const handleEdit = () => {
+    setShowEditModal(true);
+    setShowOptions(false);
+  };
+
+  const handlePostUpdated = (updatedPost) => {
+    setPost(updatedPost);
+    setShowEditModal(false);
+    toast.success('Post updated successfully');
+    
+    // Emit event for other pages to update
+    window.dispatchEvent(new CustomEvent('postUpdated', {
+      detail: {
+        postId: updatedPost._id,
+        updates: updatedPost
+      }
+    }));
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -397,6 +418,12 @@ const PostDetailPage = () => {
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-10">
                   {post.author?._id === authUser?._id && (
                     <>
+                      <button 
+                        onClick={handleEdit}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
+                      >
+                        Edit post
+                      </button>
                       <button className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm text-red-600">
                         Delete post
                       </button>
@@ -997,6 +1024,16 @@ const PostDetailPage = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Edit Post Modal */}
+        {showEditModal && (
+          <EditPostModal
+            isOpen={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            post={post}
+            onPostUpdated={handlePostUpdated}
+          />
         )}
       </div>
     </div>

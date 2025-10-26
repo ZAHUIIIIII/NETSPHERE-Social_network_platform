@@ -50,8 +50,8 @@ export default function SignUpPage() {
       const username = (form.username || '').normalize('NFC').trim();
       if (!username.trim()) {
         errors.username = 'Username is required.';
-      } else if (username.length < 2 || username.length > 20) {
-        errors.username = 'Username must be 2 to 20 characters.';
+      } else if (username.length < 2 || username.length > 35) {
+        errors.username = 'Username must be 2 to 35 characters.';
       } else if (!/^[\p{L}\p{N} ]+$/u.test(username)) {
         errors.username = 'Only letters, numbers, and spaces are allowed.';
       } else {

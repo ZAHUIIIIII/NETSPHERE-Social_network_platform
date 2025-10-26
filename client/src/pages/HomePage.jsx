@@ -682,7 +682,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
     : post.content;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 animate-slideUp">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 animate-slideUp">
       {/* Post Header */}
       <div className="p-4 flex items-start justify-between">
         <div className="flex items-start gap-3 flex-1">
@@ -1413,9 +1413,19 @@ export default function HomePage() {
 
   // Listen for post created event from Navbar
   useEffect(() => {
-    const handlePostCreated = () => {
-      console.log('📝 New post created, refreshing feed...');
-      fetchPosts(0, 10); // Refresh the feed
+    const handlePostCreated = (event) => {
+      console.log('📝 New post created event received:', event.detail);
+      
+      // If we have the post data in the event, add it to the top of the feed
+      if (event.detail && event.detail.post) {
+        const newPost = event.detail.post;
+        console.log('Adding new post to feed:', newPost);
+        setPosts(prev => [newPost, ...prev]);
+      } else {
+        // Fallback: refresh the entire feed if no post data provided
+        console.log('No post data in event, refreshing feed...');
+        fetchPosts(0, 10);
+      }
     };
 
     window.addEventListener('postCreated', handlePostCreated);

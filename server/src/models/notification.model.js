@@ -20,7 +20,6 @@ const notificationSchema = new mongoose.Schema({
       'comment',        // Someone commented on your post
       'reply',          // Someone replied to your comment
       'follow',         // Someone followed you
-      'mention',        // Someone mentioned you in a post/comment
       'reaction',       // Someone reacted to your post/comment
       'share'           // Someone shared your post
     ]

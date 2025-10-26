@@ -98,7 +98,7 @@ function formatCommentDTO(comment, currentUserId) {
 export const createComment = async (req, res) => {
   try {
     const { postId } = req.params;
-    const { content, immediateParent, mentions } = req.body || {};
+    const { content, immediateParent } = req.body || {};
     const authorId = req.user?._id;
 
     if (!authorId) {
@@ -148,7 +148,6 @@ export const createComment = async (req, res) => {
       immediateParent: immediateParent || null,
       ancestors,
       logicalDepth,
-      mentions: mentions || [],
       replyToSnapshot,
       reactions: { like: [], love: [], haha: [], wow: [], sad: [], angry: [] }
     });

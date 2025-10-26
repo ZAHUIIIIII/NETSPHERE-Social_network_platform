@@ -55,8 +55,8 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
     { emoji: '😍', label: 'loved' },
     { emoji: '😎', label: 'cool' },
     { emoji: '😴', label: 'tired' },
-    { emoji: '🎉', label: 'celebrating' },
-    { emoji: '💪', label: 'motivated' },
+    { emoji: '🎉', label: 'celebrate' },
+    { emoji: '💪', label: 'motivate' },
     { emoji: '🤔', label: 'thoughtful' },
     { emoji: '😋', label: 'hungry' },
   ];
@@ -339,7 +339,7 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
                     <Smile className="w-5 h-5 text-yellow-600" />
                   </button>
                   {showEmojiPicker && (
-                    <div className="absolute right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 w-64">
+                    <div className="absolute right-0 bottom-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 w-64">
                       <p className="text-xs font-semibold text-gray-700 mb-2">How are you feeling?</p>
                       <div className="grid grid-cols-4 gap-2">
                         {feelings.map((f) => (

@@ -72,6 +72,17 @@ export const getFollowing = async (userId) => {
   }
 };
 
+// Remove follower
+export const removeFollower = async (followerId) => {
+  try {
+    const response = await axiosInstance.delete(`/users/${followerId}/remove-follower`);
+    return response.data;
+  } catch (error) {
+    console.error('Error removing follower:', error);
+    throw error;
+  }
+};
+
 // Update profile
 export const updateUserProfile = async (data) => {
   try {

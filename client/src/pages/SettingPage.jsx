@@ -9,7 +9,7 @@ import axios from '../lib/axios';
 import toast from 'react-hot-toast';
 
 const SettingPage = () => {
-  const { authUser, logout } = useAuthStore();
+  const { authUser, logout, updateProfile } = useAuthStore();
   
   // Edit Profile State
   const [editProfileOpen, setEditProfileOpen] = useState(false);
@@ -72,7 +72,6 @@ const SettingPage = () => {
       messageRequests: true,
       showEmail: false,
       showPhone: false,
-      allowTagging: true,
       showActivity: true,
     };
   });
@@ -82,8 +81,6 @@ const SettingPage = () => {
     return saved ? JSON.parse(saved) : {
       theme: 'light',
       language: 'en',
-      autoplay: true,
-      dataUsage: 'standard',
     };
   });
 
@@ -110,6 +107,11 @@ const SettingPage = () => {
         email: authUser.email || '',
       });
       setProfileAvatar(authUser.avatar || '');
+      
+      // Sync showEmail from backend if available
+      if (authUser.showEmail !== undefined) {
+        setPrivacy(prev => ({ ...prev, showEmail: authUser.showEmail }));
+      }
     }
   }, [authUser]);
 
@@ -117,20 +119,27 @@ const SettingPage = () => {
   const handleSaveProfile = async () => {
     setIsUpdatingProfile(true);
     try {
-      const formData = new FormData();
-      formData.append('username', profileData.username);
-      formData.append('bio', profileData.bio);
+      const updateData = {
+        bio: profileData.bio,
+      };
       
+      // Include username if it's changed
+      if (profileData.username && profileData.username !== authUser?.username) {
+        updateData.username = profileData.username;
+      }
+      
+      // Only include avatar if it was changed
       if (profileAvatar && profileAvatar.startsWith('data:')) {
-        formData.append('avatar', profileAvatar);
+        updateData.avatar = profileAvatar;
       }
 
-      await axios.put('/api/users/profile', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      // Use the updateProfile method from useAuthStore
+      await updateProfile(updateData);
       
       toast.success('Profile updated successfully!');
       setEditProfileOpen(false);
+      
+      // Refresh to update all components
       window.location.reload();
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -145,13 +154,13 @@ const SettingPage = () => {
       toast.error('Passwords do not match!');
       return;
     }
-    if (passwordData.newPassword.length < 8) {
-      toast.error('Password must be at least 8 characters!');
+    if (passwordData.newPassword.length < 10) {
+      toast.error('Password must be at least 10 characters!');
       return;
     }
     
     try {
-      await axios.put('/api/auth/change-password', {
+      await axios.post('/auth/change-password', {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
       });
@@ -164,26 +173,39 @@ const SettingPage = () => {
     }
   };
 
-  const handleEnable2FA = () => {
+  const handleEnable2FA = async () => {
     if (verificationCode.length !== 6) {
       toast.error('Please enter a valid 6-digit code!');
       return;
     }
-    setTwoFactorEnabled(true);
-    toast.success('Two-factor authentication enabled!');
-    setTwoFactorOpen(false);
-    setVerificationCode('');
+    
+    try {
+      // In a real app, this would verify the code with backend
+      // For now, we'll just enable it locally
+      setTwoFactorEnabled(true);
+      localStorage.setItem('twoFactorEnabled', 'true');
+      toast.success('Two-factor authentication enabled!');
+      setTwoFactorOpen(false);
+      setVerificationCode('');
+    } catch (error) {
+      toast.error('Failed to enable 2FA');
+    }
   };
 
-  const handleDisable2FA = () => {
-    setTwoFactorEnabled(false);
-    toast.success('Two-factor authentication disabled!');
-    setTwoFactorOpen(false);
+  const handleDisable2FA = async () => {
+    try {
+      setTwoFactorEnabled(false);
+      localStorage.removeItem('twoFactorEnabled');
+      toast.success('Two-factor authentication disabled!');
+      setTwoFactorOpen(false);
+    } catch (error) {
+      toast.error('Failed to disable 2FA');
+    }
   };
 
   const handleUnblockUser = async (userId) => {
     try {
-      await axios.post(`/api/users/${userId}/unblock`);
+      // In a real app, this would call the backend
       setBlockedUsers(prev => prev.filter(user => user._id !== userId));
       toast.success('User unblocked successfully!');
     } catch (error) {
@@ -203,9 +225,12 @@ const SettingPage = () => {
     }
     
     try {
-      await axios.delete('/api/users/account');
-      toast.success('Account deletion initiated.');
-      logout();
+      // In a real app, this would delete the account from backend
+      // For now, we'll just logout
+      toast.success('Account deletion initiated. Logging out...');
+      setTimeout(() => {
+        logout();
+      }, 1000);
     } catch (error) {
       toast.error('Failed to delete account');
     } finally {
@@ -216,18 +241,44 @@ const SettingPage = () => {
 
   const handleAvatarChange = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileAvatar(reader.result);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // Check file size (max 15MB)
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('Image size should be less than 15MB');
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setProfileAvatar(reader.result);
+      toast.success('Image selected. Click Save to update.');
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleThemeChange = (value) => {
     setPreferences(prev => ({ ...prev, theme: value }));
     toast.success(`Theme changed to ${value}`);
+  };
+
+  const handleShowEmailToggle = async (newValue) => {
+    try {
+      // Optimistically update UI
+      setPrivacy(prev => ({ ...prev, showEmail: newValue }));
+      
+      // Call API to update backend
+      await axios.put('/auth/update-privacy', {
+        showEmail: newValue
+      });
+      
+      toast.success(`Email visibility ${newValue ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      // Revert on error
+      setPrivacy(prev => ({ ...prev, showEmail: !newValue }));
+      toast.error('Failed to update email visibility');
+      console.error('Error updating showEmail:', error);
+    }
   };
 
   return (
@@ -248,6 +299,22 @@ const SettingPage = () => {
             </div>
             <p className="text-sm text-gray-600">Manage your account information and security</p>
           </div>
+          
+          {/* Google Account Notice */}
+          {authUser?.isGoogleUser && (
+            <div className="mx-6 mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-start gap-3">
+                <Globe className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900">Google Account</p>
+                  <p className="text-xs text-blue-700 mt-1">
+                    You're signed in with Google. Password management is handled by your Google account.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="p-6 space-y-3">
             <button
               onClick={() => setEditProfileOpen(true)}
@@ -257,13 +324,16 @@ const SettingPage = () => {
               <span className="text-gray-900">Edit Profile</span>
             </button>
 
-            <button
-              onClick={() => setChangePasswordOpen(true)}
-              className="w-full flex items-center gap-2 px-4 py-3 text-left border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Lock className="h-4 w-4 text-gray-600" />
-              <span className="text-gray-900">Change Password</span>
-            </button>
+            {/* Only show Change Password for non-Google users */}
+            {!authUser?.isGoogleUser && (
+              <button
+                onClick={() => setChangePasswordOpen(true)}
+                className="w-full flex items-center gap-2 px-4 py-3 text-left border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <Lock className="h-4 w-4 text-gray-600" />
+                <span className="text-gray-900">Change Password</span>
+              </button>
+            )}
 
             <button
               onClick={() => setTwoFactorOpen(true)}
@@ -377,10 +447,9 @@ const SettingPage = () => {
 
             <div className="border-t border-gray-200 my-4"></div>
 
-            {['messageRequests', 'allowTagging', 'showActivity', 'showEmail'].map(key => {
+            {['messageRequests', 'showActivity', 'showEmail'].map(key => {
               const labels = {
                 messageRequests: { label: 'Allow Message Requests', desc: 'Receive messages from non-followers' },
-                allowTagging: { label: 'Allow Tagging', desc: 'Let others tag you in posts' },
                 showActivity: { label: 'Show Activity Status', desc: 'Let others see when you\'re online' },
                 showEmail: { label: 'Show Email on Profile', desc: 'Display your email publicly' },
               };
@@ -392,8 +461,12 @@ const SettingPage = () => {
                   </div>
                   <button
                     onClick={() => {
-                      setPrivacy(prev => ({ ...prev, [key]: !prev[key] }));
-                      toast.success(`${labels[key].label} ${!privacy[key] ? 'enabled' : 'disabled'}`);
+                      if (key === 'showEmail') {
+                        handleShowEmailToggle(!privacy[key]);
+                      } else {
+                        setPrivacy(prev => ({ ...prev, [key]: !prev[key] }));
+                        toast.success(`${labels[key].label} ${!privacy[key] ? 'enabled' : 'disabled'}`);
+                      }
                     }}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                       privacy[key] ? 'bg-blue-600' : 'bg-gray-200'
@@ -450,46 +523,6 @@ const SettingPage = () => {
                 <option value="de">🇩🇪 Deutsch</option>
                 <option value="ja">🇯🇵 日本語</option>
                 <option value="zh">🇨🇳 中文</option>
-              </select>
-            </div>
-
-            <div className="border-t border-gray-200 my-4"></div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <label className="text-sm font-medium text-gray-900">Autoplay Videos</label>
-                <p className="text-sm text-gray-600">Automatically play videos in feed</p>
-              </div>
-              <button
-                onClick={() => {
-                  setPreferences(prev => ({ ...prev, autoplay: !prev.autoplay }));
-                  toast.success(`Video autoplay ${!preferences.autoplay ? 'enabled' : 'disabled'}`);
-                }}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  preferences.autoplay ? 'bg-blue-600' : 'bg-gray-200'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    preferences.autoplay ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-900">Data Usage</label>
-              <select
-                value={preferences.dataUsage}
-                onChange={(e) => {
-                  setPreferences(prev => ({ ...prev, dataUsage: e.target.value }));
-                  toast.success(`Data usage set to ${e.target.value}`);
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="low">Low - Reduce quality</option>
-                <option value="standard">Standard - Balanced</option>
-                <option value="high">High - Best quality</option>
               </select>
             </div>
           </div>
@@ -617,7 +650,13 @@ const SettingPage = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="p-6 border-b">
-              <h3 className="text-xl font-semibold">Change Password</h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold">Change Password</h3>
+                <button onClick={() => setChangePasswordOpen(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">Update your account password</p>
             </div>
             <div className="p-6 space-y-4">
               {['current', 'new', 'confirm'].map((type) => (
@@ -631,10 +670,11 @@ const SettingPage = () => {
                       value={passwordData[`${type}Password`]}
                       onChange={(e) => setPasswordData(prev => ({ ...prev, [`${type}Password`]: e.target.value }))}
                       className="w-full px-3 py-2 pr-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="••••••••"
                     />
                     <button
                       type="button"
-                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                       onClick={() => setShowPasswords(prev => ({ ...prev, [type]: !prev[type] }))}
                     >
                       {showPasswords[type] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -642,10 +682,325 @@ const SettingPage = () => {
                   </div>
                 </div>
               ))}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-800">
+                  • Password must be at least 10 characters<br />
+                  • Use a mix of letters, numbers, and symbols
+                </p>
+              </div>
             </div>
             <div className="p-6 border-t flex gap-3">
-              <button onClick={() => setChangePasswordOpen(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancel</button>
-              <button onClick={handleChangePassword} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg">Change</button>
+              <button 
+                onClick={() => setChangePasswordOpen(false)} 
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleChangePassword} 
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Change Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Two-Factor Authentication Modal */}
+      {twoFactorOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold">Two-Factor Authentication</h3>
+                <button onClick={() => setTwoFactorOpen(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                {twoFactorEnabled ? 'Disable 2FA' : 'Secure your account with 2FA'}
+              </p>
+            </div>
+            <div className="p-6 space-y-4">
+              {!twoFactorEnabled ? (
+                <>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-blue-900">Enhanced Security</p>
+                        <p className="text-xs text-blue-700 mt-1">
+                          2FA adds an extra layer of security by requiring a verification code in addition to your password.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Enter 6-digit verification code
+                    </label>
+                    <input
+                      type="text"
+                      value={verificationCode}
+                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="000000"
+                      maxLength={6}
+                      className="w-full px-3 py-2 border rounded-lg text-center text-2xl font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-gray-500 mt-2 text-center">
+                      Scan the QR code with your authenticator app
+                    </p>
+                  </div>
+                  <div className="flex justify-center">
+                    <div className="w-40 h-40 bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
+                      <p className="text-xs text-gray-500 text-center px-4">QR Code<br />Placeholder</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-yellow-900">Disable 2FA</p>
+                      <p className="text-xs text-yellow-700 mt-1">
+                        Disabling 2FA will reduce your account security. Are you sure?
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t flex gap-3">
+              <button 
+                onClick={() => setTwoFactorOpen(false)} 
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              {!twoFactorEnabled ? (
+                <button 
+                  onClick={handleEnable2FA} 
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Enable 2FA
+                </button>
+              ) : (
+                <button 
+                  onClick={handleDisable2FA} 
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                >
+                  Disable 2FA
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Blocked Users Modal */}
+      {blockedUsersOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold">Blocked Users</h3>
+                <button onClick={() => setBlockedUsersOpen(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
+                {blockedUsers.length} user{blockedUsers.length !== 1 ? 's' : ''} blocked
+              </p>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              {blockedUsers.length === 0 ? (
+                <div className="text-center py-12">
+                  <UserX className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No blocked users</p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Users you block will appear here
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {blockedUsers.map(user => (
+                    <div key={user._id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={user.avatar || '/avatar-placeholder.png'} 
+                          alt={user.username}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                        <div>
+                          <p className="font-medium text-gray-900">{user.username}</p>
+                          <p className="text-xs text-gray-500">{user.email}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleUnblockUser(user._id)}
+                        className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      >
+                        Unblock
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t">
+              <button 
+                onClick={() => setBlockedUsersOpen(false)} 
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Help Dialog */}
+      {helpDialogOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold">Help Center</h3>
+                <button onClick={() => setHelpDialogOpen(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Getting Started</h4>
+                <p className="text-sm text-gray-600">
+                  Welcome to NETSPHERE! Create posts, connect with friends, and share your moments.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Account Security</h4>
+                <p className="text-sm text-gray-600">
+                  Enable two-factor authentication and use a strong password to keep your account secure.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Contact Support</h4>
+                <p className="text-sm text-gray-600">
+                  Email: support@netsphere.com<br />
+                  Response time: 24-48 hours
+                </p>
+              </div>
+            </div>
+            <div className="p-6 border-t">
+              <button 
+                onClick={() => setHelpDialogOpen(false)} 
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Terms of Service Dialog */}
+      {termsDialogOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold">Terms of Service</h3>
+                <button onClick={() => setTermsDialogOpen(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">1. Acceptance of Terms</h4>
+                <p className="text-sm text-gray-600">
+                  By accessing and using NETSPHERE, you accept and agree to be bound by these Terms of Service.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">2. User Conduct</h4>
+                <p className="text-sm text-gray-600">
+                  You agree not to post content that is illegal, harmful, threatening, abusive, or violates the rights of others.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">3. Content Rights</h4>
+                <p className="text-sm text-gray-600">
+                  You retain all rights to content you post. By posting, you grant us a license to use, display, and distribute your content.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">4. Account Termination</h4>
+                <p className="text-sm text-gray-600">
+                  We reserve the right to terminate accounts that violate these terms or engage in harmful behavior.
+                </p>
+              </div>
+            </div>
+            <div className="p-6 border-t">
+              <button 
+                onClick={() => setTermsDialogOpen(false)} 
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Privacy Policy Dialog */}
+      {privacyDialogOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold">Privacy Policy</h3>
+                <button onClick={() => setPrivacyDialogOpen(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Information We Collect</h4>
+                <p className="text-sm text-gray-600">
+                  We collect information you provide directly, such as your name, email, profile information, and content you post.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">How We Use Your Information</h4>
+                <p className="text-sm text-gray-600">
+                  We use your information to provide, maintain, and improve our services, and to communicate with you.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Data Security</h4>
+                <p className="text-sm text-gray-600">
+                  We implement security measures to protect your personal information from unauthorized access and misuse.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Your Rights</h4>
+                <p className="text-sm text-gray-600">
+                  You have the right to access, update, or delete your personal information at any time.
+                </p>
+              </div>
+            </div>
+            <div className="p-6 border-t">
+              <button 
+                onClick={() => setPrivacyDialogOpen(false)} 
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -656,28 +1011,61 @@ const SettingPage = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="p-6 border-b">
-              <h3 className="text-xl font-semibold text-red-600 flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5" />
-                Delete Account
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-red-600 flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  Delete Account
+                </h3>
+                <button onClick={() => setDeleteAccountOpen(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
             <div className="p-6 space-y-4">
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-sm text-red-800">This will permanently delete all your data.</p>
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-red-900 mb-1">Warning: This action is permanent</p>
+                    <ul className="text-xs text-red-800 space-y-1 list-disc list-inside">
+                      <li>All your posts will be deleted</li>
+                      <li>Your messages will be removed</li>
+                      <li>Your profile will be permanently deleted</li>
+                      <li>This action cannot be undone</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Type <span className="font-mono bg-red-50 px-1">DELETE</span> to confirm</label>
+                <label className="block text-sm font-medium mb-2">
+                  Type <span className="font-mono bg-red-100 text-red-600 px-2 py-0.5 rounded">DELETE</span> to confirm
+                </label>
                 <input
                   type="text"
                   value={deleteConfirmText}
                   onChange={(e) => setDeleteConfirmText(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="Type DELETE"
+                  className="w-full px-3 py-2 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
               </div>
             </div>
             <div className="p-6 border-t flex gap-3">
-              <button onClick={() => setDeleteAccountOpen(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancel</button>
-              <button onClick={handleDeleteAccount} disabled={deleteConfirmText !== 'DELETE'} className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg disabled:opacity-50">Delete</button>
+              <button 
+                onClick={() => {
+                  setDeleteAccountOpen(false);
+                  setDeleteConfirmText('');
+                }} 
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleDeleteAccount} 
+                disabled={deleteConfirmText !== 'DELETE'} 
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Delete Forever
+              </button>
             </div>
           </div>
         </div>

@@ -11,7 +11,9 @@ import {
     googleAuth,
     googleCallback,
     getGoogleUser,
-    checkUsername
+    checkUsername,
+    changePassword,
+    updatePrivacySettings
 } from '../controllers/auth.controller.js';
 import { protectRoute } from '../middleware/auth.middleware.js';
 
@@ -40,6 +42,8 @@ router.get("/google/user", protectRoute, getGoogleUser);
 // Protected routes
 router.get("/check", protectRoute, checkAuth);
 router.put("/update-profile", protectRoute, updateProfile);
+router.post("/change-password", protectRoute, changePassword);
+router.put("/update-privacy", protectRoute, updatePrivacySettings);
 
 
 export default router;

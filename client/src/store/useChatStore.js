@@ -29,6 +29,16 @@ export const useChatStore = create((set, get) => ({
     try {
       const res = await axiosInstance.get(`/messages/${userId}`);
       set({ messages: res.data });
+      
+      // After fetching messages, update the user's unread count to 0
+      const { users } = get();
+      const updatedUsers = users.map(user => {
+        if (user._id === userId) {
+          return { ...user, unreadCount: 0 };
+        }
+        return user;
+      });
+      set({ users: updatedUsers });
     } catch (error) {
       console.error("Error fetching messages:", error);
       toast.error(error.response?.data?.message || "Failed to fetch messages");
@@ -81,25 +91,25 @@ export const useChatStore = create((set, get) => ({
       console.error("Error sending message:", error);
       toast.error(error.response?.data?.message || "Failed to send message");
     }
-  },  subscribeToMessages: () => {
-    const { selectedUser } = get();
-    if (!selectedUser) return;
-
+  },  
+  
+  subscribeToMessages: () => {
     const socket = useAuthStore.getState().socket;
 
     socket.on("newMessage", (newMessage) => {
-      const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser._id;
-      if (!isMessageSentFromSelectedUser) return;
-
-      // Add message to current conversation
-      set({
-        messages: [...get().messages, newMessage],
-      });
+      const { selectedUser, messages, users } = get();
+      const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser?._id;
       
-      // Update the specific user's last message in the users list WITHOUT refetching
-      const { users } = get();
+      if (isMessageSentFromSelectedUser) {
+        // Add message to current conversation if from selected user
+        set({
+          messages: [...messages, newMessage],
+        });
+      }
+      
+      // Update the user's last message and unread count in the users list
       const updatedUsers = users.map(user => {
-        if (user._id === selectedUser._id) {
+        if (user._id === newMessage.senderId) {
           return {
             ...user,
             lastMessage: {
@@ -107,10 +117,12 @@ export const useChatStore = create((set, get) => ({
               text: newMessage.text || '',
               image: newMessage.image || null,
               senderId: newMessage.senderId,
-              senderName: selectedUser.username,
+              senderName: user.username,
               createdAt: newMessage.createdAt || new Date().toISOString(),
               isFromMe: false
-            }
+            },
+            // Increment unread count only if not from selected user (not currently viewing)
+            unreadCount: isMessageSentFromSelectedUser ? user.unreadCount : (user.unreadCount || 0) + 1
           };
         }
         return user;

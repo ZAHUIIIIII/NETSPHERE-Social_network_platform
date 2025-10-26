@@ -1,8 +1,10 @@
 import { X, Phone, Video, MoreVertical } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useChatStore } from "../../store/useChatStore";
 
 const ChatHeader = () => {
+  const navigate = useNavigate();
   const { selectedUser, setSelectedUser } = useChatStore();
   const { onlineUsers } = useAuthStore();
 
@@ -34,7 +36,10 @@ const ChatHeader = () => {
 
           {/* User info */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-base lg:text-lg text-gray-800 truncate">
+            <h3 
+              onClick={() => navigate(`/profile/${selectedUser?.username}`)}
+              className="font-semibold text-base lg:text-lg text-gray-800 truncate hover:text-blue-600 cursor-pointer transition-colors"
+            >
               {selectedUser?.username || "User"}
             </h3>
             <div className="flex items-center gap-2 mt-1">

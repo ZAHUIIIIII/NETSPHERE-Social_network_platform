@@ -43,8 +43,8 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image size should be less than 5MB');
+    if (file.size > 15 * 1024 * 1024) {
+      toast.error('Image size should be less than 15MB');
       return;
     }
 
@@ -157,12 +157,13 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
 
   return (
     <div className="bg-white border-b border-gray-200">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col sm:flex-row gap-6">
+      <div className="max-w-5xl mx-auto px-8 py-8">
+        {/* Main Profile Info */}
+        <div className="flex items-start gap-8 mb-6">
           {/* Avatar */}
           <div className="flex-shrink-0">
-            <div className="relative w-36 h-36 rounded-full overflow-visible bg-gray-100 ring-4 ring-gray-200">
-              <div className="w-full h-full rounded-full overflow-hidden">
+            <div className="relative w-36 h-36">
+              <div className="w-full h-full rounded-full overflow-hidden ring-1 ring-gray-300">
                 {(selectedImg || user?.avatar) ? (
                   <img
                     src={selectedImg || user.avatar}
@@ -170,8 +171,8 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
-                    <span className="text-white font-bold text-5xl">
+                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                    <span className="text-gray-600 font-semibold text-5xl">
                       {user?.username?.charAt(0).toUpperCase()}
                     </span>
                   </div>
@@ -189,10 +190,10 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                     disabled={isUpdatingProfile}
                   />
                   <label htmlFor="avatar-upload" className="cursor-pointer">
-                    <div className={`w-10 h-10 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center shadow-lg transition-all border-2 border-gray-200 ${
+                    <div className={`w-9 h-9 bg-white hover:bg-gray-50 rounded-full flex items-center justify-center shadow-md transition-all border border-gray-300 ${
                       isUpdatingProfile ? 'animate-pulse' : ''
                     }`}>
-                      <Camera className="h-5 w-5 text-gray-700" />
+                      <Camera className="h-4 w-4 text-gray-700" />
                     </div>
                   </label>
                 </div>
@@ -202,32 +203,29 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
 
           {/* User Info */}
           <div className="flex-1 min-w-0">
-            {/* Name and Actions */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-5">
-              <div className="flex-1 min-w-0">
-                <h1 className="text-3xl font-bold text-gray-900 mb-1">
-                  {user?.username || 'User'}
-                </h1>
-                <p className="text-gray-600 text-base">@{user?.email?.split('@')[0] || 'user'}</p>
-              </div>
+            {/* Name and Action Buttons */}
+            <div className="flex items-center justify-between mb-1">
+              <h1 className="text-3xl font-bold text-gray-900">
+                {user?.name || user?.username || 'User'}
+              </h1>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-3">
                 {isOwnProfile ? (
                   <>
                     <button
                       onClick={onEditClick}
-                      className="px-5 py-2 bg-white border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 transition-all font-medium text-sm flex items-center gap-2"
+                      className="inline-flex items-center gap-2 px-6 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-900 rounded-lg transition-colors font-semibold text-sm"
                     >
                       <Edit size={16} />
                       Edit Profile
                     </button>
-                    <button className="p-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors">
-                      <MoreHorizontal size={20} className="text-gray-700" />
+                    <button className="p-2 hover:bg-gray-50 border border-gray-300 rounded-lg transition-colors">
+                      <MoreHorizontal size={20} className="text-gray-900" />
                     </button>
                   </>
                 ) : (
-                  <>
+                  <div className="flex items-center gap-2">
                     <FollowButton
                       userId={user?._id}
                       initialIsFollowing={isFollowing}
@@ -235,65 +233,64 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                     />
                     <button 
                       onClick={handleMessage}
-                      className="px-5 py-2 bg-white border border-gray-300 text-gray-900 rounded-lg hover:bg-gray-50 transition-all font-medium text-sm flex items-center gap-2"
+                      className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-lg transition-colors font-semibold text-sm"
                     >
-                      <MessageCircle size={16} />
                       Message
                     </button>
-                    <button className="p-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition-colors">
-                      <MoreHorizontal size={20} className="text-gray-700" />
-                    </button>
-                  </>
+                  </div>
                 )}
               </div>
             </div>
 
-            {/* Stats */}
+            {/* Email - Show if user enabled showEmail OR if viewing own profile */}
+            {(user?.showEmail || isOwnProfile) && (
+              <p className="text-gray-600 mb-5 text-base">
+                {user?.email || 'user@example.com'}
+              </p>
+            )}
+
+            {/* Stats Row */}
             <div className="flex items-center gap-8 mb-5">
-              <div className="flex items-center gap-1">
-                <span className="font-bold text-gray-900 text-base">
+              <div className="flex items-center gap-1.5">
+                <span className="font-bold text-gray-900 text-lg">
                   {user?.postCount || posts?.length || 0}
                 </span>
                 <span className="text-gray-600 text-base">Posts</span>
               </div>
               <button
-                className="flex items-center gap-1 hover:text-gray-900 transition-colors group"
+                className="flex items-center gap-1.5 hover:opacity-70 transition-opacity"
                 onClick={() => setShowFollowersModal(true)}
               >
-                <span className="font-bold text-gray-900 text-base group-hover:underline">
-                  {followersCount}
+                <span className="font-bold text-gray-900 text-lg">
+                  {followersCount >= 1000 ? `${(followersCount / 1000).toFixed(1)}k` : followersCount}
                 </span>
-                <span className="text-gray-600 text-base group-hover:underline">Followers</span>
+                <span className="text-gray-600 text-base">Followers</span>
               </button>
               <button
-                className="flex items-center gap-1 hover:text-gray-900 transition-colors group"
+                className="flex items-center gap-1.5 hover:opacity-70 transition-opacity"
                 onClick={() => setShowFollowingModal(true)}
               >
-                <span className="font-bold text-gray-900 text-base group-hover:underline">
+                <span className="font-bold text-gray-900 text-lg">
                   {followingCount}
                 </span>
-                <span className="text-gray-600 text-base group-hover:underline">Following</span>
+                <span className="text-gray-600 text-base">Following</span>
               </button>
             </div>
 
             {/* Bio */}
             {user?.bio && (
-              <p className="text-gray-900 mb-3 leading-relaxed text-base max-w-2xl">
-                {user.bio}
-              </p>
+              <div className="mb-4">
+                <p className="text-gray-900 leading-relaxed whitespace-pre-wrap">
+                  {user.bio}
+                </p>
+              </div>
             )}
 
-            {/* Additional Info */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm mb-3">
-              {user?.work && (
-                <div className="flex items-center gap-1.5 text-gray-600">
-                  <span className="font-medium">{user.work}</span>
-                </div>
-              )}
-
+            {/* Additional Info - All in one line */}
+            <div className="flex flex-wrap items-center gap-4 text-gray-600 mb-4">
               {user?.location && (
-                <div className="flex items-center gap-1.5 text-gray-600">
-                  <MapPin size={16} className="text-gray-500" />
+                <div className="flex items-center gap-1.5">
+                  <MapPin size={18} className="text-gray-500" />
                   <span>{user.location}</span>
                 </div>
               )}
@@ -303,16 +300,16 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                   href={user.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-blue-600 hover:underline"
+                  className="text-blue-600 hover:underline font-medium flex items-center gap-1.5"
                 >
-                  <LinkIcon size={16} />
+                  <LinkIcon size={18} />
                   <span>{user.website.replace(/^https?:\/\//, '')}</span>
                 </a>
               )}
 
               {user?.createdAt && (
-                <div className="flex items-center gap-1.5 text-gray-600">
-                  <Calendar size={16} className="text-gray-500" />
+                <div className="flex items-center gap-1.5">
+                  <Calendar size={18} className="text-gray-500" />
                   <span>
                     Joined {new Date(user.createdAt).toLocaleDateString('en-US', {
                       month: 'long',
@@ -322,6 +319,8 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                 </div>
               )}
             </div>
+
+            {/* Skills/Hashtags - Removed */}
           </div>
         </div>
       </div>

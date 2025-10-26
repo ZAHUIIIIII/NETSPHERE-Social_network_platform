@@ -110,11 +110,24 @@ const Sidebar = () => {
               {onlineUsers.includes(user._id) && (
                 <span className="absolute -bottom-1 -right-1 size-3 bg-green-500 rounded-full border-2 border-white shadow-sm animate-pulse" />
               )}
+              {/* Unread badge for mobile */}
+              {user.unreadCount > 0 && (
+                <span className="lg:hidden absolute -top-1 -right-1 bg-blue-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 border-2 border-white">
+                  {user.unreadCount > 9 ? '9+' : user.unreadCount}
+                </span>
+              )}
             </div>
 
             {/* User info - only visible on larger screens */}
             <div className="hidden lg:block text-left min-w-0 flex-1">
-              <div className="font-semibold text-gray-800 truncate text-sm">{user.username || "Unknown User"}</div>
+              <div className="flex items-center justify-between">
+                <div className="font-semibold text-gray-800 truncate text-sm">{user.username || "Unknown User"}</div>
+                {user.unreadCount > 0 && (
+                  <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1.5 ml-2">
+                    {user.unreadCount > 99 ? '99+' : user.unreadCount}
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-2 mt-1">
                 {user.lastMessage ? (
                   <div className="flex items-center justify-between min-w-0 flex-1">

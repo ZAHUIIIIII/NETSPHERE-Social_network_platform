@@ -51,12 +51,6 @@ const CommentSchema = new mongoose.Schema({
     required: true 
   },
   
-  // Mentions
-  mentions: [{ 
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    username: String 
-  }],
-  
   // Reply snapshot (for display)
   replyToSnapshot: {
     userId: mongoose.Schema.Types.ObjectId,

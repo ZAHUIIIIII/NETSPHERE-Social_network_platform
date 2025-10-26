@@ -60,13 +60,15 @@ export const getAllPosts = async (req, res) => {
 // Create a new post
 export const createPost = async (req, res) => {
   try {
-    const { content, images = [], privacy = 'public' } = req.body;
+    const { content, images = [], privacy = 'public', location, feeling } = req.body;
 
     const post = new Post({
       content,
       images,
       privacy,
-      author: req.user._id
+      author: req.user._id,
+      ...(location && { location }),
+      ...(feeling && { feeling })
     });
 
     await post.save();

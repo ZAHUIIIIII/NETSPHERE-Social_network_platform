@@ -1,12 +1,15 @@
 // client/src/components/profile/FollowButton.jsx
 import React, { useState } from 'react';
-import { UserPlus, UserMinus, Loader } from 'lucide-react';
+import { UserPlus, UserMinus, Loader, UserCheck } from 'lucide-react';
 import { followUser, unfollowUser } from '../../services/profileApi';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../../store/useAuthStore';
 
-const FollowButton = ({ userId, initialIsFollowing, onFollowChange }) => {
+const FollowButton = ({ userId, initialIsFollowing, onFollowChange, isFollowBack = false }) => {
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing);
   const [isLoading, setIsLoading] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const { authUser } = useAuthStore();
 
   // Update local state when prop changes (important for when navigating between profiles)
   React.useEffect(() => {
@@ -26,6 +29,16 @@ const FollowButton = ({ userId, initialIsFollowing, onFollowChange }) => {
       if (isFollowing) {
         const response = await unfollowUser(userId);
         setIsFollowing(false);
+        
+        // Update authUser following list in global state
+        const updatedFollowing = authUser.following.filter(id => {
+          const idStr = typeof id === 'object' ? id._id || id.toString() : id.toString();
+          return idStr !== userId.toString();
+        });
+        useAuthStore.setState({ 
+          authUser: { ...authUser, following: updatedFollowing } 
+        });
+        
         toast.success(response.message || 'Unfollowed successfully');
         onFollowChange?.({
           isFollowing: false,
@@ -34,6 +47,13 @@ const FollowButton = ({ userId, initialIsFollowing, onFollowChange }) => {
       } else {
         const response = await followUser(userId);
         setIsFollowing(true);
+        
+        // Update authUser following list in global state
+        const updatedFollowing = [...(authUser.following || []), userId];
+        useAuthStore.setState({ 
+          authUser: { ...authUser, following: updatedFollowing } 
+        });
+        
         toast.success(response.message || 'Followed successfully');
         onFollowChange?.({
           isFollowing: true,
@@ -51,32 +71,40 @@ const FollowButton = ({ userId, initialIsFollowing, onFollowChange }) => {
   return (
     <button
       onClick={handleFollowToggle}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       disabled={isLoading}
       className={`
-        px-5 py-2 rounded-lg font-medium text-sm transition-all
-        flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed
+        relative overflow-hidden px-4 py-1.5 rounded-lg font-semibold text-sm 
+        transition-all duration-200
+        flex items-center justify-center gap-2 
+        disabled:opacity-50 disabled:cursor-not-allowed
+        ${isFollowBack ? 'min-w-[110px]' : 'min-w-[100px]'}
         ${isFollowing
-          ? 'bg-white border border-gray-300 text-gray-900 hover:bg-gray-50 hover:border-red-300 hover:text-red-600'
-          : 'bg-blue-500 text-white hover:bg-blue-600 shadow-md hover:shadow-lg'
+          ? 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+          : 'bg-blue-500 text-white hover:bg-blue-600'
         }
       `}
     >
-      {isLoading ? (
-        <>
-          <Loader className="w-4 h-4 animate-spin" />
-          <span>Loading...</span>
-        </>
-      ) : isFollowing ? (
-        <>
-          <UserMinus className="w-4 h-4" />
-          <span>Unfollow</span>
-        </>
-      ) : (
-        <>
-          <UserPlus className="w-4 h-4" />
-          <span>Follow</span>
-        </>
-      )}
+      {/* Button content */}
+      <div className="relative flex items-center gap-2 whitespace-nowrap">
+        {isLoading ? (
+          <>
+            <Loader className="w-4 h-4 animate-spin" />
+            <span>{isFollowing ? 'Unfollowing' : 'Following'}...</span>
+          </>
+        ) : isFollowing ? (
+          <>
+            {isHovered ? (
+              <span>Unfollow</span>
+            ) : (
+              <span>Following</span>
+            )}
+          </>
+        ) : (
+          <span>{isFollowBack ? 'Follow Back' : 'Follow'}</span>
+        )}
+      </div>
     </button>
   );
 };

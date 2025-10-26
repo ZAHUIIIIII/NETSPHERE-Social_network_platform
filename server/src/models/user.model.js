@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     minlength: 2,
-    maxlength: 20,
+    maxlength: 35,
     validate: {
       validator: function(v) {
           if (typeof v !== 'string') return false;
@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
           if (!/^[\p{L}\p{N} ]+$/u.test(s)) return false;
           return true;
         },
-      message: props => `${props.value} is not a valid username. Use 2-20 characters: letters, numbers, and spaces. Periods are not allowed.`
+      message: props => `${props.value} is not a valid username. Use 2-35 characters: letters, numbers, and spaces. Periods are not allowed.`
     }
   },
 
@@ -71,6 +71,11 @@ const userSchema = new mongoose.Schema({
   work: {
     type: String,
     default: "",
+  },
+  // Privacy settings
+  showEmail: {
+    type: Boolean,
+    default: false,
   },
   followers: [{
     type: mongoose.Schema.Types.ObjectId,

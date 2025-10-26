@@ -12,7 +12,7 @@ export const getUsersForSidebar = async (req, res) => {
     
     const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
     
-    // Get last message for each user
+    // Get last message and unread count for each user
     const usersWithLastMessage = await Promise.all(
       filteredUsers.map(async (user) => {
         const lastMessage = await Message.findOne({
@@ -25,6 +25,13 @@ export const getUsersForSidebar = async (req, res) => {
         .populate('senderId', 'username')
         .populate('receiverId', 'username');
 
+        // Count unread messages from this user
+        const unreadCount = await Message.countDocuments({
+          senderId: user._id,
+          receiverId: loggedInUserId,
+          read: false
+        });
+
         return {
           ...user.toObject(),
           lastMessage: lastMessage ? {
@@ -35,7 +42,8 @@ export const getUsersForSidebar = async (req, res) => {
             senderName: lastMessage.senderId.username,
             createdAt: lastMessage.createdAt,
             isFromMe: lastMessage.senderId._id.toString() === loggedInUserId.toString()
-          } : null
+          } : null,
+          unreadCount
         };
       })
     );
@@ -68,6 +76,18 @@ export const getMessages = async (req, res) => {
       ],
     })
     .sort({ createdAt: 1 }); // Sort by creation time in ascending order (oldest first)
+
+    // Mark all messages from the other user as read
+    await Message.updateMany(
+      {
+        senderId: userToChatId,
+        receiverId: myId,
+        read: false
+      },
+      {
+        $set: { read: true }
+      }
+    );
 
     res.status(200).json(messages);
   } catch (error) {

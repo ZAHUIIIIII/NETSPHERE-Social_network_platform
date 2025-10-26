@@ -26,31 +26,22 @@ function ensureGoogleStrategy() {
                 },
                 async (accessToken, refreshToken, profile, done) => {
                     try {
-                        // Debug: log minimal profile info to help diagnose missing-email cases
-                        try {
-                            const pid = profile && profile.id ? profile.id : '<no-id>';
-                            const emails = profile && profile.emails ? profile.emails.map(e => e.value) : [];
-                            console.log(`[GoogleOAuth] profile id=${pid} emails=${JSON.stringify(emails)}`);
-                        } catch (logErr) {
-                            console.warn('[GoogleOAuth] Failed to log profile info', logErr);
-                        }
                         const email = profile.emails[0].value;
                         const googleAvatar = profile.photos && profile.photos[0] && profile.photos[0].value;
                         
                         // Normalize display name: NFC normalize + trim
                         const displayName = profile.displayName ? String(profile.displayName).normalize('NFC').trim() : '';
-                        const normalized = displayName || `user_${profile.id}`;
+                        
+                        // Sanitize username: remove invalid characters (keep only letters, numbers, spaces)
+                        // Remove periods, parentheses, and other special characters
+                        const sanitized = displayName.replace(/[^\p{L}\p{N} ]/gu, '').trim();
+                        const normalized = sanitized || `user_${profile.id}`;
                         
                         // Create canonical usernameKey (lowercase, remove periods)
                         const usernameKey = normalized.toLowerCase().replace(/\./g, '');
 
-                        // First check if user exists by googleId (most reliable for OAuth)
-                        let user = await User.findOne({ googleId: profile.id });
-
-                        if (!user) {
-                            // Then check by email (for linking existing accounts)
-                            user = await User.findOne({ email });
-                        }
+                        // Check if user already exists by email
+                        let user = await User.findOne({ email });
 
                         if (!user) {
                             // ensure no collision on usernameKey (should be rare)

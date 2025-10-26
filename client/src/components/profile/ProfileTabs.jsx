@@ -1,34 +1,34 @@
 // client/src/components/profile/ProfileTabs.jsx
 import React from 'react';
-import { Grid, Bookmark } from 'lucide-react';
+import { Grid, Bookmark, UserSquare2 } from 'lucide-react';
 
 const ProfileTabs = ({ activeTab, onTabChange, isOwnProfile }) => {
   const tabs = [
-    { key: 'posts', label: 'Posts', icon: Grid },
+    { key: 'posts', label: 'POSTS', icon: Grid },
   ];
 
   // Only show saved tab for own profile
   if (isOwnProfile) {
-    tabs.push({ key: 'saved', label: 'Saved', icon: Bookmark });
+    tabs.push({ key: 'saved', label: 'SAVED', icon: Bookmark });
   }
 
   return (
     <div className="bg-white border-b border-gray-200">
-      <div className="max-w-5xl mx-auto">
-        <div className={`grid ${isOwnProfile ? 'grid-cols-2' : 'grid-cols-1'} w-full`}>
+      <div className="max-w-4xl mx-auto">
+        <div className="flex justify-center">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
               <button
                 key={tab.key}
                 onClick={() => onTabChange(tab.key)}
-                className={`flex items-center justify-center gap-2 py-4 text-sm font-medium transition-all relative border-b-2 ${
+                className={`flex items-center justify-center gap-1.5 px-16 py-3 text-xs font-semibold tracking-wide transition-all relative ${
                   activeTab === tab.key
-                    ? 'text-gray-900 border-gray-900'
-                    : 'text-gray-500 border-transparent hover:text-gray-700 hover:border-gray-300'
+                    ? 'text-gray-900 border-t border-t-gray-900'
+                    : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-3 w-3" />
                 <span>{tab.label}</span>
               </button>
             );

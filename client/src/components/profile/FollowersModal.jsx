@@ -1,17 +1,19 @@
 // client/src/components/profile/FollowersModal.jsx
 import React, { useState, useEffect } from 'react';
-import { X, Loader, Users } from 'lucide-react';
-import { getFollowers, getFollowing } from '../../services/profileApi';
+import { X, Loader, Users, UserX, MessageCircle } from 'lucide-react';
+import { getFollowers, getFollowing, removeFollower } from '../../services/profileApi';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import FollowButton from './FollowButton';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useChatStore } from '../../store/useChatStore';
 
 const FollowersModal = ({ userId, type, onClose, userName, onCountChange }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { authUser } = useAuthStore();
+  const { setSelectedUser } = useChatStore();
 
 
   
@@ -70,69 +72,116 @@ const FollowersModal = ({ userId, type, onClose, userName, onCountChange }) => {
     }
   };
 
+  const handleRemoveFollower = async (followerId, followerUsername) => {
+    try {
+      await removeFollower(followerId);
+      
+      // Remove from local state
+      setUsers(prevUsers => prevUsers.filter(u => u._id !== followerId));
+      
+      // Update parent component's follower count
+      if (onCountChange) {
+        onCountChange({ type: 'followers', change: -1 });
+      }
+      
+      toast.success(`Removed ${followerUsername} from followers`);
+    } catch (error) {
+      console.error('Error removing follower:', error);
+      toast.error(error.response?.data?.message || 'Failed to remove follower');
+    }
+  };
+
+  const handleMessage = (user) => {
+    // Set the selected user in chat store
+    setSelectedUser(user);
+    // Close modal
+    onClose();
+    // Navigate to chat page
+    navigate('/chat');
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden"
+        className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900 capitalize">
-            {userName ? `${userName}'s ${type}` : type}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <X size={24} />
-          </button>
+        {/* Header - Simple and clean */}
+        <div className="relative bg-white border-b border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 capitalize">
+                {type}
+              </h2>
+              <p className="text-gray-500 text-sm mt-1">
+                {userName ? `@${userName}` : ''}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full transition-all duration-200 text-gray-600"
+            >
+              <X size={24} />
+            </button>
+          </div>
+          
+          {/* Count badge - Simple gray */}
+          <div className="mt-4 inline-flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full">
+            <Users size={16} className="text-gray-600" />
+            <span className="text-gray-700 font-semibold text-sm">
+              {users.length} {users.length === 1 ? 'user' : 'users'}
+            </span>
+          </div>
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(80vh-120px)]">
-          {loading ? (
-            <div className="flex justify-center items-center py-12">
-              <Loader className="w-8 h-8 animate-spin text-blue-500" />
+        <div className="overflow-y-auto max-h-[calc(85vh-180px)] bg-gray-50">{loading ? (
+            <div className="flex justify-center items-center py-16">
+              <div className="text-center">
+                <Loader className="w-10 h-10 animate-spin text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-500 text-sm">Loading {type}...</p>
+              </div>
             </div>
           ) : users.length === 0 ? (
-            <div className="text-center py-12 px-6">
-              <Users className="h-16 w-16 mx-auto text-gray-300 mb-4" />
+            <div className="text-center py-16 px-6">
+              <div className="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="h-10 w-10 text-gray-400" />
+              </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
                 No {type} yet
               </h3>
-              <p className="text-gray-600">
+              <p className="text-gray-500">
                 {type === 'followers' 
                   ? 'No one is following this user yet'
                   : 'This user is not following anyone yet'}
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="divide-y divide-gray-200">
               {users.map((user) => (
                 <div
                   key={user._id}
-                  className="p-4 hover:bg-gray-50 transition-colors"
+                  className="p-5 hover:bg-white transition-all duration-200"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-4">
                     <div
-                      className="flex items-center gap-3 flex-1 cursor-pointer"
+                      className="flex items-center gap-4 flex-1 cursor-pointer group"
                       onClick={() => handleUserClick(user.username)}
                     >
-                      {/* Avatar */}
+                      {/* Avatar with subtle ring effect */}
                       <div className="relative flex-shrink-0">
                         {user.avatar ? (
                           <img
                             src={user.avatar}
                             alt={user.username}
-                            className="w-12 h-12 rounded-full object-cover ring-2 ring-gray-200"
+                            className="w-14 h-14 rounded-full object-cover ring-2 ring-gray-200 group-hover:ring-gray-300 transition-all duration-300 shadow-sm"
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center ring-2 ring-gray-200">
-                            <span className="text-white font-bold text-lg">
+                          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center ring-2 ring-gray-200 group-hover:ring-gray-300 transition-all duration-300 shadow-sm">
+                            <span className="text-white font-bold text-xl">
                               {user.username?.charAt(0).toUpperCase()}
                             </span>
                           </div>
@@ -141,30 +190,91 @@ const FollowersModal = ({ userId, type, onClose, userName, onCountChange }) => {
 
                       {/* User Info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 truncate">
+                        <h3 className="font-bold text-gray-900 truncate text-base group-hover:text-gray-700 transition-colors">
                           {user.username}
                         </h3>
-                        {user.bio && (
-                          <p className="text-sm text-gray-600 truncate">
+                        {user.bio ? (
+                          <p className="text-sm text-gray-600 truncate mt-0.5">
                             {user.bio}
                           </p>
+                        ) : (
+                          <p className="text-xs text-gray-400 mt-0.5">No bio yet</p>
                         )}
                       </div>
                     </div>
 
-                    {/* Follow/Unfollow Button Logic:
-                        - Show Follow button if current user doesn't follow this person
-                        - Show Unfollow button if current user already follows this person
-                        - Don't show button for current user's own profile
-                        - This allows current user to manage THEIR OWN follows, not the profile user's
+                    {/* Action Buttons Logic:
+                        Followers Tab (viewing your own profile):
+                        - If you're NOT following them back: Show "Follow Back" button
+                        - If you ARE following them back: Show "Message" button
+                        - Show "Remove Follower" (X) button for own profile
+                        
+                        Following Tab or other profiles:
+                        - Show regular Follow/Unfollow button
                     */}
                     {authUser?._id !== user._id && (
-                      <div className="ml-3">
-                        <FollowButton
-                          userId={user._id}
-                          initialIsFollowing={user.isFollowing || false}
-                          onFollowChange={(data) => handleFollowChange(user._id, data)}
-                        />
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {type === 'followers' && authUser?._id === userId ? (
+                          // In followers tab viewing own profile
+                          <>
+                            {user.isFollowing ? (
+                              // Already following back - Show Message button
+                              <button
+                                onClick={() => handleMessage(user)}
+                                className="
+                                  relative overflow-hidden px-4 py-2.5 rounded-xl font-semibold text-sm 
+                                  transition-all duration-300 ease-out
+                                  flex items-center justify-center gap-2 
+                                  transform hover:scale-105 active:scale-95
+                                  min-w-[120px] whitespace-nowrap
+                                  bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 
+                                  text-white shadow-md hover:shadow-lg 
+                                  hover:from-green-600 hover:via-green-700 hover:to-emerald-700
+                                "
+                              >
+                                <MessageCircle className="w-4 h-4" />
+                                <span>Message</span>
+                              </button>
+                            ) : (
+                              // Not following back - Show Follow Back button with special styling
+                              <FollowButton
+                                userId={user._id}
+                                initialIsFollowing={false}
+                                onFollowChange={(data) => handleFollowChange(user._id, data)}
+                                isFollowBack={true}
+                              />
+                            )}
+                            
+                            {/* Remove Follower Button - Just X icon */}
+                            <button
+                              onClick={() => handleRemoveFollower(user._id, user.username)}
+                              className="
+                                p-2 rounded-full
+                                bg-gray-100
+                                hover:bg-red-50
+                                transition-all duration-200
+                                group
+                              "
+                              title="Remove follower"
+                            >
+                              <X 
+                                size={18} 
+                                className="
+                                  text-gray-500 
+                                  group-hover:text-red-600 
+                                  transition-colors duration-200
+                                " 
+                              />
+                            </button>
+                          </>
+                        ) : (
+                          // In following tab or viewing other profiles - Show regular follow button
+                          <FollowButton
+                            userId={user._id}
+                            initialIsFollowing={user.isFollowing || false}
+                            onFollowChange={(data) => handleFollowChange(user._id, data)}
+                          />
+                        )}
                       </div>
                     )}
                   </div>

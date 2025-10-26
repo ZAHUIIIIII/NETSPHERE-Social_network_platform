@@ -309,6 +309,68 @@ export const getFollowing = async (req, res) => {
   }
 };
 
+// Remove follower - Remove a user from your followers list
+export const removeFollower = async (req, res) => {
+  try {
+    const { followerId } = req.params;
+    const currentUserId = req.user._id;
+
+    console.log('Backend - removeFollower:', {
+      currentUser: currentUserId.toString(),
+      followerToRemove: followerId,
+      action: 'Current user is removing a follower'
+    });
+
+    if (followerId === currentUserId.toString()) {
+      return res.status(400).json({ message: "You can't remove yourself" });
+    }
+
+    const followerUser = await User.findById(followerId).select('-password');
+    const currentUser = await User.findById(currentUserId).select('-password');
+
+    if (!followerUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if this user is actually following you
+    if (!currentUser.followers.includes(followerId)) {
+      return res.status(400).json({ message: 'This user is not following you' });
+    }
+
+    // Remove follower from current user's followers list
+    currentUser.followers = currentUser.followers.filter(
+      id => id.toString() !== followerId
+    );
+    
+    // Remove current user from follower's following list
+    followerUser.following = followerUser.following.filter(
+      id => id.toString() !== currentUserId.toString()
+    );
+
+    await currentUser.save();
+    await followerUser.save();
+
+    console.log('Backend - removeFollower result:', {
+      currentUserFollowersCount: currentUser.followers.length,
+      followerUserFollowingCount: followerUser.following.length,
+      summary: `${followerUser.username} removed from ${currentUser.username}'s followers`
+    });
+
+    res.json({ 
+      message: 'Follower removed successfully',
+      followersCount: currentUser.followers.length,
+      user: {
+        _id: followerUser._id,
+        username: followerUser.username,
+        avatar: followerUser.avatar
+      }
+    });
+  } catch (error) {
+    console.error('Error in removeFollower:', error);
+    res.status(500).json({ message: 'Error removing follower' });
+  }
+};
+
 // Upload avatar
 export const uploadAvatar = async (req, res) => {
   try {
