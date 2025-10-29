@@ -116,6 +116,41 @@ export function shortTimeLabel(dateISO) {
   return sameYear ? `${dStr} ${hhmm}` : `${dStr} ${d.getFullYear()}`;
 }
 
+/**
+ * FORMAT LAST ACTIVE TIME FOR ADMIN USER MANAGEMENT
+ * 
+ * Format last active timestamp for admin panel user table:
+ * - < 1 minute: "Just now"
+ * - < 60 minutes: "Xm ago" (e.g., "5m ago")
+ * - < 24 hours: "Xh ago" (e.g., "3h ago")
+ * - < 7 days: "Xd ago" (e.g., "2d ago")
+ * - >= 7 days: "DD MMM YYYY" (e.g., "16 Oct 2024")
+ * 
+ * @param {string|Date} date - ISO date string or Date object
+ * @returns {string} Formatted last active time
+ */
+export function formatLastActive(date) {
+  if (!date) return 'Never';
+  
+  const d = new Date(date);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  
+  return new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  }).format(d);
+}
+
 // ==================== DEPRECATED FUNCTIONS ====================
 // Count total comments including nested replies (Legacy system only)
 // For unlimited nesting system, use countTotalComments from commentApi.js

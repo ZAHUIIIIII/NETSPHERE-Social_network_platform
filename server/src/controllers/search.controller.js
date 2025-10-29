@@ -77,7 +77,15 @@ export const search = async (req, res) => {
               { content: wordsRegex }
             ]
           },
-          { privacy: 'public' }
+          { privacy: 'public' },
+          // Only show published posts (exclude removed and flagged)
+          {
+            $or: [
+              { status: 'published' },
+              { status: { $exists: false } },
+              { status: null }
+            ]
+          }
         ]
       };
 
@@ -191,7 +199,13 @@ export const search = async (req, res) => {
       
       const hashtagPosts = await Post.find({
         content: hashtagRegex,
-        privacy: 'public'
+        privacy: 'public',
+        // Only show published posts
+        $or: [
+          { status: 'published' },
+          { status: { $exists: false } },
+          { status: null }
+        ]
       })
         .populate('author', 'username avatar')
         .sort({ createdAt: -1 })

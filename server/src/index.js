@@ -20,6 +20,8 @@ import searchRoutes from './routes/search.routes.js';
 import commentRoutes from './routes/comment.routes.js'; 
 import userRoutes from './routes/user.route.js';
 import notificationRoutes from './routes/notification.routes.js';
+import adminRoutes from './routes/admin.routes.js';
+import reportRoutes from './routes/report.routes.js';
 
 
 
@@ -70,6 +72,8 @@ app.use('/api/posts', postRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/admin', adminRoutes);
 
 
 (async () => {

@@ -93,7 +93,15 @@ const postSchema = new mongoose.Schema({
   },
   feeling: { type: String },
   location: { type: String },
-  shares: { type: Number, default: 0 }
+  shares: { type: Number, default: 0 },
+  // Admin moderation fields
+  status: {
+    type: String,
+    enum: ['published', 'flagged', 'removed'],
+    default: 'published'
+  },
+  reportsCount: { type: Number, default: 0 },
+  commentsCount: { type: Number, default: 0 }
 }, { timestamps: true });
 
 postSchema.index({ author: 1, createdAt: -1 });

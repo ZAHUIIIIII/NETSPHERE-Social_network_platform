@@ -95,6 +95,40 @@ function ensureGoogleStrategy() {
                             }
                         }
 
+                        // Check if suspension has expired
+                        if (user.status === 'suspended' && user.suspendedUntil) {
+                            if (new Date() > user.suspendedUntil) {
+                                // Suspension expired, automatically reactivate
+                                user.status = 'active';
+                                user.suspendedUntil = null;
+                                await user.save();
+                            }
+                        }
+
+                        // Check if user is suspended or banned before generating token
+                        if (user.status === 'suspended') {
+                            const expiryMsg = user.suspendedUntil 
+                                ? ` Your suspension will expire on ${user.suspendedUntil.toLocaleDateString()}.`
+                                : '';
+                            return done(null, false, { 
+                                message: `Your account has been temporarily suspended. Please contact support.${expiryMsg}`,
+                                status: 'suspended',
+                                suspendedUntil: user.suspendedUntil
+                            });
+                        }
+
+                        if (user.status === 'banned') {
+                            return done(null, false, { 
+                                message: 'Your account has been permanently banned.',
+                                status: 'banned',
+                                reason: user.banReason || 'Violation of terms of service'
+                            });
+                        }
+
+                        // Update lastActive timestamp
+                        user.lastActive = new Date();
+                        await user.save();
+
                         // Generate JWT token
                         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
                             expiresIn: '7d',

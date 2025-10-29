@@ -23,6 +23,7 @@ import { formatTime } from "../lib/utils";
 import SuggestedUsers from '../components/common/SuggestedUsers';
 import CommentsSection from '../components/comment/CommentsSection';
 import EditPostModal from '../components/EditPostModal';
+import ReportPostModal from '../components/ReportPostModal';
 import { countTotalComments, listRootComments } from "../services/commentApi";
 // import { 
 //   likePost as likePostAPI
@@ -457,6 +458,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
   const [likesData, setLikesData] = useState([]);
   const [loadingLikes, setLoadingLikes] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
     // Initialize reactions from post data
@@ -782,9 +784,17 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
               >
                 Copy link
               </button>
-              <button className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm text-red-600">
-                Report post
-              </button>
+              {post.author?._id !== currentUser?._id && (
+                <button 
+                  onClick={() => {
+                    setShowReportModal(true);
+                    setShowOptions(false);
+                  }}
+                  className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm text-red-600"
+                >
+                  Report post
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -1320,6 +1330,16 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
           setShowEditModal(false);
         }}
       />
+
+      {/* Report Post Modal */}
+      {showReportModal && (
+        <ReportPostModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          postId={post._id}
+          postAuthor={post.author?.name || post.author?.username}
+        />
+      )}
     </div>
   );
 };

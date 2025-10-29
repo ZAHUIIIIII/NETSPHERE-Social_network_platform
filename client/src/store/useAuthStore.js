@@ -23,6 +23,13 @@ export const useAuthStore = create((set, get) => ({
         set({authUser: res.data});
         get().connectSocket();
     } catch (error) {
+        // For 403 (banned/suspended), let the axios interceptor handle it (will redirect to login)
+        if (error.response?.status === 403) {
+            set({authUser: null});
+            // Don't log error, interceptor will handle redirect
+            return; // Exit early, let interceptor handle
+        }
+        
         // Silently handle 401 errors - user is just not authenticated
         if (error.response?.status === 401) {
             set({authUser: null});

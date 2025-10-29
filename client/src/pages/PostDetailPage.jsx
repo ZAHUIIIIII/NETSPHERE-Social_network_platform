@@ -10,6 +10,7 @@ import toast from 'react-hot-toast';
 import { formatTime, formatMessageTime } from '../lib/utils';
 import CommentsSection from '../components/comment/CommentsSection';
 import EditPostModal from '../components/EditPostModal';
+import ReportPostModal from '../components/ReportPostModal';
 
 const PostDetailPage = () => {
   const { postId } = useParams();
@@ -34,6 +35,7 @@ const PostDetailPage = () => {
   const [loadingLikes, setLoadingLikes] = useState(false);
   const [commentCount, setCommentCount] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   const handleCommentCountChange = (newCount) => {
     setCommentCount(newCount);
@@ -448,6 +450,17 @@ const PostDetailPage = () => {
                   >
                     Copy link
                   </button>
+                  {post.author?._id !== authUser?._id && (
+                    <button 
+                      onClick={() => {
+                        setShowReportModal(true);
+                        setShowOptions(false);
+                      }}
+                      className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm text-red-600"
+                    >
+                      Report post
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -1033,6 +1046,16 @@ const PostDetailPage = () => {
             onClose={() => setShowEditModal(false)}
             post={post}
             onPostUpdated={handlePostUpdated}
+          />
+        )}
+
+        {/* Report Post Modal */}
+        {showReportModal && (
+          <ReportPostModal
+            isOpen={showReportModal}
+            onClose={() => setShowReportModal(false)}
+            postId={post._id}
+            postAuthor={post.author?.name || post.author?.username}
           />
         )}
       </div>

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, Mail, Lock } from 'lucide-react';
 
 function validateEmail(email) {
@@ -9,6 +9,7 @@ function validateEmail(email) {
 
 export default function LoginPage() {
   const { login, isLoggingIn, forgotPassword } = useAuthStore();
+  const [searchParams] = useSearchParams();
   
   const [form, setForm] = useState({
     email: '',
@@ -23,6 +24,14 @@ export default function LoginPage() {
   const [forgotSent, setForgotSent] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
   const [forgotError, setForgotError] = useState('');
+
+  // Check for error message from URL params (e.g., suspended/banned account)
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam) {
+      setError(decodeURIComponent(errorParam));
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

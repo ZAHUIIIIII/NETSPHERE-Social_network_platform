@@ -9,6 +9,7 @@ import SettingPage from './pages/SettingPage';
 import SearchPage from './pages/SearchPage';  
 import PostDetailPage from './pages/PostDetailPage';
 import NotificationPage from './pages/NotificationPage';
+import AdminPage from './pages/AdminPage';
 
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
@@ -26,8 +27,6 @@ const App = () => {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  console.log({ onlineUsers });
-
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
@@ -38,7 +37,6 @@ const App = () => {
 
     const handleNewNotification = (event) => {
       const notification = event.detail;
-      console.log('🔔 App received new notification:', notification);
       
       // Add to store
       addNotification(notification);
@@ -60,7 +58,6 @@ const App = () => {
 
     const handleUnreadCountUpdate = (event) => {
       const count = event.detail;
-      console.log('📊 App received unread count update:', count);
       setUnreadCount(count);
     };
 
@@ -105,8 +102,6 @@ const App = () => {
     }
   }, [location]);
 
-  console.log({ authUser });
-
   if (isCheckingAuth && location.pathname !== '/reset-password') {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -132,6 +127,7 @@ const App = () => {
             <Route path='/chat' element={authUser ? <ChatPage /> : <Navigate to="/login" />} />
             <Route path='/profile' element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />
             <Route path='/settings' element={authUser ? <SettingPage /> : <Navigate to="/login" />} />
+            <Route path='/admin' element={authUser ? <AdminPage /> : <Navigate to="/login" />} />
             <Route path='/search' element={authUser ? <SearchPage /> : <Navigate to="/login" />} />
             <Route path='/profile/:username?' element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />
             <Route path='/post/:postId' element={authUser ? <PostDetailPage /> : <Navigate to="/login" />} />

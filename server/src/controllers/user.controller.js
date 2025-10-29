@@ -77,7 +77,11 @@ export const getUserPosts = async (req, res) => {
     const { userId } = req.params;
     const { skip = 0, limit = 20 } = req.query;
 
-    const posts = await Post.find({ author: userId })
+    // Only fetch published posts (exclude removed and flagged posts)
+    const posts = await Post.find({ 
+      author: userId,
+      status: { $in: ['published', null, undefined] }
+    })
       .sort({ createdAt: -1 })
       .skip(Number(skip))
       .limit(Number(limit))

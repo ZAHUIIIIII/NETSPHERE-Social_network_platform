@@ -108,6 +108,29 @@ const userSchema = new mongoose.Schema({
   resetPasswordExpires: {
     type: Date,
   },
+  // Admin fields
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user',
+  },
+  status: {
+    type: String,
+    enum: ['active', 'suspended', 'banned'],
+    default: 'active',
+  },
+  suspendedUntil: {
+    type: Date,
+    default: null,
+  },
+  banReason: {
+    type: String,
+    default: '',
+  },
+  lastActive: {
+    type: Date,
+    default: Date.now,
+  },
 }, 
   { timestamps: true }
 );
@@ -117,6 +140,10 @@ userSchema.index({ followers: 1 });
 userSchema.index({ following: 1 });
 // username and email already have indexes due to unique: true
 
+// Note: Cascade deletion is now handled in the admin.controller.js deleteUser function
+// to have better control and logging. These pre-hooks are disabled to avoid conflicts.
+
+/*
 // Cascade delete: Remove all related data when user is deleted
 userSchema.pre('remove', async function(next) {
   try {
@@ -181,6 +208,7 @@ userSchema.pre('findOneAndDelete', async function(next) {
     next(error);
   }
 });
+*/
 
 // Normalize username into usernameKey (lowercase, remove periods) and enforce forbidden words/suffixes
 userSchema.pre('validate', async function(next) {

@@ -30,7 +30,10 @@ export const getAllPosts = async (req, res) => {
   try {
     const { skip = 0, limit = 20 } = req.query;
     
-    const posts = await Post.find()
+    // Only fetch published posts (exclude removed and flagged posts)
+    const posts = await Post.find({ 
+      status: { $in: ['published', null, undefined] } 
+    })
       .sort({ createdAt: -1 })
       .skip(Number(skip))
       .limit(Number(limit))
@@ -452,6 +455,15 @@ export const getPostById = async (req, res) => {
 
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if post is removed or flagged (unless user is the author)
+    if (post.status === 'removed' && post.author._id.toString() !== req.user._id.toString()) {
+      return res.status(404).json({ message: 'This post has been removed' });
+    }
+
+    if (post.status === 'flagged' && post.author._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'This post is under review' });
     }
 
     // Check privacy settings

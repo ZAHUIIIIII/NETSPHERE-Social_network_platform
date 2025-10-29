@@ -229,6 +229,40 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
+        // Check if suspension has expired
+        if (user.status === 'suspended' && user.suspendedUntil) {
+            if (new Date() > user.suspendedUntil) {
+                // Suspension expired, automatically reactivate
+                user.status = 'active';
+                user.suspendedUntil = null;
+                await user.save();
+            }
+        }
+
+        // Check if user is suspended or banned
+        if (user.status === 'suspended') {
+            const expiryMsg = user.suspendedUntil 
+                ? ` Your suspension will expire on ${user.suspendedUntil.toLocaleDateString()}.`
+                : '';
+            return res.status(403).json({ 
+                message: `Your account has been temporarily suspended. Please contact support.${expiryMsg}`,
+                status: 'suspended',
+                suspendedUntil: user.suspendedUntil
+            });
+        }
+
+        if (user.status === 'banned') {
+            return res.status(403).json({ 
+                message: 'Your account has been permanently banned.',
+                status: 'banned',
+                reason: user.banReason || 'Violation of terms of service'
+            });
+        }
+
+        // Update lastActive on login
+        user.lastActive = new Date();
+        await user.save();
+
         generateToken(user._id, res);
 
         res.status(200).json({
@@ -577,6 +611,17 @@ export const googleCallback = (req, res, next) => {
         if (err) {
             console.error('[Google OAuth] Authentication error:', err);
             return res.redirect(`${frontendUrl}/login?error=oauth_error`);
+        }
+        
+        // Check if user is banned or suspended (data will be false in this case)
+        if (!data && info) {
+            if (info.status === 'suspended') {
+                return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(info.message)}`);
+            }
+            if (info.status === 'banned') {
+                const message = info.reason ? `${info.message} Reason: ${info.reason}` : info.message;
+                return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(message)}`);
+            }
         }
         
         if (!data || !data.user || !data.token) {
