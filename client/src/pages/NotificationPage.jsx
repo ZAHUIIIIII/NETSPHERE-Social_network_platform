@@ -9,6 +9,7 @@ import {
   UserPlus, 
   User,
   Bell,
+  BellOff,
   Trash2,
   CheckCheck,
   Smile,
@@ -19,11 +20,13 @@ import {
   Check,
   Eye,
   Image as ImageIcon,
-  BellOff,
   Reply,
   UserCheck,
   Repeat,
-  UserMinus
+  FileText,
+  UserX,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 import { formatTime } from '../lib/utils';
 import toast from 'react-hot-toast';
@@ -40,7 +43,10 @@ const NotificationPage = () => {
     markAsRead,
     markAsUnread,
     markAllAsRead,
-    deleteNotification: deleteNotificationFromStore
+    deleteNotification: deleteNotificationFromStore,
+    togglePostMute,
+    notificationSettings,
+    fetchNotificationSettings
   } = useNotificationStore();
   const navigate = useNavigate();
   
@@ -56,6 +62,7 @@ const NotificationPage = () => {
   useEffect(() => {
     if (authUser && !initializedRef.current) {
       fetchNotifications(false);
+      fetchNotificationSettings();
       initializedRef.current = true;
     }
   }, []); // Only run once on mount
@@ -186,9 +193,10 @@ const NotificationPage = () => {
 
   const handleMarkAsRead = async (notificationId, e) => {
     e.stopPropagation();
+    e.preventDefault();
     try {
+      setOpenMenuId(null);
       await markAsRead(notificationId);
-      setOpenMenuId(null); // Close menu after marking
     } catch (error) {
       toast.error('Failed to mark as read');
     }
@@ -196,9 +204,10 @@ const NotificationPage = () => {
 
   const handleMarkAsUnread = async (notificationId, e) => {
     e.stopPropagation();
+    e.preventDefault();
     try {
+      setOpenMenuId(null);
       await markAsUnread(notificationId);
-      setOpenMenuId(null); // Close menu after marking
     } catch (error) {
       toast.error('Failed to mark as unread');
     }
@@ -215,28 +224,60 @@ const NotificationPage = () => {
 
   const handleDeleteNotification = async (notificationId, e) => {
     e.stopPropagation();
+    e.preventDefault();
     try {
+      setOpenMenuId(null);
       await deleteNotificationFromStore(notificationId);
       toast.success('Notification deleted');
-      setOpenMenuId(null); // Close menu after delete
     } catch (error) {
       toast.error('Failed to delete notification');
     }
   };
 
-  const handleTurnOffPostNotifications = async (notification, e) => {
+  const handleMutePost = async (postId, e) => {
     e.stopPropagation();
+    e.preventDefault();
     try {
-      if (!notification.post?._id) {
-        toast.error('Cannot mute notifications for this post');
-        return;
-      }
-      
-      await axiosInstance.post(`/posts/${notification.post._id}/mute-notifications`);
-      toast.success('Post notifications turned off');
+      console.log('🔇 handleMutePost called with postId:', postId);
       setOpenMenuId(null);
+      const result = await togglePostMute(postId);
+      console.log('✅ togglePostMute result:', result);
+      
+      // After toggling, check the updated settings from the store
+      const { notificationSettings } = useNotificationStore.getState();
+      console.log('📦 Updated notificationSettings:', notificationSettings);
+      
+      const isMuted = notificationSettings?.mutedPosts?.includes(postId);
+      console.log('🔍 Is now muted?', isMuted);
+      
+      toast.success(isMuted ? '🔇 Post notifications muted' : '🔊 Post notifications unmuted');
     } catch (error) {
-      toast.error('Failed to turn off notifications');
+      console.error('❌ Error in handleMutePost:', error);
+      toast.error('Failed to update mute settings');
+    }
+  };
+
+  const handleMuteUser = async (userId, e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    try {
+      console.log('🔇 handleMuteUser called with userId:', userId);
+      setOpenMenuId(null);
+      const result = await useNotificationStore.getState().toggleUserMute(userId);
+      console.log('✅ toggleUserMute result:', result);
+      
+      // After toggling, check the updated settings from the store
+      const { notificationSettings } = useNotificationStore.getState();
+      console.log('📦 Updated notificationSettings:', notificationSettings);
+      
+      const isMuted = notificationSettings?.mutedUsers?.includes(userId);
+      console.log('🔍 Is now muted?', isMuted);
+      
+      const username = notifications.find(n => n.sender?._id === userId)?.sender?.username || 'user';
+      toast.success(isMuted ? `🔇 Muted @${username}` : `🔊 Unmuted @${username}`);
+    } catch (error) {
+      console.error('❌ Error in handleMuteUser:', error);
+      toast.error('Failed to update mute settings');
     }
   };
 
@@ -624,7 +665,12 @@ const NotificationPage = () => {
                       >
                           {/* Mark as Read/Unread */}
                           <button
-                            onClick={(e) => notification.read ? handleMarkAsUnread(notification._id, e) : handleMarkAsRead(notification._id, e)}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              notification.read ? handleMarkAsUnread(notification._id, e) : handleMarkAsRead(notification._id, e);
+                            }}
                             className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-blue-50 flex items-center gap-3 transition-all hover:pl-5"
                           >
                             {notification.read ? (
@@ -644,9 +690,75 @@ const NotificationPage = () => {
                             )}
                           </button>
 
+                          {/* Mute Post - Only show if notification has a post */}
+                          {notification.post && (
+                            <button
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleMutePost(notification.post._id || notification.post, e);
+                              }}
+                              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-amber-50 flex items-center gap-3 transition-all hover:pl-5"
+                            >
+                              {notificationSettings?.mutedPosts?.includes(notification.post._id || notification.post) ? (
+                                <>
+                                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                                    <FileText className="w-4 h-4 text-green-600" />
+                                  </div>
+                                  <span className="font-semibold">Unmute post</span>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                                    <FileText className="w-4 h-4 text-amber-600" />
+                                  </div>
+                                  <span className="font-semibold">Mute post</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+
+                          {/* Separator Line */}
+                          <div className="border-t border-gray-200 my-1"></div>
+
+                          {/* Mute User - Only show if notification has a sender and it's not self */}
+                          {notification.sender && notification.sender._id !== authUser._id && (
+                            <button
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleMuteUser(notification.sender._id, e);
+                              }}
+                              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-purple-50 flex items-center gap-3 transition-all hover:pl-5"
+                            >
+                              {notificationSettings?.mutedUsers?.includes(notification.sender._id) ? (
+                                <>
+                                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                                    <UserCheck className="w-4 h-4 text-green-600" />
+                                  </div>
+                                  <span className="font-semibold">Unmute @{notification.sender.username}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                                    <UserX className="w-4 h-4 text-purple-600" />
+                                  </div>
+                                  <span className="font-semibold">Mute @{notification.sender.username}</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+
                           {/* Delete Notification */}
                           <button
-                            onClick={(e) => handleDeleteNotification(notification._id, e)}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDeleteNotification(notification._id, e);
+                            }}
                             className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-red-50 flex items-center gap-3 transition-all hover:pl-5"
                           >
                             <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
@@ -654,22 +766,6 @@ const NotificationPage = () => {
                             </div>
                             <span className="font-semibold">Delete notification</span>
                           </button>
-
-                          {/* Turn off post notifications (only for post-related notifications) */}
-                          {(notification.type === 'comment' || 
-                            notification.type === 'reply' || 
-                            notification.type === 'reaction' || 
-                            notification.type === 'like') && notification.post && (
-                            <button
-                              onClick={(e) => handleTurnOffPostNotifications(notification, e)}
-                              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-amber-50 flex items-center gap-3 border-t border-gray-100 transition-all hover:pl-5"
-                            >
-                              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                                <BellOff className="w-4 h-4 text-amber-600" />
-                              </div>
-                              <span className="font-semibold">Mute this post</span>
-                            </button>
-                          )}
                       </PortalDropdown>
                     </div>
                   </div>

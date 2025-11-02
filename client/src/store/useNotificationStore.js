@@ -1,10 +1,23 @@
 import { create } from 'zustand';
 import { axiosInstance } from '../lib/axios';
+import { 
+  getNotificationSettings, 
+  toggleMuteAllNotifications, 
+  toggleMutePost, 
+  toggleMuteUser,
+  checkPostMuteStatus,
+  checkUserMuteStatus
+} from '../services/api';
 
 export const useNotificationStore = create((set, get) => ({
   notifications: [],
   unreadCount: 0,
   isLoading: false,
+  notificationSettings: {
+    allNotificationsMuted: false,
+    mutedPosts: [],
+    mutedUsers: []
+  },
 
   // Fetch notifications from backend
   fetchNotifications: async (unreadOnly = false) => {
@@ -48,18 +61,15 @@ export const useNotificationStore = create((set, get) => ({
   // Mark notification as read
   markAsRead: async (notificationId) => {
     try {
-      console.log('📝 Store: Marking notification as read:', notificationId);
       const res = await axiosInstance.patch(`/notifications/${notificationId}/read`);
-      console.log('📝 Store: API response received, updating state');
       set((state) => ({
         notifications: state.notifications.map(n =>
           n._id === notificationId ? { ...n, read: true } : n
         ),
         unreadCount: res.data.unreadCount
       }));
-      console.log('✅ Store: State updated, notification marked as read');
     } catch (error) {
-      console.error('❌ Store: Error marking notification as read:', error);
+      console.error('Error marking notification as read:', error);
     }
   },
 
@@ -107,5 +117,80 @@ export const useNotificationStore = create((set, get) => ({
   // Clear all notifications
   clearAll: () => {
     set({ notifications: [], unreadCount: 0 });
+  },
+
+  // ==================== MUTING FUNCTIONS ====================
+  
+  // Fetch notification settings
+  fetchNotificationSettings: async () => {
+    try {
+      const data = await getNotificationSettings();
+      set({ notificationSettings: data.settings });
+      return data.settings;
+    } catch (error) {
+      console.error('Error fetching notification settings:', error);
+      throw error;
+    }
+  },
+
+  // Toggle mute all notifications
+  toggleMuteAll: async () => {
+    try {
+      const data = await toggleMuteAllNotifications();
+      // Refetch settings to get updated state
+      await get().fetchNotificationSettings();
+      return data;
+    } catch (error) {
+      console.error('Error toggling mute all:', error);
+      throw error;
+    }
+  },
+
+  // Toggle mute post
+  togglePostMute: async (postId) => {
+    try {
+      const data = await toggleMutePost(postId);
+      // Refetch settings to get updated state
+      await get().fetchNotificationSettings();
+      return data;
+    } catch (error) {
+      console.error('Error toggling post mute:', error);
+      throw error;
+    }
+  },
+
+  // Toggle mute user
+  toggleUserMute: async (userId) => {
+    try {
+      const data = await toggleMuteUser(userId);
+      // Refetch settings to get updated state
+      await get().fetchNotificationSettings();
+      return data;
+    } catch (error) {
+      console.error('Error toggling user mute:', error);
+      throw error;
+    }
+  },
+
+  // Check if post is muted
+  checkPostMuted: async (postId) => {
+    try {
+      const data = await checkPostMuteStatus(postId);
+      return data.isMuted;
+    } catch (error) {
+      console.error('Error checking post mute status:', error);
+      return false;
+    }
+  },
+
+  // Check if user is muted
+  checkUserMuted: async (userId) => {
+    try {
+      const data = await checkUserMuteStatus(userId);
+      return data.isMuted;
+    } catch (error) {
+      console.error('Error checking user mute status:', error);
+      return false;
+    }
   }
 }));

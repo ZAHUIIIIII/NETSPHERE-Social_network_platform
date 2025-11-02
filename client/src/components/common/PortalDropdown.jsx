@@ -78,20 +78,29 @@ const PortalDropdown = ({
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        menuRef.current && 
-        !menuRef.current.contains(event.target) &&
-        triggerRef.current && 
-        !triggerRef.current.contains(event.target)
-      ) {
-        onClose();
+      // Don't close if clicking inside the menu
+      if (menuRef.current && menuRef.current.contains(event.target)) {
+        return;
       }
+      
+      // Don't close if clicking the trigger
+      if (triggerRef.current && triggerRef.current.contains(event.target)) {
+        return;
+      }
+      
+      // Close if clicking outside both menu and trigger
+      onClose();
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      // Delay adding listener to avoid immediate close on trigger click
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('click', handleClickOutside, true);
+      }, 0);
+      
       return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
+        clearTimeout(timeoutId);
+        document.removeEventListener('click', handleClickOutside, true);
       };
     }
   }, [isOpen, onClose]);
@@ -125,8 +134,10 @@ const PortalDropdown = ({
           style={{
             top: menuPosition ? `${menuPosition.top}px` : '0px',
             left: menuPosition ? `${menuPosition.left}px` : '0px',
-            visibility: menuPosition ? 'visible' : 'hidden',
+            opacity: menuPosition ? 1 : 0,
+            pointerEvents: menuPosition ? 'auto' : 'none',
           }}
+          onClick={(e) => e.stopPropagation()}
         >
           {children}
         </div>,

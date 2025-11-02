@@ -89,10 +89,21 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Post'
   }],
-  mutedPosts: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Post'
-  }],
+  // Notification settings
+  notificationSettings: {
+    allNotificationsMuted: {
+      type: Boolean,
+      default: false
+    },
+    mutedPosts: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Post'
+    }],
+    mutedUsers: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }]
+  },
   googleId: {
     type: String,
     unique: true,

@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { 
   Bell, Lock, User, Palette, Globe, Shield, HelpCircle, LogOut, 
   UserX, Trash2, Camera, Eye, EyeOff, AlertTriangle, Check, X, 
-  Mail, Phone, Key, Settings 
+  Mail, Phone, Key, Settings, BellOff
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
+import { useNotificationStore } from '../store/useNotificationStore';
 import axios from '../lib/axios';
 import toast from 'react-hot-toast';
 
@@ -379,6 +380,11 @@ const SettingPage = () => {
             <p className="text-sm text-gray-600">Choose how you want to be notified</p>
           </div>
           <div className="p-6 space-y-4">
+            {/* Mute All Notifications */}
+            <NotificationMuteToggle />
+            
+            <div className="border-t border-gray-200 my-4"></div>
+            
             {Object.entries({
               email: { label: 'Email Notifications', desc: 'Receive notifications via email' },
               push: { label: 'Push Notifications', desc: 'Receive push notifications' },
@@ -1070,6 +1076,65 @@ const SettingPage = () => {
           </div>
         </div>
       )}
+    </div>
+  );
+};
+
+// Notification Mute Toggle Component
+const NotificationMuteToggle = () => {
+  const { notificationSettings, fetchNotificationSettings, toggleMuteAll } = useNotificationStore();
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    fetchNotificationSettings();
+  }, [fetchNotificationSettings]);
+
+  const handleToggle = async () => {
+    setIsLoading(true);
+    try {
+      console.log('🔇 Toggling mute all notifications...');
+      const result = await toggleMuteAll();
+      console.log('✅ Toggle result:', result);
+      
+      // After toggling, check the updated settings from the store
+      const { notificationSettings: updatedSettings } = useNotificationStore.getState();
+      console.log('📦 Updated notificationSettings:', updatedSettings);
+      
+      toast.success(
+        updatedSettings?.allNotificationsMuted 
+          ? '🔇 All notifications muted' 
+          : '🔊 Notifications unmuted'
+      );
+    } catch (error) {
+      console.error('❌ Error toggling mute all:', error);
+      toast.error('Failed to update notification settings');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
+      <div className="flex items-center gap-3">
+        <BellOff className="h-5 w-5 text-blue-600" />
+        <div>
+          <p className="text-sm font-medium text-gray-900">Mute All Notifications</p>
+          <p className="text-xs text-gray-600">Temporarily pause all notifications</p>
+        </div>
+      </div>
+      <button
+        onClick={handleToggle}
+        disabled={isLoading}
+        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+          notificationSettings?.allNotificationsMuted ? 'bg-red-600' : 'bg-gray-200'
+        } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+            notificationSettings?.allNotificationsMuted ? 'translate-x-6' : 'translate-x-1'
+          }`}
+        />
+      </button>
     </div>
   );
 };

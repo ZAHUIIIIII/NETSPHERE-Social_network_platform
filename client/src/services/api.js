@@ -223,3 +223,64 @@ export const getPopularSearches = async () => {
     throw error;
   }
 };
+
+// ==================== NOTIFICATIONS ====================
+export const getNotificationSettings = async () => {
+  try {
+    const response = await axiosInstance.get('/notifications/settings');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching notification settings:', error);
+    throw error;
+  }
+};
+
+export const toggleMuteAllNotifications = async () => {
+  try {
+    const response = await axiosInstance.post('/notifications/settings/mute-all/toggle');
+    return response.data;
+  } catch (error) {
+    console.error('Error toggling mute all notifications:', error);
+    throw error;
+  }
+};
+
+export const toggleMutePost = async (postId) => {
+  try {
+    const response = await axiosInstance.post(`/notifications/settings/mute-post/${postId}/toggle`);
+    return response.data;
+  } catch (error) {
+    console.error('Error toggling mute post:', error);
+    throw error;
+  }
+};
+
+export const toggleMuteUser = async (userId) => {
+  try {
+    const response = await axiosInstance.post(`/notifications/settings/mute-user/${userId}/toggle`);
+    return response.data;
+  } catch (error) {
+    console.error('Error toggling mute user:', error);
+    throw error;
+  }
+};
+
+export const checkPostMuteStatus = async (postId) => {
+  try {
+    const response = await axiosInstance.get(`/notifications/settings/mute-post/${postId}/status`);
+    return response.data;
+  } catch (error) {
+    console.error('Error checking post mute status:', error);
+    throw error;
+  }
+};
+
+export const checkUserMuteStatus = async (userId) => {
+  try {
+    const response = await axiosInstance.get(`/notifications/settings/mute-user/${userId}/status`);
+    return response.data;
+  } catch (error) {
+    console.error('Error checking user mute status:', error);
+    throw error;
+  }
+};
