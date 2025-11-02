@@ -22,6 +22,7 @@ import userRoutes from './routes/user.route.js';
 import notificationRoutes from './routes/notification.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import reportRoutes from './routes/report.routes.js';
+import usageRoutes from './routes/usage.routes.js';
 
 
 
@@ -74,6 +75,7 @@ app.use('/api/search', searchRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin', usageRoutes);
 
 
 (async () => {

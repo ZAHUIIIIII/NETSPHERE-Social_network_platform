@@ -73,6 +73,26 @@ export const reactToPost = async (postId, reactionType) => {
   }
 };
 
+export const repostPost = async (postId) => {
+  try {
+    const response = await axiosInstance.post(`/posts/${postId}/repost`);
+    return response.data;
+  } catch (error) {
+    console.error('Error reposting:', error);
+    throw error;
+  }
+};
+
+export const getUserReposts = async (userId) => {
+  try {
+    const response = await axiosInstance.get(`/posts/reposts/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching reposts:', error);
+    throw error;
+  }
+};
+
 export const checkPostSaved = async (postId) => {
   try {
     const response = await axiosInstance.get(`/posts/${postId}/saved-status`);

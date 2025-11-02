@@ -6,8 +6,10 @@ import ProfileHeader from '../components/profile/ProfileHeader';
 import ProfileTabs from '../components/profile/ProfileTabs';
 import ProfilePosts from '../components/profile/ProfilePosts';
 import ProfileSaved from '../components/profile/ProfileSaved';
+import ProfileReposts from '../components/profile/ProfileReposts';
 import EditProfileModal from '../components/profile/EditProfileModal';
 import { getUserProfile, getUserPosts } from '../services/profileApi';
+import { getUserReposts } from '../services/api';
 import toast from 'react-hot-toast';
 import { Loader, ArrowLeft } from 'lucide-react';
 
@@ -17,7 +19,9 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const [profileUser, setProfileUser] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [reposts, setReposts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [repostsLoading, setRepostsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('posts');
   const [showEditModal, setShowEditModal] = useState(false);
   
@@ -74,6 +78,33 @@ const ProfilePage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchReposts = async () => {
+    if (!profileUser?._id) return;
+    
+    try {
+      setRepostsLoading(true);
+      const data = await getUserReposts(profileUser._id);
+      setReposts(data || []);
+    } catch (error) {
+      console.error('Error fetching reposts:', error);
+      toast.error('Failed to load reposts');
+    } finally {
+      setRepostsLoading(false);
+    }
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    if (tab === 'reposts' && reposts.length === 0) {
+      fetchReposts();
+    }
+  };
+
+  const handleRepostRemoved = (repostId) => {
+    // Remove the repost from the local state
+    setReposts(prev => prev.filter(repost => repost._id !== repostId));
   };
 
   const handleProfileUpdate = (updatedData) => {
@@ -164,7 +195,7 @@ const ProfilePage = () => {
       {/* Tabs */}
       <ProfileTabs 
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         isOwnProfile={isOwnProfile}
       />
 
@@ -176,6 +207,13 @@ const ProfilePage = () => {
               posts={posts}
               isOwnProfile={isOwnProfile}
               onPostsUpdate={fetchProfile}
+            />
+          )}
+          {activeTab === 'reposts' && (
+            <ProfileReposts 
+              reposts={reposts}
+              loading={repostsLoading}
+              onRepostRemoved={handleRepostRemoved}
             />
           )}
           {activeTab === 'saved' && isOwnProfile && (

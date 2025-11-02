@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  ArrowLeft, Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, 
-  Loader, Globe, Users, Lock, MapPin, ChevronLeft, ChevronRight, X, Eye 
+  ArrowLeft, Heart, MessageCircle, Bookmark, MoreHorizontal, 
+  Loader, Globe, Users, Lock, MapPin, ChevronLeft, ChevronRight, X, Eye, Repeat
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import axiosInstance from '../lib/axios';
@@ -11,11 +11,13 @@ import { formatTime, formatMessageTime } from '../lib/utils';
 import CommentsSection from '../components/comment/CommentsSection';
 import EditPostModal from '../components/EditPostModal';
 import ReportPostModal from '../components/ReportPostModal';
+import PortalDropdown from '../components/common/PortalDropdown';
+import { repostPost as repostPostAPI } from '../services/api';
 
 const PostDetailPage = () => {
   const { postId } = useParams();
   const navigate = useNavigate();
-  const { authUser } = useAuthStore();
+  const { authUser, socket } = useAuthStore();
   
   const [post, setPost] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,6 +38,9 @@ const PostDetailPage = () => {
   const [commentCount, setCommentCount] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [reposted, setReposted] = useState(false);
+  const [repostCount, setRepostCount] = useState(0);
+  const [isReposting, setIsReposting] = useState(false);
 
   const handleCommentCountChange = (newCount) => {
     setCommentCount(newCount);
@@ -54,6 +59,50 @@ const PostDetailPage = () => {
   useEffect(() => {
     fetchPost();
   }, [postId]);
+
+  // Listen for real-time repost count updates via socket
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleRepostUpdate = (data) => {
+      const { postId: updatedPostId, repostCount: newRepostCount, reposted: newReposted, userId } = data;
+      
+      // Only update if this is the current post
+      if (updatedPostId === postId) {
+        setRepostCount(newRepostCount);
+        
+        // Update reposted state if it's the current user
+        if (userId === authUser?._id) {
+          setReposted(newReposted);
+        }
+        
+        // Update post object if it exists
+        setPost(prev => {
+          if (!prev) return prev;
+          
+          let updatedReposts = [...(prev.reposts || [])];
+          
+          if (newReposted && !updatedReposts.includes(userId)) {
+            updatedReposts.push(userId);
+          } else if (!newReposted && updatedReposts.includes(userId)) {
+            updatedReposts = updatedReposts.filter(id => id !== userId);
+          }
+          
+          return {
+            ...prev,
+            repostCount: newRepostCount,
+            reposts: updatedReposts
+          };
+        });
+      }
+    };
+
+    socket.on('post:repost', handleRepostUpdate);
+
+    return () => {
+      socket.off('post:repost', handleRepostUpdate);
+    };
+  }, [socket, postId, authUser]);
 
   const fetchPost = async () => {
     try {
@@ -98,6 +147,10 @@ const PostDetailPage = () => {
       // Check if post is saved
       const savedResponse = await axiosInstance.get(`/posts/${postId}/saved-status`);
       setIsSaved(savedResponse.data.isSaved);
+      
+      // Initialize repost state
+      setReposted(postData.reposts?.includes(authUser._id) || false);
+      setRepostCount(postData.repostCount || 0);
     } catch (error) {
       console.error('Error fetching post:', error);
       toast.error('Failed to load post');
@@ -232,14 +285,27 @@ const PostDetailPage = () => {
     }
   };
 
-  const handleShare = async () => {
+  const handleRepost = async () => {
+    if (isReposting) return;
+    
     try {
-      const postUrl = `${window.location.origin}/post/${postId}`;
-      await navigator.clipboard.writeText(postUrl);
-      toast.success('Link copied to clipboard!');
+      setIsReposting(true);
+      const response = await repostPostAPI(post._id);
+      
+      if (response.reposted) {
+        setReposted(true);
+        setRepostCount(prev => prev + 1);
+        toast.success('Post reposted!');
+      } else {
+        setReposted(false);
+        setRepostCount(prev => Math.max(0, prev - 1));
+        toast.success('Repost removed');
+      }
     } catch (error) {
-      console.error('Error sharing:', error);
-      toast.error('Failed to copy link');
+      console.error('Error reposting:', error);
+      toast.error(error.response?.data?.message || 'Failed to repost');
+    } finally {
+      setIsReposting(false);
     }
   };
 
@@ -408,62 +474,71 @@ const PostDetailPage = () => {
               </div>
             </div>
 
-            <div className="relative">
-              <button 
-                onClick={() => setShowOptions(!showOptions)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <MoreHorizontal size={20} className="text-gray-500" />
-              </button>
-              
-              {showOptions && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-10">
-                  {post.author?._id === authUser?._id && (
-                    <>
-                      <button 
-                        onClick={handleEdit}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
-                      >
-                        Edit post
-                      </button>
-                      <button className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm text-red-600">
-                        Delete post
-                      </button>
-                      <div className="border-t border-gray-100 my-2"></div>
-                    </>
-                  )}
+            <PortalDropdown
+              isOpen={showOptions}
+              onClose={() => setShowOptions(false)}
+              width="w-48"
+              trigger={
+                <button 
+                  onClick={() => setShowOptions(!showOptions)}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <MoreHorizontal size={20} className="text-gray-500" />
+                </button>
+              }
+              className="py-2"
+            >
+              {post.author?._id === authUser?._id && (
+                <>
                   <button 
-                    onClick={() => {
-                      handleSave();
-                      setShowOptions(false);
-                    }}
+                    onClick={handleEdit}
                     className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
                   >
-                    {isSaved ? 'Unsave post' : 'Save post'}
+                    Edit post
                   </button>
-                  <button 
-                    onClick={() => {
-                      handleShare();
-                      setShowOptions(false);
-                    }}
-                    className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
-                  >
-                    Copy link
+                  <button className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm text-red-600">
+                    Delete post
                   </button>
-                  {post.author?._id !== authUser?._id && (
-                    <button 
-                      onClick={() => {
-                        setShowReportModal(true);
-                        setShowOptions(false);
-                      }}
-                      className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm text-red-600"
-                    >
-                      Report post
-                    </button>
-                  )}
-                </div>
+                  <div className="border-t border-gray-100 my-2"></div>
+                </>
               )}
-            </div>
+              <button 
+                onClick={() => {
+                  handleSave();
+                  setShowOptions(false);
+                }}
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
+              >
+                {isSaved ? 'Unsave post' : 'Save post'}
+              </button>
+              <button 
+                onClick={async () => {
+                  try {
+                    const postUrl = `${window.location.origin}/post/${postId}`;
+                    await navigator.clipboard.writeText(postUrl);
+                    toast.success('Link copied to clipboard!');
+                    setShowOptions(false);
+                  } catch (error) {
+                    console.error('Error copying link:', error);
+                    toast.error('Failed to copy link');
+                  }
+                }}
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
+              >
+                Copy link
+              </button>
+              {post.author?._id !== authUser?._id && (
+                <button 
+                  onClick={() => {
+                    setShowReportModal(true);
+                    setShowOptions(false);
+                  }}
+                  className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm text-red-600"
+                >
+                  Report post
+                </button>
+              )}
+            </PortalDropdown>
           </div>
 
           {/* Post Content */}
@@ -690,7 +765,7 @@ const PostDetailPage = () => {
             </div>
             <div className="flex items-center gap-4 text-gray-700 font-medium">
               <span>{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</span>
-              <span>{post.shares || 0} shares</span>
+              <span>{post.repostCount || 0} {post.repostCount === 1 ? 'repost' : 'reposts'}</span>
             </div>
           </div>
 
@@ -791,11 +866,15 @@ const PostDetailPage = () => {
               </button>
 
               <button
-                onClick={handleShare}
-                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-all"
+                onClick={handleRepost}
+                disabled={isReposting}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm transition-all disabled:opacity-50 ${
+                  reposted
+                    ? 'text-green-600 bg-green-50 hover:bg-green-100'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`}
               >
-                <Share2 size={12} />
-                <span>Share</span>
+                <span className="font-medium">Repost</span>
               </button>
 
               <button

@@ -39,11 +39,11 @@ export const createReport = async (req, res) => {
       $inc: { reportsCount: 1 }
     });
 
-    // Auto-flag post if it reaches threshold (1 report = auto-flag)
+    // Auto-remove post if it reaches threshold (5 reports = auto-remove)
     const totalReports = await Report.countDocuments({ postId, status: 'pending' });
-    if (totalReports >= 1 && post.status === 'published') {
+    if (totalReports >= 5 && post.status === 'published') {
       await Post.findByIdAndUpdate(postId, {
-        status: 'flagged'
+        status: 'removed'
       });
     }
 

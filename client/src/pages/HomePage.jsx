@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { 
-  Heart, MessageCircle, Share2, Send, Image as ImageIcon, X, 
+  Heart, MessageCircle, Send, Image as ImageIcon, X, 
   MoreHorizontal, TrendingUp, Bookmark, Smile, MapPin, 
   Eye, EyeOff, Globe, Lock, Users, Play, Pause, Volume2, VolumeX,
   ChevronLeft, ChevronRight, Repeat, ThumbsUp, Laugh, AlertCircle,
@@ -15,7 +15,8 @@ import {
   uploadPostImages,
   savePost as savePostAPI,
   checkPostSaved,
-  reactToPost as reactToPostAPI
+  reactToPost as reactToPostAPI,
+  repostPost as repostPostAPI
 } from "../services/api";
 
 import axiosInstance from "../lib/axios";
@@ -25,6 +26,7 @@ import CommentsSection from '../components/comment/CommentsSection';
 import EditPostModal from '../components/EditPostModal';
 import ReportPostModal from '../components/ReportPostModal';
 import { countTotalComments, listRootComments } from "../services/commentApi";
+import PortalDropdown from '../components/common/PortalDropdown';
 // import { 
 //   likePost as likePostAPI
 // } from "../services/api";
@@ -448,7 +450,9 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
   const [loadingCommentCount, setLoadingCommentCount] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [showShareModal, setShowShareModal] = useState(false);
+  const [reposted, setReposted] = useState(false);
+  const [repostCount, setRepostCount] = useState(0);
+  const [isReposting, setIsReposting] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -487,12 +491,16 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
       setLikeCount(post.likes?.length || 0);
     }
     
+    // Initialize repost state
+    setReposted(post.reposts?.includes(currentUser?._id) || false);
+    setRepostCount(post.repostCount || 0);
+    
     // Fetch accurate comment count on mount
     fetchInitialCommentCount();
     
     // Check if post is saved
     checkIfSaved();
-  }, [post.likes, post.reactions, post.comments, currentUser, post._id]);
+  }, [post.likes, post.reactions, post.comments, post.reposts, currentUser, post._id]);
 
   const fetchInitialCommentCount = async () => {
     try {
@@ -614,15 +622,27 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
     }
   };
 
-  const handleShare = async () => {
+  const handleRepost = async () => {
+    if (isReposting) return;
+    
     try {
-      const postUrl = `${window.location.origin}/post/${post._id}`;
-      await navigator.clipboard.writeText(postUrl);
-      toast.success('Link copied to clipboard!');
-      setShowShareModal(false);
+      setIsReposting(true);
+      const response = await repostPostAPI(post._id);
+      
+      if (response.reposted) {
+        setReposted(true);
+        setRepostCount(prev => prev + 1);
+        toast.success('Post reposted!');
+      } else {
+        setReposted(false);
+        setRepostCount(prev => Math.max(0, prev - 1));
+        toast.success('Repost removed');
+      }
     } catch (error) {
-      console.error('Error sharing:', error);
-      toast.error('Failed to share post');
+      console.error('Error reposting:', error);
+      toast.error(error.response?.data?.message || 'Failed to repost');
+    } finally {
+      setIsReposting(false);
     }
   };
 
@@ -732,72 +752,81 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
           </div>
         </div>
 
-        <div className="relative">
-          <button 
-            onClick={() => setShowOptions(!showOptions)}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
-            <MoreHorizontal size={20} className="text-gray-500" />
-          </button>
-          
-          {showOptions && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-10 animate-scaleIn">
-              {post.author?._id === currentUser?._id && (
-                <>
-                  <button 
-                    onClick={() => {
-                      setShowOptions(false);
-                      setShowEditModal(true);
-                    }}
-                    className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
-                  >
-                    Edit post
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setShowOptions(false);
-                      onPostDelete?.(post._id);
-                    }}
-                    className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm text-red-600"
-                  >
-                    Delete post
-                  </button>
-                  <div className="border-t border-gray-100 my-2"></div>
-                </>
-              )}
+        <PortalDropdown
+          isOpen={showOptions}
+          onClose={() => setShowOptions(false)}
+          width="w-48"
+          trigger={
+            <button 
+              onClick={() => setShowOptions(!showOptions)}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <MoreHorizontal size={20} className="text-gray-500" />
+            </button>
+          }
+          className="py-2"
+        >
+          {post.author?._id === currentUser?._id && (
+            <>
               <button 
                 onClick={() => {
-                  handleSaveToggle();
                   setShowOptions(false);
-                }}
-                disabled={isSaving}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm disabled:opacity-50"
-              >
-                {bookmarked ? 'Unsave post' : 'Save post'}
-              </button>
-              <button 
-                onClick={() => {
-                  handleShare();
-                  setShowOptions(false);
+                  setShowEditModal(true);
                 }}
                 className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
               >
-                Copy link
+                Edit post
               </button>
-              {post.author?._id !== currentUser?._id && (
-                <button 
-                  onClick={() => {
-                    setShowReportModal(true);
-                    setShowOptions(false);
-                  }}
-                  className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm text-red-600"
-                >
-                  Report post
-                </button>
-              )}
-            </div>
+              <button 
+                onClick={() => {
+                  setShowOptions(false);
+                  onPostDelete?.(post._id);
+                }}
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm text-red-600"
+              >
+                Delete post
+              </button>
+              <div className="border-t border-gray-100 my-2"></div>
+            </>
           )}
-        </div>
+          <button 
+            onClick={() => {
+              handleSaveToggle();
+              setShowOptions(false);
+            }}
+            disabled={isSaving}
+            className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm disabled:opacity-50"
+          >
+            {bookmarked ? 'Unsave post' : 'Save post'}
+          </button>
+          <button 
+            onClick={async () => {
+              try {
+                const postUrl = `${window.location.origin}/post/${post._id}`;
+                await navigator.clipboard.writeText(postUrl);
+                toast.success('Link copied to clipboard!');
+                setShowOptions(false);
+              } catch (error) {
+                console.error('Error copying link:', error);
+                toast.error('Failed to copy link');
+              }
+            }}
+            className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
+          >
+            Copy link
+          </button>
+          {post.author?._id !== currentUser?._id && (
+            <button 
+              onClick={() => {
+                setShowReportModal(true);
+                setShowOptions(false);
+              }}
+              className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm text-red-600"
+            >
+              Report post
+            </button>
+          )}
+        </PortalDropdown>
       </div>
 
       {/* Post Content */}
@@ -1025,7 +1054,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
           >
             {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
           </button>
-          <span>{post.shares || 0} shares</span>
+          <span>{post.repostCount || 0} {post.repostCount === 1 ? 'repost' : 'reposts'}</span>
         </div>
       </div>
 
@@ -1129,11 +1158,15 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
           </button>
 
           <button
-            onClick={() => setShowShareModal(true)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-all"
+            onClick={handleRepost}
+            disabled={isReposting}
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm transition-all disabled:opacity-50 ${
+              reposted
+                ? 'text-green-600 bg-green-50 hover:bg-green-100'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
           >
-            <Share2 size={12} />
-            <span>Share</span>
+            <span className="font-medium">Repost</span>
           </button>
 
           <button
@@ -1157,64 +1190,6 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
           post={post}
           onCommentCountChange={(count) => setCommentCount(count)}
         />
-      )}
-
-      {/* Share Modal */}
-      {showShareModal && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn"
-          onClick={() => setShowShareModal(false)}
-        >
-          <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-scaleIn"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold">Share Post</h3>
-              <button
-                onClick={() => setShowShareModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            
-            <div className="space-y-3">
-              <button
-                onClick={handleShare}
-                className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 rounded-xl transition-colors text-left"
-              >
-                <div className="p-3 bg-blue-50 rounded-full">
-                  <Share2 size={20} className="text-blue-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">Copy link</p>
-                  <p className="text-sm text-gray-500">Share via link</p>
-                </div>
-              </button>
-              
-              <button className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 rounded-xl transition-colors text-left">
-                <div className="p-3 bg-green-50 rounded-full">
-                  <MessageCircle size={20} className="text-green-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">Send in message</p>
-                  <p className="text-sm text-gray-500">Share with friends</p>
-                </div>
-              </button>
-              
-              <button className="w-full flex items-center gap-3 p-4 hover:bg-gray-50 rounded-xl transition-colors text-left">
-                <div className="p-3 bg-purple-50 rounded-full">
-                  <Repeat size={20} className="text-purple-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-gray-900">Share to Feed</p>
-                  <p className="text-sm text-gray-500">Post to your timeline</p>
-                </div>
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Likes Modal - Only for Post Owner */}
@@ -1346,7 +1321,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
 
 // Main HomePage Component
 export default function HomePage() {
-  const { authUser: user, isCheckingAuth: loading } = useAuthStore();
+  const { authUser: user, isCheckingAuth: loading, socket } = useAuthStore();
   const [posts, setPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [error, setError] = useState(false);
@@ -1462,6 +1437,41 @@ export default function HomePage() {
     window.addEventListener('postUpdated', handlePostUpdate);
     return () => window.removeEventListener('postUpdated', handlePostUpdate);
   }, []);
+
+  // Listen for real-time repost count updates via socket
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleRepostUpdate = (data) => {
+      const { postId, repostCount, reposted, userId } = data;
+      
+      setPosts(prev => prev.map(post => {
+        if (post._id === postId) {
+          // Update the repost count and reposts array
+          let updatedReposts = [...(post.reposts || [])];
+          
+          if (reposted && !updatedReposts.includes(userId)) {
+            updatedReposts.push(userId);
+          } else if (!reposted && updatedReposts.includes(userId)) {
+            updatedReposts = updatedReposts.filter(id => id !== userId);
+          }
+          
+          return {
+            ...post,
+            repostCount,
+            reposts: updatedReposts
+          };
+        }
+        return post;
+      }));
+    };
+
+    socket.on('post:repost', handleRepostUpdate);
+
+    return () => {
+      socket.off('post:repost', handleRepostUpdate);
+    };
+  }, [socket]);
 
   // Infinite scroll
   useEffect(() => {

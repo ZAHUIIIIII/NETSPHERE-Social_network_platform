@@ -3,6 +3,7 @@ import User from '../models/user.model.js';
 import Comment from '../models/comment.model.js';
 import cloudinary from '../lib/cloudinary.js';
 import { createNotification } from './notification.controller.js';
+import { io } from '../lib/socket.js';
 
 // Helper function to calculate top 3 reactions for a post
 const getTopReactions = (post) => {
@@ -30,9 +31,12 @@ export const getAllPosts = async (req, res) => {
   try {
     const { skip = 0, limit = 20 } = req.query;
     
-    // Only fetch published posts (exclude removed and flagged posts)
+    // Only fetch published and flagged posts (exclude removed posts and reposts)
+    // Flagged posts are shown to users until they reach 5 reports (then removed)
+    // Reposts are excluded from feed as they only appear in user's Reposts tab
     const posts = await Post.find({ 
-      status: { $in: ['published', null, undefined] } 
+      status: { $in: ['published', 'flagged', null, undefined] },
+      isRepost: { $ne: true }
     })
       .sort({ createdAt: -1 })
       .skip(Number(skip))
@@ -457,13 +461,10 @@ export const getPostById = async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    // Check if post is removed or flagged (unless user is the author)
+    // Check if post is removed (unless user is the author)
+    // Flagged posts remain visible to all users until removed at 5 reports
     if (post.status === 'removed' && post.author._id.toString() !== req.user._id.toString()) {
       return res.status(404).json({ message: 'This post has been removed' });
-    }
-
-    if (post.status === 'flagged' && post.author._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'This post is under review' });
     }
 
     // Check privacy settings
@@ -642,3 +643,131 @@ export const checkPostMutedStatus = async (req, res) => {
     res.status(500).json({ message: 'Error checking status' });
   }
 };
+
+// Repost a post
+export const repostPost = async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const userId = req.user._id;
+
+    // Find the original post
+    const originalPost = await Post.findById(postId);
+    if (!originalPost) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if user already reposted
+    if (originalPost.reposts.includes(userId)) {
+      // Undo repost
+      await Post.findByIdAndUpdate(postId, {
+        $pull: { reposts: userId },
+        $inc: { repostCount: -1 }
+      });
+
+      // Delete the repost
+      await Post.findOneAndDelete({
+        author: userId,
+        originalPost: postId,
+        isRepost: true
+      });
+
+      // Delete the notification
+      const Notification = (await import('../models/notification.model.js')).default;
+      await Notification.findOneAndDelete({
+        recipient: originalPost.author,
+        sender: userId,
+        type: 'repost',
+        post: postId
+      });
+
+      // Emit socket event for repost count update
+      io.emit('post:repost', {
+        postId: postId.toString(),
+        repostCount: Math.max(0, originalPost.repostCount - 1),
+        reposted: false,
+        userId: userId.toString()
+      });
+
+      return res.json({ message: 'Repost removed', reposted: false });
+    }
+
+    // Create repost
+    const repost = await Post.create({
+      author: userId,
+      isRepost: true,
+      originalPost: postId,
+      privacy: 'public' // Reposts are always public
+    });
+
+    // Update original post
+    await Post.findByIdAndUpdate(postId, {
+      $push: { reposts: userId },
+      $inc: { repostCount: 1 }
+    });
+
+    // Create notification for post owner (if not reposting own post)
+    if (originalPost.author.toString() !== userId.toString()) {
+      await createNotification({
+        recipient: originalPost.author,
+        sender: userId,
+        type: 'repost',
+        post: postId
+      });
+    }
+
+    // Emit socket event for repost count update
+    io.emit('post:repost', {
+      postId: postId.toString(),
+      repostCount: originalPost.repostCount + 1,
+      reposted: true,
+      userId: userId.toString()
+    });
+
+    // Populate the repost with original post data
+    await repost.populate({
+      path: 'originalPost',
+      populate: {
+        path: 'author',
+        select: 'username name avatar'
+      }
+    });
+
+    await repost.populate('author', 'username name avatar');
+
+    res.json({ message: 'Post reposted', repost, reposted: true });
+  } catch (error) {
+    console.error('Error reposting:', error);
+    res.status(500).json({ message: 'Error reposting post' });
+  }
+};
+
+// Get user's reposts
+export const getUserReposts = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const reposts = await Post.find({
+      author: userId,
+      isRepost: true,
+      isDeleted: false
+    })
+      .populate({
+        path: 'originalPost',
+        select: 'content images author createdAt isDeleted',
+        populate: {
+          path: 'author',
+          select: 'username avatar'
+        }
+      })
+      .populate('author', 'username avatar')
+      .sort({ createdAt: -1 });
+
+    // Filter out reposts where original post was deleted
+    const validReposts = reposts.filter(repost => repost.originalPost);
+
+    res.json(validReposts);
+  } catch (error) {
+    console.error('Error fetching reposts:', error);
+    res.status(500).json({ message: 'Error fetching reposts' });
+  }
+};;

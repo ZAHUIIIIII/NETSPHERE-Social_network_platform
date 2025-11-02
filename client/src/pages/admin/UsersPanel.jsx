@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { formatLastActive } from '../../lib/utils';
+import PortalDropdown from '../../components/common/PortalDropdown';
 
 const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateUser, setSelectedUser, deleteUser }) => {
   const [openDropdown, setOpenDropdown] = useState(null);
@@ -225,30 +226,27 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                 </td>
                 <td className="py-4 px-4 text-gray-700 text-sm font-medium">{formatLastActive(u.lastActive)}</td>
                 <td className="py-4 px-4 text-right">
-                  <div className="relative">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenDropdown(openDropdown === (u._id || u.id) ? null : (u._id || u.id));
-                      }}
-                      className="inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 transition-all group-hover:bg-blue-50"
-                    >
-                      <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-600 group-hover:text-blue-600" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="12" cy="12" r="1" fill="currentColor"/>
-                        <circle cx="12" cy="5" r="1" fill="currentColor"/>
-                        <circle cx="12" cy="19" r="1" fill="currentColor"/>
-                      </svg>
-                    </button>
-                    
-                    {openDropdown === (u._id || u.id) && (
-                      <>
-                        <div 
-                          className="fixed inset-0 z-30" 
-                          onClick={() => setOpenDropdown(null)}
-                        />
-                        <div className={`absolute right-0 w-52 bg-white rounded-lg shadow-xl border border-gray-200/80 overflow-hidden z-50 ${
-                          index >= filtered.length - 2 ? 'bottom-full mb-2' : 'top-full mt-2'
-                        }`}>
+                  <PortalDropdown
+                    isOpen={openDropdown === (u._id || u.id)}
+                    onClose={() => setOpenDropdown(null)}
+                    width="w-52"
+                    trigger={
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenDropdown(openDropdown === (u._id || u.id) ? null : (u._id || u.id));
+                        }}
+                        className="inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 transition-all group-hover:bg-blue-50"
+                      >
+                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-600 group-hover:text-blue-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                          <circle cx="12" cy="5" r="1" fill="currentColor"/>
+                          <circle cx="12" cy="19" r="1" fill="currentColor"/>
+                        </svg>
+                      </button>
+                    }
+                    className="overflow-hidden"
+                  >
                           <div className="px-4 py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                             <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Actions</span>
                           </div>
@@ -350,10 +348,7 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                               <span>Delete User</span>
                             </button>
                           </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  </PortalDropdown>
                 </td>
               </tr>
             ))}

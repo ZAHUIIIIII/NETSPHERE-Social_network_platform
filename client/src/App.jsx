@@ -14,6 +14,7 @@ import AdminPage from './pages/AdminPage';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
 import { useNotificationStore } from './store/useNotificationStore';
+import { useChatStore } from './store/useChatStore';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { UserProvider } from './UserContext';
@@ -24,12 +25,28 @@ import {Toaster} from 'react-hot-toast';
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore();
   const { addNotification, setUnreadCount } = useNotificationStore();
+  const { getUsers, subscribeToMessages, unsubscribeFromMessages } = useChatStore();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Initialize chat store and subscribe to messages globally
+  useEffect(() => {
+    if (!authUser) return;
+
+    // Fetch users list to populate unread counts
+    getUsers();
+
+    // Subscribe to real-time messages
+    subscribeToMessages();
+
+    return () => {
+      unsubscribeFromMessages();
+    };
+  }, [authUser, getUsers, subscribeToMessages, unsubscribeFromMessages]);
 
   // Real-time notification listener
   useEffect(() => {

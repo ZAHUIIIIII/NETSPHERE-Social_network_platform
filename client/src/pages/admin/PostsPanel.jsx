@@ -3,6 +3,7 @@ import { X, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../lib/axios';
 import toast from 'react-hot-toast';
+import PortalDropdown from '../../components/common/PortalDropdown';
 
 const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
   const navigate = useNavigate();
@@ -261,30 +262,27 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                 </td>
                 <td className="py-4 px-4 text-xs text-gray-700 whitespace-nowrap font-medium">{formatDate(p.createdAt)}</td>
                 <td className="py-4 px-4 text-right">
-                  <div className="relative">
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenDropdown(openDropdown === (p._id || p.id) ? null : (p._id || p.id));
-                      }}
-                      className="inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 transition-all group-hover:bg-blue-50"
-                    >
-                      <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-600 group-hover:text-blue-600" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <circle cx="12" cy="12" r="1" fill="currentColor"/>
-                        <circle cx="12" cy="5" r="1" fill="currentColor"/>
-                        <circle cx="12" cy="19" r="1" fill="currentColor"/>
-                      </svg>
-                    </button>
-                    
-                    {openDropdown === (p._id || p.id) && (
-                      <>
-                        <div 
-                          className="fixed inset-0 z-30" 
-                          onClick={() => setOpenDropdown(null)}
-                        />
-                        <div className={`absolute right-0 w-52 bg-white rounded-lg shadow-xl border border-gray-200/80 overflow-hidden z-50 ${
-                          index >= filtered.length - 2 ? 'bottom-full mb-2' : 'top-full mt-2'
-                        }`}>
+                  <PortalDropdown
+                    isOpen={openDropdown === (p._id || p.id)}
+                    onClose={() => setOpenDropdown(null)}
+                    width="w-52"
+                    trigger={
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenDropdown(openDropdown === (p._id || p.id) ? null : (p._id || p.id));
+                        }}
+                        className="inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 transition-all group-hover:bg-blue-50"
+                      >
+                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-600 group-hover:text-blue-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                          <circle cx="12" cy="5" r="1" fill="currentColor"/>
+                          <circle cx="12" cy="19" r="1" fill="currentColor"/>
+                        </svg>
+                      </button>
+                    }
+                    className="overflow-hidden"
+                  >
                           <div className="px-4 py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
                             <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Actions</span>
                           </div>
@@ -331,9 +329,9 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                                 className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 flex items-center gap-3 transition-all group"
                               >
                                 <svg viewBox="0 0 24 24" className="w-4 h-4 text-green-500 group-hover:text-green-600" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                  <path d="M4 12a8 8 0 018-8V0l4 4-4 4V4a6 6 0 100 12 6 6 0 006-6h2a8 8 0 11-16 0z" fill="currentColor"/>
+                                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
-                                <span className="font-medium">Restore Post</span>
+                                <span className="font-medium">Activate Post</span>
                               </button>
                             )}
                           </div>
@@ -351,10 +349,7 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                               <span>Delete Post</span>
                             </button>
                           </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  </PortalDropdown>
                 </td>
               </tr>
             ))}

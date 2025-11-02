@@ -13,13 +13,13 @@ const ICONS = {
   reports: (
     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 3v18l7-3 7 3V3H5z" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
   ),
-  analytics: (
-    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 3v18h18" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M7 13v-6M12 16v-9M17 10v-3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+  usage: (
+    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2v20M17 7l-5-5-5 5M7 17l5 5 5-5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/><path d="M20 12H4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
   ),
 };
 
 const TabNav = ({ activeTab, setActiveTab }) => {
-  const tabs = ['overview', 'users', 'posts', 'reports', 'analytics'];
+  const tabs = ['overview', 'users', 'posts', 'reports', 'usage'];
   return (
     <div className="w-full mb-4">
       <div className="bg-gray-100 rounded-full border border-gray-200 shadow-sm overflow-hidden">

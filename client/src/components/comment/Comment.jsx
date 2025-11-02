@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { shortTimeLabel } from '../../lib/utils';
+import PortalDropdown from '../common/PortalDropdown';
 
 const REACTION_EMOJIS = {
   like: '👍',
@@ -212,25 +213,45 @@ const Comment = ({
                     
                     {/* Three dots menu - aligned with username */}
                     {isOwnComment && !comment.isDeleted && (
-                      <div className="relative group">
-                        <button className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-200/50">
-                          <MoreHorizontal className="w-3.5 h-3.5" />
+                      <PortalDropdown
+                        isOpen={showMenu}
+                        onClose={() => setShowMenu(false)}
+                        trigger={
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowMenu(!showMenu);
+                            }}
+                            className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-200/50 transition-colors"
+                          >
+                            <MoreHorizontal className="w-3.5 h-3.5" />
+                          </button>
+                        }
+                        className="py-1.5"
+                      >
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setIsEditing(true);
+                            setShowMenu(false);
+                          }}
+                          className="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-100 text-gray-700 flex items-center gap-2 transition-colors"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                          Edit
                         </button>
-                        <div className="absolute right-0 top-full mt-1 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                          <button
-                            onClick={() => setIsEditing(true)}
-                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 text-gray-700"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => setShowDeleteDialog(true)}
-                            className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDeleteDialog(true);
+                            setShowMenu(false);
+                          }}
+                          className="w-full px-4 py-2.5 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Delete
+                        </button>
+                      </PortalDropdown>
                     )}
                   </div>
                   

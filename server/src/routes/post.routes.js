@@ -36,6 +36,8 @@ router.post('/:postId/save', protectRoute, postController.savePost);
 router.post('/:postId/mute-notifications', protectRoute, postController.mutePostNotifications);
 router.post('/:postId/unmute-notifications', protectRoute, postController.unmutePostNotifications);
 router.get('/:postId/muted-status', protectRoute, postController.checkPostMutedStatus);
+router.post('/:postId/repost', protectRoute, postController.repostPost);
+router.get('/reposts/:userId', protectRoute, postController.getUserReposts);
 // Comment routes removed - handled by comment.routes.js for advanced features
 
 // Generic :postId routes

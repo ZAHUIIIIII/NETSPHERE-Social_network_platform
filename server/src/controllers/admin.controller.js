@@ -3,20 +3,67 @@ import Post from '../models/post.model.js';
 import Comment from '../models/comment.model.js';
 import Notification from '../models/notification.model.js';
 import Report from '../models/report.model.js';
+import mongoose from 'mongoose';
 
 // Get admin dashboard statistics
 export const getDashboardStats = async (req, res) => {
   try {
     // Total counts
     const totalUsers = await User.countDocuments();
+    const activeUsers = await User.countDocuments({ status: 'active' });
+    const suspendedUsers = await User.countDocuments({ status: 'suspended' });
+    const bannedUsers = await User.countDocuments({ status: 'banned' });
+    
     const totalPosts = await Post.countDocuments();
-    const totalActiveReports = 0; // TODO: Implement reports model
+    const publishedPosts = await Post.countDocuments({ status: 'published' });
+    const flaggedPosts = await Post.countDocuments({ status: 'flagged' });
+    const removedPosts = await Post.countDocuments({ status: 'removed' });
+    
+    // Get MongoDB usage
+    const db = mongoose.connection.db;
+    const dbStats = await db.stats();
+    const quotaLimitMB = parseFloat(process.env.MONGODB_QUOTA_LIMIT_MB || 512);
+    const usedBytes = dbStats.dataSize + dbStats.indexSize;
+    const usedMB = usedBytes / (1024 * 1024);
+    const storageUsagePercent = ((usedMB / quotaLimitMB) * 100).toFixed(1);
     
     // Active users (logged in within last 24 hours)
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const dailyActiveUsers = await User.countDocuments({
       lastActive: { $gte: oneDayAgo }
     });
+
+    // Calculate percentage changes compared to last month
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    
+    const lastMonthUsers = await User.countDocuments({
+      createdAt: { $lt: oneMonthAgo }
+    });
+    const lastMonthPosts = await Post.countDocuments({
+      createdAt: { $lt: oneMonthAgo }
+    });
+    
+    const twoDaysAgo = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    const lastDayActiveUsers = await User.countDocuments({
+      lastActive: { $gte: twoDaysAgo, $lt: oneDayAgo }
+    });
+    
+    // Calculate percentage changes
+    const usersChange = lastMonthUsers > 0 
+      ? (((totalUsers - lastMonthUsers) / lastMonthUsers) * 100).toFixed(1)
+      : totalUsers > 0 ? '100.0' : '0.0';
+      
+    const postsChange = lastMonthPosts > 0
+      ? (((totalPosts - lastMonthPosts) / lastMonthPosts) * 100).toFixed(1)
+      : totalPosts > 0 ? '100.0' : '0.0';
+      
+    // For storage usage, show if usage increased (positive = bad for storage)
+    const usageChange = storageUsagePercent > 0 ? `+${storageUsagePercent}` : storageUsagePercent;
+      
+    const dauChange = lastDayActiveUsers > 0
+      ? (((dailyActiveUsers - lastDayActiveUsers) / lastDayActiveUsers) * 100).toFixed(1)
+      : dailyActiveUsers > 0 ? '100.0' : '0.0';
 
     // User growth data (last 6 months)
     const sixMonthsAgo = new Date();
@@ -167,15 +214,6 @@ export const getDashboardStats = async (req, res) => {
       }, null, 2));
     }
 
-    const sharesResult = await Post.aggregate([
-      { 
-        $group: { 
-          _id: null, 
-          total: { $sum: '$shares' }
-        } 
-      }
-    ]);
-
     // Calculate total likes/reactions - ONLY from posts (not comments)
     const postLikesData = likesResult[0] || {};
     
@@ -192,13 +230,11 @@ export const getDashboardStats = async (req, res) => {
 
     // Use only post reactions for the "Likes" metric
     const likesCount = totalPostReactions;
-    const sharesCount = sharesResult[0]?.total || 0;
 
     console.log('📊 Activity Distribution Final Result:', {
       posts: postsCount,
       comments: finalCommentsCount,
       likes: likesCount,
-      shares: sharesCount,
       breakdown: {
         postReactions: totalPostReactions,
         embeddedComments: embeddedCommentsCount,
@@ -209,16 +245,29 @@ export const getDashboardStats = async (req, res) => {
     res.json({
       stats: {
         totalUsers,
+        activeUsers,
+        suspendedUsers,
+        bannedUsers,
         totalPosts,
-        totalActiveReports,
-        dailyActiveUsers
+        publishedPosts,
+        flaggedPosts,
+        removedPosts,
+        storageUsed: usedMB,
+        storageLimit: quotaLimitMB,
+        storagePercent: parseFloat(storageUsagePercent),
+        dailyActiveUsers,
+        changes: {
+          users: `${usersChange >= 0 ? '+' : ''}${usersChange}%`,
+          posts: `${postsChange >= 0 ? '+' : ''}${postsChange}%`,
+          storage: `${storageUsagePercent}%`,
+          dau: `${dauChange >= 0 ? '+' : ''}${dauChange}%`
+        }
       },
       userGrowth: formattedUserGrowth,
       activityDistribution: {
         posts: postsCount,
         comments: finalCommentsCount,
-        likes: likesCount,
-        shares: sharesCount
+        likes: likesCount
       }
     });
   } catch (error) {
@@ -698,61 +747,54 @@ export const getRecentActivities = async (req, res) => {
         timestamp: user.updatedAt,
         type: 'moderation',
         icon: '🚫',
+        status: 'warning'
+      });
+    });
+
+    // Get recently banned users
+    const bannedUsers = await User.find({ status: 'banned' })
+      .sort({ updatedAt: -1 })
+      .limit(5)
+      .select('name username updatedAt')
+      .lean();
+
+    bannedUsers.forEach(user => {
+      activities.push({
+        id: `banned-${user._id}`,
+        action: 'User banned',
+        user: user.username,
+        detail: user.name,
+        time: formatTimeAgo(user.updatedAt),
+        timestamp: user.updatedAt,
+        type: 'moderation',
+        icon: '🚫',
         status: 'error'
       });
     });
 
-    // Get recently activated users (unsuspended)
-    const activeUsers = await User.find({ 
-      status: 'active',
-      updatedAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } // Last 7 days
-    })
-      .sort({ updatedAt: -1 })
-      .limit(3)
-      .select('name username updatedAt createdAt')
-      .lean();
-
-    // Filter only those who were likely unsuspended (updated after creation)
-    activeUsers.forEach(user => {
-      const daysSinceCreation = (new Date(user.updatedAt) - new Date(user.createdAt)) / (1000 * 60 * 60 * 24);
-      if (daysSinceCreation > 1) { // Only if updated more than a day after creation
-        activities.push({
-          id: `activated-${user._id}`,
-          action: 'User activated',
-          user: user.username,
-          detail: user.name,
-          time: formatTimeAgo(user.updatedAt),
-          timestamp: user.updatedAt,
-          type: 'moderation',
-          icon: '✅',
-          status: 'success'
-        });
-      }
-    });
-
-    // Get recently deleted comments (if tracked)
-    const deletedComments = await Comment.find({ 
+    // Get recently deleted posts
+    const deletedPosts = await Post.find({ 
       isDeleted: true,
       updatedAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
     })
       .sort({ updatedAt: -1 })
-      .limit(3)
-      .populate('authorId', 'name username')
-      .select('authorId content updatedAt')
+      .limit(5)
+      .populate('author', 'name username')
+      .select('author content updatedAt')
       .lean();
 
-    deletedComments.forEach(comment => {
-      if (comment.authorId) {
+    deletedPosts.forEach(post => {
+      if (post.author) {
         activities.push({
-          id: `deleted-comment-${comment._id}`,
-          action: 'Comment deleted',
-          user: comment.authorId.username,
-          detail: comment.content ? comment.content.substring(0, 50) + (comment.content.length > 50 ? '...' : '') : '',
-          time: formatTimeAgo(comment.updatedAt),
-          timestamp: comment.updatedAt,
+          id: `deleted-post-${post._id}`,
+          action: 'Post deleted',
+          user: post.author.username,
+          detail: post.content ? post.content.substring(0, 50) + (post.content.length > 50 ? '...' : '') : 'Image post',
+          time: formatTimeAgo(post.updatedAt),
+          timestamp: post.updatedAt,
           type: 'moderation',
           icon: '🗑️',
-          status: 'warning'
+          status: 'error'
         });
       }
     });

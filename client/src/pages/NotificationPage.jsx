@@ -8,7 +8,6 @@ import {
   MessageCircle, 
   UserPlus, 
   User,
-  Share2,
   Bell,
   Trash2,
   CheckCheck,
@@ -23,11 +22,13 @@ import {
   BellOff,
   Reply,
   UserCheck,
+  Repeat,
   UserMinus
 } from 'lucide-react';
 import { formatTime } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { useFollow } from '../hooks/useFollow';
+import PortalDropdown from '../components/common/PortalDropdown';
 
 const NotificationPage = () => {
   const { authUser } = useAuthStore();
@@ -355,8 +356,8 @@ const NotificationPage = () => {
         return <UserPlus className={`${iconClasses} text-purple-500`} />;
       case 'reaction':
         return <Smile className={`${iconClasses} text-yellow-500`} />;
-      case 'share':
-        return <Share2 className={`${iconClasses} text-indigo-500`} />;
+      case 'repost':
+        return <Repeat className={`${iconClasses} text-indigo-500`} />;
       case 'story':
         return <Eye className={`${iconClasses} text-pink-500`} />;
       case 'post':
@@ -386,8 +387,8 @@ const NotificationPage = () => {
           angry: '😠'
         }[notification.reactionType] || '👍';
         return `reacted ${emoji} to your ${notification.comment ? 'comment' : 'post'}`;
-      case 'share':
-        return `shared your post`;
+      case 'repost':
+        return `reposted your post`;
       case 'story':
         return `viewed your story`;
       case 'post':
@@ -418,7 +419,7 @@ const NotificationPage = () => {
         return '↩️';
       case 'follow':
         return '👤';
-      case 'share':
+      case 'repost':
         return '🔄';
       default:
         return '🔔';
@@ -601,30 +602,26 @@ const NotificationPage = () => {
                     </div>
 
                     {/* Actions menu - Always visible */}
-                    <div className="flex items-center gap-1 relative flex-shrink-0">
-                      <button
-                        data-dropdown-trigger
-                        onClick={(e) => handleToggleMenu(notification._id, e)}
-                        className={`p-2 rounded-lg transition-all ${
-                          openMenuId === notification._id 
-                            ? 'bg-blue-100 text-blue-700 shadow-sm' 
-                            : 'hover:bg-gray-100 text-gray-400 hover:text-gray-700 opacity-0 group-hover:opacity-100'
-                        }`}
-                        title="More options"
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <PortalDropdown
+                        isOpen={openMenuId === notification._id}
+                        onClose={() => setOpenMenuId(null)}
+                        width="min-w-[260px]"
+                        trigger={
+                          <button
+                            onClick={(e) => handleToggleMenu(notification._id, e)}
+                            className={`p-2 rounded-lg transition-all ${
+                              openMenuId === notification._id 
+                                ? 'bg-blue-100 text-blue-700 shadow-sm' 
+                                : 'hover:bg-gray-100 text-gray-400 hover:text-gray-700 opacity-0 group-hover:opacity-100'
+                            }`}
+                            title="More options"
+                          >
+                            <MoreHorizontal className="w-4 h-4" />
+                          </button>
+                        }
+                        className="py-2 backdrop-blur-sm"
                       >
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-
-                      {/* Dropdown Menu */}
-                      {openMenuId === notification._id && (
-                        <div 
-                          data-dropdown-menu
-                          className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 min-w-[260px] z-[200] backdrop-blur-sm"
-                          onClick={(e) => e.stopPropagation()}
-                          style={{ 
-                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
-                          }}
-                        >
                           {/* Mark as Read/Unread */}
                           <button
                             onClick={(e) => notification.read ? handleMarkAsUnread(notification._id, e) : handleMarkAsRead(notification._id, e)}
@@ -673,8 +670,7 @@ const NotificationPage = () => {
                               <span className="font-semibold">Mute this post</span>
                             </button>
                           )}
-                        </div>
-                      )}
+                      </PortalDropdown>
                     </div>
                   </div>
 

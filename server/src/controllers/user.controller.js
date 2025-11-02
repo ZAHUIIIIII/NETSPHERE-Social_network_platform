@@ -77,10 +77,13 @@ export const getUserPosts = async (req, res) => {
     const { userId } = req.params;
     const { skip = 0, limit = 20 } = req.query;
 
-    // Only fetch published posts (exclude removed and flagged posts)
+    // Only fetch published and flagged posts (exclude removed posts and reposts)
+    // Flagged posts are shown to users until they reach 5 reports (then removed)
+    // Reposts are excluded as they appear in separate Reposts tab
     const posts = await Post.find({ 
       author: userId,
-      status: { $in: ['published', null, undefined] }
+      status: { $in: ['published', 'flagged', null, undefined] },
+      isRepost: { $ne: true }
     })
       .sort({ createdAt: -1 })
       .skip(Number(skip))

@@ -4,20 +4,22 @@ import axiosInstance from '../lib/axios';
 
 const ReportPostModal = ({ isOpen, onClose, postId, postAuthor }) => {
   const [selectedReason, setSelectedReason] = useState('');
+  const [customReason, setCustomReason] = useState('');
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const reportReasons = [
-    { value: 'spam', label: '🚫 Spam or Misleading', description: 'Repetitive content or clickbait' },
-    { value: 'harassment', label: '😠 Harassment or Bullying', description: 'Targeting or attacking someone' },
-    { value: 'hate_speech', label: '⚠️ Hate Speech', description: 'Discriminatory or offensive language' },
-    { value: 'violence', label: '🔪 Violence or Dangerous', description: 'Threats, gore, or harm' },
-    { value: 'nudity', label: '🔞 Nudity or Sexual Content', description: 'Inappropriate adult content' },
-    { value: 'false_information', label: '📰 False Information', description: 'Misinformation or fake news' },
-    { value: 'scam', label: '💰 Scam or Fraud', description: 'Deceptive financial schemes' },
-    { value: 'terrorism', label: '☠️ Terrorism or Extremism', description: 'Promoting violent organizations' },
-    { value: 'self_harm', label: '⚕️ Self-Harm or Suicide', description: 'Encouraging dangerous behavior' },
-    { value: 'other', label: '🔧 Other', description: 'Something else not listed' }
+    { value: '', label: 'Select a reason...', disabled: true },
+    { value: 'spam', label: '🚫 Spam or Misleading' },
+    { value: 'harassment', label: '😠 Harassment or Bullying' },
+    { value: 'hate_speech', label: '⚠️ Hate Speech' },
+    { value: 'violence', label: '🔪 Violence or Dangerous' },
+    { value: 'nudity', label: '🔞 Nudity or Sexual Content' },
+    { value: 'false_information', label: '📰 False Information' },
+    { value: 'scam', label: '💰 Scam or Fraud' },
+    { value: 'terrorism', label: '☠️ Terrorism or Extremism' },
+    { value: 'self_harm', label: '⚕️ Self-Harm or Suicide' },
+    { value: 'other', label: '🔧 Other (Please specify)' }
   ];
 
   const handleSubmit = async (e) => {
@@ -28,16 +30,27 @@ const ReportPostModal = ({ isOpen, onClose, postId, postAuthor }) => {
       return;
     }
 
+    if (selectedReason === 'other' && !customReason.trim()) {
+      toast.error('Please specify the reason for "Other"');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
+      // If "other" is selected, use customReason as description
+      const finalDescription = selectedReason === 'other' 
+        ? `${customReason.trim()}${description.trim() ? ' | ' + description.trim() : ''}`
+        : description.trim();
+
       await axiosInstance.post(`/reports/posts/${postId}`, {
         reason: selectedReason,
-        description: description.trim()
+        description: finalDescription
       });
 
       toast.success('Report submitted successfully. We will review it shortly.');
       onClose();
       setSelectedReason('');
+      setCustomReason('');
       setDescription('');
     } catch (error) {
       if (error.response?.data?.message === 'You have already reported this post') {
@@ -54,6 +67,7 @@ const ReportPostModal = ({ isOpen, onClose, postId, postAuthor }) => {
     if (!isSubmitting) {
       onClose();
       setSelectedReason('');
+      setCustomReason('');
       setDescription('');
     }
   };
@@ -109,37 +123,55 @@ const ReportPostModal = ({ isOpen, onClose, postId, postAuthor }) => {
             </div>
           </div>
 
-          {/* Reason Selection */}
+          {/* Reason Selection - Dropdown */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-900 mb-3">
               Why are you reporting this post? <span className="text-red-500">*</span>
             </label>
-            <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
+            <select
+              value={selectedReason}
+              onChange={(e) => {
+                setSelectedReason(e.target.value);
+                if (e.target.value !== 'other') {
+                  setCustomReason('');
+                }
+              }}
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900 font-medium bg-white cursor-pointer transition-all"
+              required
+            >
               {reportReasons.map((reason) => (
-                <label
-                  key={reason.value}
-                  className={`flex items-start gap-3 p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                    selectedReason === reason.value
-                      ? 'border-red-500 bg-red-50'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                  }`}
+                <option 
+                  key={reason.value} 
+                  value={reason.value}
+                  disabled={reason.disabled}
+                  className="py-2"
                 >
-                  <input
-                    type="radio"
-                    name="reason"
-                    value={reason.value}
-                    checked={selectedReason === reason.value}
-                    onChange={(e) => setSelectedReason(e.target.value)}
-                    className="mt-1 w-4 h-4 text-red-600 focus:ring-red-500"
-                  />
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">{reason.label}</div>
-                    <div className="text-sm text-gray-600">{reason.description}</div>
-                  </div>
-                </label>
+                  {reason.label}
+                </option>
               ))}
-            </div>
+            </select>
           </div>
+
+          {/* Custom Reason Input (shown only when "Other" is selected) */}
+          {selectedReason === 'other' && (
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-gray-900 mb-2">
+                Please specify the reason <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={customReason}
+                onChange={(e) => setCustomReason(e.target.value)}
+                placeholder="Enter your reason for reporting..."
+                maxLength={100}
+                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                {customReason.length}/100 characters
+              </p>
+            </div>
+          )}
 
           {/* Additional Details */}
           <div className="mb-6">

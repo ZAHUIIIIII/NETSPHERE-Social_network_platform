@@ -24,9 +24,23 @@ const AdminPage = ({ onBack } = {}) => {
   // Real data states
   const [stats, setStats] = useState({
     totalUsers: 0,
+    activeUsers: 0,
+    suspendedUsers: 0,
+    bannedUsers: 0,
     totalPosts: 0,
-    totalActiveReports: 0,
-    dailyActiveUsers: 0
+    publishedPosts: 0,
+    flaggedPosts: 0,
+    removedPosts: 0,
+    storageUsed: 0,
+    storageLimit: 0,
+    storagePercent: 0,
+    dailyActiveUsers: 0,
+    changes: {
+      users: '+0.0%',
+      posts: '+0.0%',
+      storage: '0.0%',
+      dau: '+0.0%'
+    }
   });
   const [users, setUsers] = useState([]);
   const [posts, setPosts] = useState([]);
@@ -71,9 +85,23 @@ const AdminPage = ({ onBack } = {}) => {
 
       setStats({
         totalUsers: statsData.stats.totalUsers,
+        activeUsers: statsData.stats.activeUsers,
+        suspendedUsers: statsData.stats.suspendedUsers,
+        bannedUsers: statsData.stats.bannedUsers,
         totalPosts: statsData.stats.totalPosts,
-        totalActiveReports: statsData.stats.totalActiveReports,
-        dailyActiveUsers: statsData.stats.dailyActiveUsers
+        publishedPosts: statsData.stats.publishedPosts,
+        flaggedPosts: statsData.stats.flaggedPosts,
+        removedPosts: statsData.stats.removedPosts,
+        storageUsed: statsData.stats.storageUsed,
+        storageLimit: statsData.stats.storageLimit,
+        storagePercent: statsData.stats.storagePercent,
+        dailyActiveUsers: statsData.stats.dailyActiveUsers,
+        changes: statsData.stats.changes || {
+          users: '+0.0%',
+          posts: '+0.0%',
+          storage: '0.0%',
+          dau: '+0.0%'
+        }
       });
 
       setUserGrowth(statsData.userGrowth || []);
@@ -253,10 +281,22 @@ const AdminPage = ({ onBack } = {}) => {
   );
 
   const statsData = [
-    { title: 'Total Users', value: stats.totalUsers.toLocaleString(), change: '+12.5%' },
-    { title: 'Total Posts', value: stats.totalPosts.toLocaleString(), change: '+8.2%' },
-    { title: 'Active Reports', value: stats.totalActiveReports, change: '-5.1%' },
-    { title: 'Daily Active Users', value: stats.dailyActiveUsers.toLocaleString(), change: '+15.3%' },
+    { 
+      title: 'Total Users', 
+      value: `${stats.activeUsers.toLocaleString()} / ${stats.totalUsers.toLocaleString()}`, 
+      change: stats.changes?.users || '+0.0%' 
+    },
+    { 
+      title: 'Total Posts', 
+      value: `${stats.publishedPosts.toLocaleString()} / ${stats.totalPosts.toLocaleString()}`, 
+      change: stats.changes?.posts || '+0.0%' 
+    },
+    { 
+      title: 'Storage Usage', 
+      value: `${stats.storageUsed.toFixed(1)} / ${stats.storageLimit} MB`, 
+      change: stats.changes?.storage || '0.0%' 
+    },
+    { title: 'Daily Active Users', value: stats.dailyActiveUsers.toLocaleString(), change: stats.changes?.dau || '+0.0%' },
   ];
 
   if (loading) {
@@ -336,7 +376,7 @@ const AdminPage = ({ onBack } = {}) => {
           <ReportsPanel reports={reports} resolveReport={resolveReport} dismissReport={dismissReport} />
         )}
 
-        {activeTab === 'analytics' && (
+        {activeTab === 'usage' && (
           <Analytics />
         )}
 

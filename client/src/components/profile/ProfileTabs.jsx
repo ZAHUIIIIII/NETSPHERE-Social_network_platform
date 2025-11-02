@@ -1,6 +1,6 @@
 // client/src/components/profile/ProfileTabs.jsx
 import React from 'react';
-import { Grid, Bookmark, UserSquare2 } from 'lucide-react';
+import { Grid, Bookmark, UserSquare2, Repeat } from 'lucide-react';
 
 const ProfileTabs = ({ activeTab, onTabChange, isOwnProfile }) => {
   const tabs = [
@@ -11,6 +11,9 @@ const ProfileTabs = ({ activeTab, onTabChange, isOwnProfile }) => {
   if (isOwnProfile) {
     tabs.push({ key: 'saved', label: 'SAVED', icon: Bookmark });
   }
+
+  // Add reposts tab after saved (or after posts if not own profile)
+  tabs.push({ key: 'reposts', label: 'REPOSTS', icon: Repeat });
 
   return (
     <div className="bg-white border-b border-gray-200">

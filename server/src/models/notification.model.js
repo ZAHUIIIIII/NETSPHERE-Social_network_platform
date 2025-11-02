@@ -21,7 +21,7 @@ const notificationSchema = new mongoose.Schema({
       'reply',          // Someone replied to your comment
       'follow',         // Someone followed you
       'reaction',       // Someone reacted to your post/comment
-      'share'           // Someone shared your post
+      'repost'          // Someone reposted your post
     ]
   },
   post: {

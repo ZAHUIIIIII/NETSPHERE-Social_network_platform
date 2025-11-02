@@ -78,10 +78,12 @@ export const search = async (req, res) => {
             ]
           },
           { privacy: 'public' },
-          // Only show published posts (exclude removed and flagged)
+          // Only show published and flagged posts (exclude removed posts only)
+          // Flagged posts are shown to users until they reach 5 reports (then removed)
           {
             $or: [
               { status: 'published' },
+              { status: 'flagged' },
               { status: { $exists: false } },
               { status: null }
             ]
