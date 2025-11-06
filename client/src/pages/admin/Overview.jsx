@@ -63,16 +63,16 @@ const Overview = ({ recentActivities = [], users = [], posts = [], reports = [],
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* User Growth Chart */}
-        <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h3 className="font-semibold text-base text-gray-900">User Growth</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Monthly new user registrations</p>
+              <h3 className="font-semibold text-base text-gray-900 dark:text-gray-100">User Growth</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Monthly new user registrations</p>
             </div>
             <select 
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="text-xs border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100"
             >
               <option value="6months">Last 6 months</option>
               <option value="12months">Last 12 months</option>
@@ -82,7 +82,7 @@ const Overview = ({ recentActivities = [], users = [], posts = [], reports = [],
 
           <div className="relative h-56">
             {/* Y-axis labels */}
-            <div className="absolute left-0 top-0 bottom-5 flex flex-col justify-between text-xs text-gray-400">
+            <div className="absolute left-0 top-0 bottom-5 flex flex-col justify-between text-xs text-gray-400 dark:text-gray-500">
               <span>{maxUsers}</span>
               <span>{Math.floor(maxUsers * 0.75)}</span>
               <span>{Math.floor(maxUsers * 0.5)}</span>
@@ -91,18 +91,18 @@ const Overview = ({ recentActivities = [], users = [], posts = [], reports = [],
             </div>
 
             {/* Chart area */}
-            <div className="absolute left-12 right-0 top-0 bottom-5 border-l-2 border-b-2 border-gray-300">
+            <div className="absolute left-12 right-0 top-0 bottom-5 border-l-2 border-b-2 border-gray-300 dark:border-gray-600">
               {/* Grid lines - horizontal */}
               <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
                 {[0, 1, 2, 3, 4].map(i => (
-                  <div key={i} className="w-full border-t border-dashed border-gray-200" />
+                  <div key={i} className="w-full border-t border-dashed border-gray-200 dark:border-gray-700" />
                 ))}
               </div>
 
               {/* Grid lines - vertical */}
               <div className="absolute inset-0 flex justify-between pointer-events-none">
                 {growthData.map((item, i) => (
-                  <div key={i} className="h-full border-l border-dashed border-gray-200" />
+                  <div key={i} className="h-full border-l border-dashed border-gray-200 dark:border-gray-700" />
                 ))}
               </div>
 
@@ -185,7 +185,7 @@ const Overview = ({ recentActivities = [], users = [], posts = [], reports = [],
               {/* Hover tooltip */}
               {hoveredPoint !== null && growthData[hoveredPoint] && (
                 <div 
-                  className="absolute bg-white border border-gray-200 rounded-md shadow-lg pointer-events-none z-20"
+                  className="absolute bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg pointer-events-none z-20"
                   style={{
                     left: `${(hoveredPoint / (growthData.length - 1)) * 100}%`,
                     top: `${100 - (growthData[hoveredPoint].users / maxUsers) * 100}%`,
@@ -193,8 +193,8 @@ const Overview = ({ recentActivities = [], users = [], posts = [], reports = [],
                   }}
                 >
                   <div className="px-3 py-2">
-                    <div className="text-xs font-medium text-gray-700">{growthData[hoveredPoint].month}</div>
-                    <div className="text-sm font-bold text-blue-600 mt-0.5">
+                    <div className="text-xs font-medium text-gray-700 dark:text-gray-300">{growthData[hoveredPoint].month}</div>
+                    <div className="text-sm font-bold text-blue-600 dark:text-blue-400 mt-0.5">
                       users : {growthData[hoveredPoint].users.toLocaleString()}
                     </div>
                   </div>
@@ -203,7 +203,7 @@ const Overview = ({ recentActivities = [], users = [], posts = [], reports = [],
             </div>
 
             {/* X-axis labels */}
-            <div className="absolute left-12 right-0 bottom-0 flex items-center justify-between text-xs text-gray-500">
+            <div className="absolute left-12 right-0 bottom-0 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
               {growthData.map(item => (
                 <span key={item.month} className="flex-1 text-center">{item.month}</span>
               ))}
@@ -212,10 +212,10 @@ const Overview = ({ recentActivities = [], users = [], posts = [], reports = [],
         </div>
 
         {/* Platform Activity Chart */}
-        <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="mb-6">
-            <h3 className="font-semibold text-lg text-gray-900">Platform Activity</h3>
-            <p className="text-sm text-gray-500 mt-1">Distribution of user actions</p>
+            <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">Platform Activity</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Distribution of user actions</p>
           </div>
 
           {/* Pie Chart */}
@@ -338,9 +338,9 @@ const Overview = ({ recentActivities = [], users = [], posts = [], reports = [],
                 <div key={item.name} className="flex items-center justify-between gap-2.5">
                   <div className="flex items-center gap-2.5">
                     <div className="w-3.5 h-3.5 rounded-sm flex-shrink-0" style={{ backgroundColor: colors[index] }} />
-                    <span className="text-sm text-gray-700 font-medium">{item.name}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">{item.name}</span>
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">{item.value.toLocaleString()}</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.value.toLocaleString()}</span>
                 </div>
               );
             })}
@@ -349,19 +349,19 @@ const Overview = ({ recentActivities = [], users = [], posts = [], reports = [],
       </div>
 
       {/* Recent Activity Section */}
-      <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="font-semibold text-base text-gray-900">Recent Activity</h3>
-            <p className="text-xs text-gray-500 mt-0.5">Important platform events and moderation actions</p>
+            <h3 className="font-semibold text-base text-gray-900 dark:text-gray-100">Recent Activity</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Important platform events and moderation actions</p>
           </div>
           <div className="flex gap-2">
             <button
               onClick={() => setActivityFilter('all')}
               className={`text-xs px-3 py-1 rounded-full transition-colors ${
                 activityFilter === 'all'
-                  ? 'bg-blue-100 text-blue-700 font-medium'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               All
@@ -370,8 +370,8 @@ const Overview = ({ recentActivities = [], users = [], posts = [], reports = [],
               onClick={() => setActivityFilter('user')}
               className={`text-xs px-3 py-1 rounded-full transition-colors ${
                 activityFilter === 'user'
-                  ? 'bg-blue-100 text-blue-700 font-medium'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               Users
@@ -380,8 +380,8 @@ const Overview = ({ recentActivities = [], users = [], posts = [], reports = [],
               onClick={() => setActivityFilter('report')}
               className={`text-xs px-3 py-1 rounded-full transition-colors ${
                 activityFilter === 'report'
-                  ? 'bg-blue-100 text-blue-700 font-medium'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               Reports
@@ -390,8 +390,8 @@ const Overview = ({ recentActivities = [], users = [], posts = [], reports = [],
               onClick={() => setActivityFilter('moderation')}
               className={`text-xs px-3 py-1 rounded-full transition-colors ${
                 activityFilter === 'moderation'
-                  ? 'bg-blue-100 text-blue-700 font-medium'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               Moderation
@@ -399,37 +399,37 @@ const Overview = ({ recentActivities = [], users = [], posts = [], reports = [],
           </div>
         </div>
 
-        <div className="space-y-0 divide-y divide-gray-100">
+        <div className="space-y-0 divide-y divide-gray-100 dark:divide-gray-700">
           {filteredActivities.length === 0 ? (
-            <div className="text-sm text-gray-400 py-8 text-center">
-              <svg viewBox="0 0 24 24" className="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <div className="text-sm text-gray-400 dark:text-gray-500 py-8 text-center">
+              <svg viewBox="0 0 24 24" className="w-12 h-12 mx-auto mb-2 text-gray-300 dark:text-gray-600" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <p>No recent activity</p>
             </div>
           ) : (
             filteredActivities.map((activity) => (
-              <div key={activity.id} className="flex items-start justify-between py-3 first:pt-0 hover:bg-gray-50 transition-colors px-2 -mx-2 rounded">
+              <div key={activity.id} className="flex items-start justify-between py-3 first:pt-0 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors px-2 -mx-2 rounded">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
                   <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-base mt-0.5 ${
-                    activity.status === 'success' ? 'bg-green-100' :
-                    activity.status === 'warning' ? 'bg-yellow-100' :
-                    activity.status === 'error' ? 'bg-red-100' :
-                    'bg-gray-100'
+                    activity.status === 'success' ? 'bg-green-100 dark:bg-green-900/30' :
+                    activity.status === 'warning' ? 'bg-yellow-100 dark:bg-yellow-900/30' :
+                    activity.status === 'error' ? 'bg-red-100 dark:bg-red-900/30' :
+                    'bg-gray-100 dark:bg-gray-700'
                   }`}>
                     {activity.icon || '📋'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                       {activity.action}
                     </p>
-                    <p className="text-xs text-gray-600 mt-0.5">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                       <span className="font-semibold">@{activity.user}</span>
-                      {activity.detail && <span className="text-gray-500"> · {activity.detail}</span>}
+                      {activity.detail && <span className="text-gray-500 dark:text-gray-500"> · {activity.detail}</span>}
                     </p>
                   </div>
                 </div>
-                <span className="text-xs text-gray-400 whitespace-nowrap ml-2">{activity.time}</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap ml-2">{activity.time}</span>
               </div>
             ))
           )}

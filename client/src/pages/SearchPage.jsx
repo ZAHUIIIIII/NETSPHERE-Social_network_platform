@@ -326,18 +326,18 @@ const SearchPage = () => {
         </div>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+        <p className="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
           {user.username}
         </p>
-        {user.bio && <p className="text-sm text-gray-500 truncate">{user.bio}</p>}
-        {user.email && !user.bio && <p className="text-xs text-gray-400 truncate">{user.email}</p>}
+        {user.bio && <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user.bio}</p>}
+        {user.email && !user.bio && <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{user.email}</p>}
       </div>
       <button
         onClick={(e) => {
           e.stopPropagation();
           toast.success('Follow feature coming soon!');
         }}
-        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium opacity-0 group-hover:opacity-100"
+        className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-600 dark:hover:bg-blue-500 transition-colors text-sm font-medium opacity-0 group-hover:opacity-100"
       >
         Follow
       </button>
@@ -371,31 +371,31 @@ const SearchPage = () => {
     return (
       <div 
         onClick={() => navigate(`/post/${post._id}`)}
-        className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer"
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer"
       >
         <div className="p-4 flex items-start justify-between">
           <div className="flex items-start gap-3">
             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
-              <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+              <div className="h-full w-full rounded-full bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden">
                 {post.author?.avatar ? (
                   <img src={post.author.avatar} alt={post.author.username} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="text-gray-700 font-bold text-sm">
+                  <span className="text-gray-700 dark:text-gray-300 font-bold text-sm">
                     {post.author?.username?.charAt(0).toUpperCase() || 'U'}
                   </span>
                 )}
               </div>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">{post.author?.username || 'Anonymous'}</h3>
-            <p className="text-xs text-gray-500">{formatTime(post.createdAt)}</p>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">{post.author?.username || 'Anonymous'}</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{formatTime(post.createdAt)}</p>
           </div>
         </div>
       </div>
 
       {post.content && (
         <div className="px-4 pb-3">
-          <p className="text-gray-800 whitespace-pre-wrap line-clamp-3">{post.content}</p>
+          <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap line-clamp-3">{post.content}</p>
         </div>
       )}
 
@@ -405,7 +405,7 @@ const SearchPage = () => {
         </div>
       )}
 
-      <div className="px-4 py-3 flex items-center gap-6 text-sm text-gray-600 border-t border-gray-100">
+      <div className="px-4 py-3 flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700">
         <span className="flex items-center gap-1">
           <Heart size={16} />
           {formatNumber(totalReactions)}
@@ -420,7 +420,7 @@ const SearchPage = () => {
 };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
@@ -442,10 +442,10 @@ const SearchPage = () => {
 
       <div className="max-w-4xl mx-auto p-4">
         {/* Enhanced Search Header */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6 animate-slideUp">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 mb-6 animate-slideUp">
           <div className="flex items-center gap-3">
             <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 dark:text-gray-500 pointer-events-none" />
               <input
                 ref={searchInputRef}
                 type="text"
@@ -465,19 +465,19 @@ const SearchPage = () => {
                   }
                 }}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-full text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-white transition-all"
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-full text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-blue-500 dark:focus:border-blue-400 focus:bg-white dark:focus:bg-gray-600 transition-all"
                 autoComplete="off"
                 spellCheck="false"
               />
 
               {/* Enhanced Suggestions Dropdown */}
               {showSuggestions && (suggestions.users.length > 0 || suggestions.hashtags.length > 0) && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden z-50 animate-fadeIn max-h-96 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50 animate-fadeIn max-h-96 overflow-y-auto">
                   {suggestions.users.length > 0 && (
                     <div className="p-2">
                       <div className="flex items-center gap-2 px-3 py-2">
-                        <User size={14} className="text-gray-400" />
-                        <p className="text-xs font-semibold text-gray-500 uppercase">Users</p>
+                        <User size={14} className="text-gray-400 dark:text-gray-500" />
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Users</p>
                       </div>
                       {suggestions.users.map((suggestion, index) => (
                         <div
@@ -487,26 +487,26 @@ const SearchPage = () => {
                             setActiveTab('users');
                             handleSearch(suggestion.value);
                           }}
-                          className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                          className="flex items-center gap-3 px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
                         >
                           {suggestion.avatar ? (
                             <img src={suggestion.avatar} alt="" className="w-8 h-8 rounded-full object-cover" />
                           ) : (
-                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                              <span className="text-xs font-medium">{suggestion.value.charAt(0).toUpperCase()}</span>
+                            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                              <span className="text-xs font-medium dark:text-gray-300">{suggestion.value.charAt(0).toUpperCase()}</span>
                             </div>
                           )}
-                          <span className="text-sm font-medium text-gray-900">{suggestion.value}</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{suggestion.value}</span>
                         </div>
                       ))}
                     </div>
                   )}
                   
                   {suggestions.hashtags.length > 0 && (
-                    <div className="p-2 border-t border-gray-100">
+                    <div className="p-2 border-t border-gray-100 dark:border-gray-700">
                       <div className="flex items-center gap-2 px-3 py-2">
-                        <Hash size={14} className="text-gray-400" />
-                        <p className="text-xs font-semibold text-gray-500 uppercase">Hashtags</p>
+                        <Hash size={14} className="text-gray-400 dark:text-gray-500" />
+                        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Hashtags</p>
                       </div>
                       {suggestions.hashtags.map((suggestion, index) => (
                         <div
@@ -516,16 +516,16 @@ const SearchPage = () => {
                             setActiveTab('posts');
                             handleSearch(`#${suggestion.value}`);
                           }}
-                          className="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                          className="flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
                         >
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
-                              <Hash size={14} className="text-blue-500" />
+                            <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                              <Hash size={14} className="text-blue-500 dark:text-blue-400" />
                             </div>
-                            <span className="text-sm font-medium text-gray-900">#{suggestion.value}</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">#{suggestion.value}</span>
                           </div>
                           {suggestion.count && (
-                            <span className="text-xs text-gray-500">{formatNumber(suggestion.count)} posts</span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{formatNumber(suggestion.count)} posts</span>
                           )}
                         </div>
                       ))}
@@ -546,37 +546,37 @@ const SearchPage = () => {
                   setActiveTab('all');
                   searchInputRef.current?.focus();
                 }}
-                className="p-3 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                 title="Clear search"
               >
-                <X size={20} className="text-gray-600" />
+                <X size={20} className="text-gray-600 dark:text-gray-400" />
               </button>
             )}
 
             <button
               onClick={() => handleSearch()}
               disabled={isSearching || !searchQuery.trim()}
-              className="px-6 py-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
+              className="px-6 py-3 bg-blue-500 dark:bg-blue-600 text-white rounded-full hover:bg-blue-600 dark:hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium"
             >
               {isSearching ? 'Searching...' : 'Search'}
             </button>
 
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="p-3 hover:bg-gray-100 rounded-full transition-colors relative"
+              className="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors relative"
               title="Filters"
             >
-              <Filter size={20} className="text-gray-600" />
+              <Filter size={20} className="text-gray-600 dark:text-gray-400" />
               {filters.sortBy !== 'Most Relevant' && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 rounded-full"></span>
+                <span className="absolute top-1 right-1 w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full"></span>
               )}
             </button>
           </div>
 
           {/* Filter Dropdown */}
           {showFilters && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg animate-slideUp">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">Sort By</h3>
+            <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg animate-slideUp">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Sort By</h3>
               <div className="flex flex-wrap gap-2">
                 {['Most Relevant', 'Most Recent', 'Most Popular', 'Oldest First'].map((option) => (
                   <button
@@ -589,8 +589,8 @@ const SearchPage = () => {
                     }}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                       filters.sortBy === option
-                        ? 'bg-blue-500 text-white shadow-sm'
-                        : 'bg-white text-gray-700 border border-gray-200 hover:border-blue-300'
+                        ? 'bg-blue-500 dark:bg-blue-600 text-white shadow-sm'
+                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-500'
                     }`}
                   >
                     {option}
@@ -606,15 +606,15 @@ const SearchPage = () => {
           <div className="space-y-6">
             {/* Recent Searches */}
             {recentSearches.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-slideUp">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-slideUp">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <Clock size={18} className="text-gray-400" />
-                    <h2 className="text-lg font-bold text-gray-900">Recent Searches</h2>
+                    <Clock size={18} className="text-gray-400 dark:text-gray-500" />
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Recent Searches</h2>
                   </div>
                   <button
                     onClick={clearRecentSearches}
-                    className="text-sm text-blue-500 hover:text-blue-600 font-medium"
+                    className="text-sm text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 font-medium"
                   >
                     Clear All
                   </button>
@@ -623,14 +623,14 @@ const SearchPage = () => {
                   {recentSearches.map((search, index) => (
                     <div
                       key={index}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-full group hover:bg-gray-100 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-50 dark:bg-gray-700 rounded-full group hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                     >
                       <button
                         onClick={() => {
                           setSearchQuery(search);
                           handleSearch(search);
                         }}
-                        className="text-sm text-gray-700 font-medium"
+                        className="text-sm text-gray-700 dark:text-gray-200 font-medium"
                       >
                         {search}
                       </button>
@@ -641,7 +641,7 @@ const SearchPage = () => {
                         }}
                         className="opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <X size={14} className="text-gray-500 hover:text-gray-700" />
+                        <X size={14} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200" />
                       </button>
                     </div>
                   ))}
@@ -651,10 +651,10 @@ const SearchPage = () => {
 
             {/* Trending Topics */}
             {trendingTopics.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-slideUp">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-slideUp">
                 <div className="flex items-center gap-2 mb-4">
-                  <TrendingUp size={18} className="text-orange-500" />
-                  <h2 className="text-lg font-bold text-gray-900">Trending Now</h2>
+                  <TrendingUp size={18} className="text-orange-500 dark:text-orange-400" />
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Trending Now</h2>
                 </div>
                 <div className="space-y-3">
                   {trendingTopics.map((topic, index) => (
@@ -664,19 +664,19 @@ const SearchPage = () => {
                         setSearchQuery(`#${topic.hashtag}`);
                         handleSearch(`#${topic.hashtag}`);
                       }}
-                      className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors group"
+                      className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg cursor-pointer transition-colors group"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl font-bold text-gray-300 w-6">{index + 1}</span>
+                        <span className="text-2xl font-bold text-gray-300 dark:text-gray-600 w-6">{index + 1}</span>
                         <div>
-                          <p className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                          <p className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                             #{topic.hashtag}
                           </p>
-                          <p className="text-sm text-gray-500">{formatNumber(topic.posts)} posts</p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">{formatNumber(topic.posts)} posts</p>
                         </div>
                       </div>
                       {topic.trending && (
-                        <span className="px-2 py-1 bg-orange-50 text-orange-600 text-xs font-semibold rounded-full flex items-center gap-1">
+                        <span className="px-2 py-1 bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-xs font-semibold rounded-full flex items-center gap-1">
                           <TrendingUp size={12} />
                           Trending
                         </span>
@@ -689,10 +689,10 @@ const SearchPage = () => {
 
             {/* Popular Searches */}
             {popularSearches.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-slideUp">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-slideUp">
                 <div className="flex items-center gap-2 mb-4">
-                  <Sparkles size={18} className="text-purple-500" />
-                  <h2 className="text-lg font-bold text-gray-900">Popular Searches</h2>
+                  <Sparkles size={18} className="text-purple-500 dark:text-purple-400" />
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Popular Searches</h2>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {popularSearches.map((search, index) => (
@@ -702,11 +702,11 @@ const SearchPage = () => {
                         setSearchQuery(`#${search.term}`);
                         handleSearch(`#${search.term}`);
                       }}
-                      className="px-4 py-2 bg-purple-50 text-purple-700 rounded-full hover:bg-purple-100 transition-colors text-sm font-medium"
+                      className="px-4 py-2 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full hover:bg-purple-100 dark:hover:bg-purple-800/40 transition-colors text-sm font-medium"
                     >
                       #{search.term}
                       {search.count && (
-                        <span className="ml-2 text-xs text-purple-500">
+                        <span className="ml-2 text-xs text-purple-500 dark:text-purple-400">
                           {formatNumber(search.count)}
                         </span>
                       )}
@@ -717,23 +717,23 @@ const SearchPage = () => {
             )}
 
             {/* Search Tips */}
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl shadow-sm border border-blue-100 p-6 animate-slideUp">
-              <h2 className="text-lg font-bold text-gray-900 mb-3">💡 Search Tips</h2>
-              <ul className="space-y-2 text-sm text-gray-700">
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-xl shadow-sm border border-blue-100 dark:border-blue-800/30 p-6 animate-slideUp">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">💡 Search Tips</h2>
+              <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
                 <li className="flex items-start gap-2">
-                  <span className="text-blue-500 mt-0.5">•</span>
-                  <span>Use <strong>#hashtag</strong> to search for posts with specific tags</span>
+                  <span className="text-blue-500 dark:text-blue-400 mt-0.5">•</span>
+                  <span>Use <strong className="dark:text-gray-200">#hashtag</strong> to search for posts with specific tags</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-blue-500 mt-0.5">•</span>
-                  <span>Use <strong>@username</strong> to find specific users</span>
+                  <span className="text-blue-500 dark:text-blue-400 mt-0.5">•</span>
+                  <span>Use <strong className="dark:text-gray-200">@username</strong> to find specific users</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-blue-500 mt-0.5">•</span>
+                  <span className="text-blue-500 dark:text-blue-400 mt-0.5">•</span>
                   <span>Search by keywords to find relevant posts and content</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-blue-500 mt-0.5">•</span>
+                  <span className="text-blue-500 dark:text-blue-400 mt-0.5">•</span>
                   <span>Use filters to sort results by relevance, recency, or popularity</span>
                 </li>
               </ul>
@@ -742,8 +742,8 @@ const SearchPage = () => {
         ) : (
           <div>
             {/* Tabs */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden animate-slideUp">
-              <div className="flex border-b border-gray-200">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 mb-6 overflow-hidden animate-slideUp">
+              <div className="flex border-b border-gray-200 dark:border-gray-700">
                 {[
                   { key: 'all', label: 'All', count: totalCounts.users + totalCounts.posts },
                   { key: 'users', label: 'Users', count: totalCounts.users },
@@ -754,20 +754,20 @@ const SearchPage = () => {
                     onClick={() => handleTabChange(tab.key)}
                     className={`flex-1 px-6 py-4 text-sm font-semibold transition-all relative ${
                       activeTab === tab.key
-                        ? 'text-blue-600 bg-blue-50'
-                        : 'text-gray-600 hover:bg-gray-50'
+                        ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                     }`}
                   >
                     <span>{tab.label}</span>
                     {tab.count > 0 && (
                       <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                        activeTab === tab.key ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                        activeTab === tab.key ? 'bg-blue-100 dark:bg-blue-800/50 text-blue-700 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                       }`}>
                         {tab.count}
                       </span>
                     )}
                     {activeTab === tab.key && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400" />
                     )}
                   </button>
                 ))}
@@ -778,22 +778,22 @@ const SearchPage = () => {
             {isSearching ? (
               <div className="flex items-center justify-center py-20">
                 <div className="text-center">
-                  <div className="inline-block h-12 w-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-                  <p className="text-gray-600 font-medium">Searching...</p>
+                  <div className="inline-block h-12 w-12 border-4 border-blue-500 dark:border-blue-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+                  <p className="text-gray-600 dark:text-gray-300 font-medium">Searching...</p>
                 </div>
               </div>
             ) : (
               <div className="space-y-4">
                 {/* Users Results */}
                 {(activeTab === 'all' || activeTab === 'users') && searchResults.users.length > 0 && (
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden animate-slideUp">
-                    <div className="px-6 py-4 border-b border-gray-200">
-                      <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                        <User size={18} className="text-blue-500" />
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden animate-slideUp">
+                    <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                      <h3 className="font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                        <User size={18} className="text-blue-500 dark:text-blue-400" />
                         Users ({searchResults.users.length})
                       </h3>
                     </div>
-                    <div className="divide-y divide-gray-100">
+                    <div className="divide-y divide-gray-100 dark:divide-gray-700">
                       {searchResults.users.map((user) => (
                         <UserResult key={user._id} user={user} />
                       ))}
@@ -805,8 +805,8 @@ const SearchPage = () => {
                 {(activeTab === 'all' || activeTab === 'posts') && searchResults.posts.length > 0 && (
                   <div className="space-y-4 animate-slideUp">
                     <div className="flex items-center gap-2 px-2">
-                      <MessageCircle size={18} className="text-blue-500" />
-                      <h3 className="font-bold text-gray-900">Posts ({searchResults.posts.length})</h3>
+                      <MessageCircle size={18} className="text-blue-500 dark:text-blue-400" />
+                      <h3 className="font-bold text-gray-900 dark:text-gray-100">Posts ({searchResults.posts.length})</h3>
                     </div>
                     {searchResults.posts.map((post) => (
                       <PostResult key={post._id} post={post} />
@@ -816,15 +816,15 @@ const SearchPage = () => {
 
                 {/* No Results */}
                 {searchResults.users.length === 0 && searchResults.posts.length === 0 && (
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center animate-slideUp">
-                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Search size={32} className="text-gray-400" />
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-12 text-center animate-slideUp">
+                    <div className="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Search size={32} className="text-gray-400 dark:text-gray-500" />
                     </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">No results found</h3>
-                    <p className="text-gray-600 mb-6">
-                      We couldn't find any results for "<strong>{searchQuery}</strong>"
+                    <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">No results found</h3>
+                    <p className="text-gray-600 dark:text-gray-300 mb-6">
+                      We couldn't find any results for "<strong className="dark:text-gray-200">{searchQuery}</strong>"
                     </p>
-                    <div className="space-y-2 text-sm text-gray-600">
+                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
                       <p>Try:</p>
                       <ul className="space-y-1">
                         <li>• Checking your spelling</li>

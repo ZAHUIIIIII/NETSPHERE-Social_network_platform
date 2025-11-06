@@ -160,7 +160,7 @@ const Comment = ({
         <div className="flex-1 min-w-0">
           {/* Comment Bubble */}
           <div className="inline-block max-w-full relative">
-            <div className="rounded-2xl px-3 py-2 bg-[#f0f2f5] relative">
+            <div className="rounded-2xl px-3 py-2 bg-[#f0f2f5] dark:bg-gray-700 relative">
               {/* Content */}
               {isEditing ? (
                 <div className="space-y-2">
@@ -176,7 +176,7 @@ const Comment = ({
                         }
                       }
                     }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 resize-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 resize-none text-sm"
                     rows="3"
                     disabled={isSubmitting}
                   />
@@ -206,7 +206,7 @@ const Comment = ({
                   <div className="flex items-center justify-between mb-0.5">
                     <Link 
                       to={`/profile/${comment.author?.username}`}
-                      className="font-semibold text-sm hover:underline text-gray-900"
+                      className="font-semibold text-sm hover:underline text-gray-900 dark:text-gray-100"
                     >
                       {comment.author?.username || 'Unknown'}
                     </Link>
@@ -256,9 +256,9 @@ const Comment = ({
                   </div>
                   
                   {/* Comment text */}
-                  <p className="text-sm whitespace-pre-wrap break-words text-gray-900">
+                  <p className="text-sm whitespace-pre-wrap break-words text-gray-900 dark:text-gray-100">
                     {comment.isDeleted ? (
-                      <span className="italic text-gray-500">
+                      <span className="italic text-gray-500 dark:text-gray-400">
                         (comment deleted)
                       </span>
                     ) : (
@@ -268,7 +268,7 @@ const Comment = ({
                           <>
                             <Link 
                               to={`/profile/${comment.replyToSnapshot.username}`}
-                              className="font-bold hover:underline text-gray-900"
+                              className="font-bold hover:underline text-gray-900 dark:text-gray-100"
                             >
                               {comment.replyToSnapshot.username}
                             </Link>
@@ -389,7 +389,7 @@ const Comment = ({
                       }
                     }}
                     placeholder={`Reply to ${comment.author?.username || 'this comment'}...`}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-2xl focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-[#f0f2f5] resize-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-2xl focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-[#f0f2f5] dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 resize-none text-sm"
                     rows="2"
                     disabled={isSubmitting}
                   />

@@ -158,10 +158,10 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <Loader className="w-12 h-12 animate-spin text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 font-medium">Loading profile...</p>
+          <Loader className="w-12 h-12 animate-spin text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300 font-medium">Loading profile...</p>
         </div>
       </div>
     );
@@ -169,16 +169,16 @@ const ProfilePage = () => {
 
   if (!profileUser) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white dark:bg-gray-900 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <div className="text-6xl mb-6">😕</div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-3">User not found</h2>
-          <p className="text-gray-600 mb-8 text-lg">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-3">User not found</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-8 text-lg">
             The profile you're looking for doesn't exist or has been removed.
           </p>
           <button
             onClick={() => navigate('/')}
-            className="inline-flex items-center gap-2 px-8 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-all font-semibold"
+            className="inline-flex items-center gap-2 px-8 py-3 bg-blue-500 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition-all font-semibold"
           >
             <ArrowLeft size={20} />
             Go to Home
@@ -189,7 +189,7 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Profile Header */}
       <ProfileHeader 
         user={profileUser}

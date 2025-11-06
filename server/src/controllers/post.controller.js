@@ -105,24 +105,12 @@ export const createPost = async (req, res) => {
 // Upload post images
 export const uploadImages = async (req, res) => {
   try {
-    console.log('📤 Upload request received');
-    console.log('Files:', req.files?.length || 0);
-    
     if (!req.files || req.files.length === 0) {
-      console.log('❌ No images uploaded');
       return res.status(400).json({ message: 'No images uploaded' });
     }
 
-    console.log('📁 Files to upload:', req.files.map(f => ({ 
-      name: f.originalname, 
-      size: f.size,
-      type: f.mimetype 
-    })));
-
     const uploadPromises = req.files.map(async (file) => {
       try {
-        console.log(`⬆️  Uploading ${file.originalname} to Cloudinary...`);
-        
         // Upload from memory buffer (no disk write!)
         return new Promise((resolve, reject) => {
           const uploadStream = cloudinary.uploader.upload_stream(
@@ -135,10 +123,9 @@ export const uploadImages = async (req, res) => {
             },
             (error, result) => {
               if (error) {
-                console.error(`❌ Error uploading ${file.originalname}:`, error);
+                console.error(`Error uploading ${file.originalname}:`, error);
                 reject(error);
               } else {
-                console.log(`✅ Uploaded ${file.originalname} successfully`);
                 resolve(result.secure_url);
               }
             }
@@ -148,18 +135,16 @@ export const uploadImages = async (req, res) => {
           uploadStream.end(file.buffer);
         });
       } catch (error) {
-        console.error(`❌ Error uploading ${file.originalname}:`, error);
+        console.error(`Error uploading ${file.originalname}:`, error);
         throw error;
       }
     });
 
     const imageUrls = await Promise.all(uploadPromises);
-    console.log('✅ All images uploaded successfully:', imageUrls.length);
     res.json({ images: imageUrls });
 
   } catch (error) {
-    console.error('❌ Error in uploadImages:', error);
-    console.error('Error stack:', error.stack);
+    console.error('Error in uploadImages:', error);
 
     res.status(500).json({ 
       message: 'Error uploading images',
@@ -714,7 +699,6 @@ export const repostPost = async (req, res) => {
     });
   } catch (error) {
     console.error('Error reposting:', error);
-    console.error('Error stack:', error.stack);
     res.status(500).json({ 
       message: 'Error reposting post',
       error: error.message 

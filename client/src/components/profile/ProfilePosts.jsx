@@ -10,11 +10,11 @@ const ProfilePosts = ({ posts, isOwnProfile, onPostsUpdate }) => {
   if (!posts || posts.length === 0) {
     return (
       <div className="text-center py-12">
-        <GridIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-semibold mb-2">
+        <GridIcon className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
+        <h3 className="text-lg font-semibold mb-2 text-gray-900 dark:text-gray-100">
           {isOwnProfile ? 'No posts yet' : 'No Posts Yet'}
         </h3>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-400">
           {isOwnProfile 
             ? 'Share your first post to get started!' 
             : 'This user hasn\'t shared anything yet.'}
@@ -22,7 +22,7 @@ const ProfilePosts = ({ posts, isOwnProfile, onPostsUpdate }) => {
         {isOwnProfile && (
           <button
             onClick={() => navigate('/')}
-            className="mt-6 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+            className="mt-6 px-6 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors font-medium"
           >
             Create Your First Post
           </button>
@@ -54,7 +54,7 @@ const ProfilePosts = ({ posts, isOwnProfile, onPostsUpdate }) => {
         return (
           <div
             key={post._id}
-            className="group cursor-pointer overflow-hidden bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
+            className="group cursor-pointer overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow"
             onClick={() => navigate(`/post/${post._id}`)}
           >
             <div className="relative aspect-square">
@@ -65,8 +65,8 @@ const ProfilePosts = ({ posts, isOwnProfile, onPostsUpdate }) => {
                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 p-4">
-                  <p className="text-gray-600 text-sm line-clamp-6 text-center">
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 p-4">
+                  <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-6 text-center">
                     {post.content}
                   </p>
                 </div>

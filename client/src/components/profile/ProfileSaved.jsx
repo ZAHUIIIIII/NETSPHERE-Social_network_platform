@@ -49,8 +49,8 @@ const ProfileSaved = ({ userId }) => {
     return (
       <div className="flex justify-center py-16">
         <div className="text-center">
-          <Loader className="w-10 h-10 animate-spin text-blue-500 mx-auto mb-3" />
-          <p className="text-gray-600 font-medium">Loading saved posts...</p>
+          <Loader className="w-10 h-10 animate-spin text-blue-500 dark:text-blue-400 mx-auto mb-3" />
+          <p className="text-gray-600 dark:text-gray-400 font-medium">Loading saved posts...</p>
         </div>
       </div>
     );
@@ -58,13 +58,13 @@ const ProfileSaved = ({ userId }) => {
 
   if (error) {
     return (
-      <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
-        <BookmarkX className="h-16 w-16 mx-auto text-red-400 mb-4" />
-        <h3 className="text-xl font-bold text-gray-900 mb-2">Error Loading Saved Posts</h3>
-        <p className="text-gray-600 mb-6">{error}</p>
+      <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl shadow-sm">
+        <BookmarkX className="h-16 w-16 mx-auto text-red-400 dark:text-red-500 mb-4" />
+        <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Error Loading Saved Posts</h3>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">{error}</p>
         <button
           onClick={fetchSavedPosts}
-          className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+          className="px-6 py-3 bg-blue-500 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition-colors font-medium"
         >
           Try Again
         </button>
@@ -74,20 +74,20 @@ const ProfileSaved = ({ userId }) => {
 
   if (savedPosts.length === 0) {
     return (
-      <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
+      <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl shadow-sm">
         <div className="relative inline-block mb-6">
-          <Bookmark className="h-20 w-20 text-gray-300" />
-          <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-2">
+          <Bookmark className="h-20 w-20 text-gray-300 dark:text-gray-600" />
+          <div className="absolute -bottom-1 -right-1 bg-blue-500 dark:bg-blue-600 rounded-full p-2">
             <span className="text-white text-2xl">✨</span>
           </div>
         </div>
-        <h3 className="text-2xl font-bold text-gray-900 mb-3">No saved posts yet</h3>
-        <p className="text-gray-600 mb-6 max-w-md mx-auto">
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">No saved posts yet</h3>
+        <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
           When you save posts, they'll appear here for easy access later
         </p>
         <button
           onClick={() => navigate('/')}
-          className="px-8 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all font-semibold shadow-lg hover:shadow-xl"
+          className="px-8 py-3 bg-blue-500 dark:bg-blue-600 text-white rounded-xl hover:bg-blue-600 dark:hover:bg-blue-700 transition-all font-semibold shadow-lg hover:shadow-xl"
         >
           Explore Posts
         </button>
@@ -118,7 +118,7 @@ const ProfileSaved = ({ userId }) => {
         return (
           <div
             key={post._id}
-            className="group cursor-pointer overflow-hidden bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative"
+            className="group cursor-pointer overflow-hidden bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative"
           >
             <div 
               className="relative aspect-square"
@@ -131,8 +131,8 @@ const ProfileSaved = ({ userId }) => {
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 p-6">
-                  <p className="text-gray-700 text-sm line-clamp-6 text-center font-medium">
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-6">
+                  <p className="text-gray-700 dark:text-gray-300 text-sm line-clamp-6 text-center font-medium">
                     {post.content}
                   </p>
                 </div>
@@ -165,7 +165,7 @@ const ProfileSaved = ({ userId }) => {
             {/* Unsave Button */}
             <button
               onClick={(e) => handleUnsave(post._id, e)}
-              className="absolute top-3 right-3 p-2.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 z-10"
+              className="absolute top-3 right-3 p-2.5 bg-red-500 dark:bg-red-600 hover:bg-red-600 dark:hover:bg-red-700 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 z-10"
               title="Remove from saved"
             >
               <Trash2 size={16} />

@@ -46,26 +46,26 @@ const Sidebar = () => {
   if (isUsersLoading) return <SidebarSkeleton />;
 
   return (
-    <aside className="h-full w-20 lg:w-80 border-r border-gray-200/50 flex flex-col transition-all duration-200 bg-white/50 backdrop-blur-sm">
+    <aside className="h-full w-20 lg:w-80 border-r border-gray-200/50 dark:border-gray-700/50 flex flex-col transition-all duration-200 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
       {/* Header */}
-      <div className="border-b border-gray-200/50 w-full p-3 bg-gradient-to-r from-blue-500/5 to-purple-500/5">
+      <div className="border-b border-gray-200/50 dark:border-gray-700/50 w-full p-3 bg-gradient-to-r from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-blue-500/10 rounded-lg">
-            <Users className="size-4 text-blue-600" />
+          <div className="p-2 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg">
+            <Users className="size-4 text-blue-600 dark:text-blue-400" />
           </div>
-          <span className="font-semibold text-gray-800 hidden lg:block text-sm">Messages</span>
+          <span className="font-semibold text-gray-800 dark:text-gray-100 hidden lg:block text-sm">Messages</span>
         </div>
         
         {/* Search Bar */}
         <div className="mt-3 hidden lg:block">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 size-3" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 size-3" />
             <input
               type="text"
               placeholder="Search conversations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-white/80 border border-gray-200/50 rounded-lg text-xs placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/30 transition-all"
+              className="w-full pl-9 pr-3 py-2 bg-white/80 dark:bg-gray-700/80 border border-gray-200/50 dark:border-gray-600/50 rounded-lg text-xs text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/30 focus:border-blue-500/30 dark:focus:border-blue-400/40 transition-all"
             />
           </div>
         </div>
@@ -77,11 +77,11 @@ const Sidebar = () => {
               type="checkbox"
               checked={showOnlineOnly}
               onChange={(e) => setShowOnlineOnly(e.target.checked)}
-              className="w-4 h-4 text-blue-600 bg-white border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+              className="w-4 h-4 text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-2"
             />
-            <span className="text-sm text-gray-600 font-medium">Online only</span>
+            <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">Online only</span>
           </label>
-          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+          <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full font-medium">
             {onlineUsers.length - 1} online
           </span>
         </div>
@@ -95,10 +95,10 @@ const Sidebar = () => {
             onClick={() => setSelectedUser(user)}
             className={`
               w-full p-2 lg:p-3 flex items-center gap-2 lg:gap-3
-              hover:bg-blue-50/80 transition-all duration-200
+              hover:bg-blue-50/80 dark:hover:bg-gray-700/50 transition-all duration-200
               border-l-4 ${selectedUser?._id === user._id 
-                ? "bg-gradient-to-r from-blue-50 to-indigo-50 border-l-blue-500 shadow-sm" 
-                : "border-l-transparent hover:border-l-blue-200"}
+                ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-l-blue-500 dark:border-l-blue-400 shadow-sm" 
+                : "border-l-transparent hover:border-l-blue-200 dark:hover:border-l-blue-600"}
             `}
           >
             <div className="relative mx-auto lg:mx-0 flex-shrink-0">
@@ -112,7 +112,7 @@ const Sidebar = () => {
               )}
               {/* Unread badge for mobile */}
               {user.unreadCount > 0 && (
-                <span className="lg:hidden absolute -top-1 -right-1 bg-blue-500 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 border-2 border-white">
+                <span className="lg:hidden absolute -top-1 -right-1 bg-blue-500 dark:bg-blue-600 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 border-2 border-white dark:border-gray-800">
                   {user.unreadCount > 9 ? '9+' : user.unreadCount}
                 </span>
               )}
@@ -122,13 +122,13 @@ const Sidebar = () => {
             <div className="hidden lg:block text-left min-w-0 flex-1">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                  <div className="font-semibold text-gray-800 truncate text-sm">{user.username || "Unknown User"}</div>
+                  <div className="font-semibold text-gray-800 dark:text-gray-100 truncate text-sm">{user.username || "Unknown User"}</div>
                   {user.isMuted && (
-                    <BellOff className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" title="Muted" />
+                    <BellOff className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 flex-shrink-0" title="Muted" />
                   )}
                 </div>
                 {user.unreadCount > 0 && (
-                  <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1.5 ml-2">
+                  <span className="bg-blue-500 dark:bg-blue-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1.5 ml-2">
                     {user.unreadCount > 99 ? '99+' : user.unreadCount}
                   </span>
                 )}
@@ -136,7 +136,7 @@ const Sidebar = () => {
               <div className="flex items-center gap-2 mt-1">
                 {user.lastMessage ? (
                   <div className="flex items-center justify-between min-w-0 flex-1">
-                    <span className="text-xs text-gray-500 truncate flex-1">
+                    <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">
                       {user.lastMessage.isFromMe ? "You: " : ""}
                       {user.lastMessage.image ? "📷 Photo" : 
                         user.lastMessage.text.length > 30 ? 
@@ -144,12 +144,12 @@ const Sidebar = () => {
                         user.lastMessage.text
                       }
                     </span>
-                    <span className="text-xs text-gray-400 flex-shrink-0 ml-2">
+                    <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 ml-2">
                       {formatTime(user.lastMessage.createdAt)}
                     </span>
                   </div>
                 ) : (
-                  <span className="text-xs text-gray-500 font-medium">
+                  <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
                     {onlineUsers.includes(user._id) ? "Online" : "Offline"}
                   </span>
                 )}
@@ -159,10 +159,10 @@ const Sidebar = () => {
         ))}
 
         {filteredUsers.length === 0 && (
-          <div className="text-center text-gray-500 py-6 px-3">
-            <div className="text-gray-400 mb-2">🔍</div>
-            <div className="text-sm font-medium">No conversations found</div>
-            <div className="text-xs text-gray-400 mt-1">
+          <div className="text-center text-gray-500 dark:text-gray-400 py-6 px-3">
+            <div className="text-gray-400 dark:text-gray-500 mb-2">🔍</div>
+            <div className="text-sm font-medium dark:text-gray-300">No conversations found</div>
+            <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
               {searchTerm ? "Try a different search term" : "No users match your filter"}
             </div>
           </div>

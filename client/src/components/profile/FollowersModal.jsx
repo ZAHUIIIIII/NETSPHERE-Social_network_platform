@@ -113,65 +113,65 @@ const FollowersModal = ({ userId, type, onClose, userName, onCountChange }) => {
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden"
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full max-h-[85vh] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header - Simple and clean */}
-        <div className="relative bg-white border-b border-gray-200 p-6">
+        <div className="relative bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 capitalize">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 capitalize">
                 {type}
               </h2>
-              <p className="text-gray-500 text-sm mt-1">
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                 {userName ? `@${userName}` : ''}
               </p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-all duration-200 text-gray-600"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-all duration-200 text-gray-600 dark:text-gray-400"
             >
               <X size={24} />
             </button>
           </div>
           
           {/* Count badge - Simple gray */}
-          <div className="mt-4 inline-flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-full">
-            <Users size={16} className="text-gray-600" />
-            <span className="text-gray-700 font-semibold text-sm">
+          <div className="mt-4 inline-flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-4 py-2 rounded-full">
+            <Users size={16} className="text-gray-600 dark:text-gray-400" />
+            <span className="text-gray-700 dark:text-gray-300 font-semibold text-sm">
               {users.length} {users.length === 1 ? 'user' : 'users'}
             </span>
           </div>
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(85vh-180px)] bg-gray-50">{loading ? (
+        <div className="overflow-y-auto max-h-[calc(85vh-180px)] bg-gray-50 dark:bg-gray-900">{loading ? (
             <div className="flex justify-center items-center py-16">
               <div className="text-center">
-                <Loader className="w-10 h-10 animate-spin text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500 text-sm">Loading {type}...</p>
+                <Loader className="w-10 h-10 animate-spin text-gray-400 dark:text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Loading {type}...</p>
               </div>
             </div>
           ) : users.length === 0 ? (
             <div className="text-center py-16 px-6">
-              <div className="bg-gray-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="h-10 w-10 text-gray-400" />
+              <div className="bg-gray-100 dark:bg-gray-700 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="h-10 w-10 text-gray-400 dark:text-gray-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 No {type} yet
               </h3>
-              <p className="text-gray-500">
+              <p className="text-gray-500 dark:text-gray-400">
                 {type === 'followers' 
                   ? 'No one is following this user yet'
                   : 'This user is not following anyone yet'}
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-gray-200 dark:divide-gray-700">
               {users.map((user) => (
                 <div
                   key={user._id}
-                  className="p-5 hover:bg-white transition-all duration-200"
+                  className="p-5 hover:bg-white dark:hover:bg-gray-800 transition-all duration-200"
                 >
                   <div className="flex items-center justify-between gap-4">
                     <div
@@ -184,10 +184,10 @@ const FollowersModal = ({ userId, type, onClose, userName, onCountChange }) => {
                           <img
                             src={user.avatar}
                             alt={user.username}
-                            className="w-14 h-14 rounded-full object-cover ring-2 ring-gray-200 group-hover:ring-gray-300 transition-all duration-300 shadow-sm"
+                            className="w-14 h-14 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-600 group-hover:ring-gray-300 dark:group-hover:ring-gray-500 transition-all duration-300 shadow-sm"
                           />
                         ) : (
-                          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center ring-2 ring-gray-200 group-hover:ring-gray-300 transition-all duration-300 shadow-sm">
+                          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 dark:from-gray-600 dark:to-gray-700 flex items-center justify-center ring-2 ring-gray-200 dark:ring-gray-600 group-hover:ring-gray-300 dark:group-hover:ring-gray-500 transition-all duration-300 shadow-sm">
                             <span className="text-white font-bold text-xl">
                               {user.username?.charAt(0).toUpperCase()}
                             </span>
@@ -197,15 +197,15 @@ const FollowersModal = ({ userId, type, onClose, userName, onCountChange }) => {
 
                       {/* User Info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-gray-900 truncate text-base group-hover:text-gray-700 transition-colors">
+                        <h3 className="font-bold text-gray-900 dark:text-gray-100 truncate text-base group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
                           {user.username}
                         </h3>
                         {user.bio ? (
-                          <p className="text-sm text-gray-600 truncate mt-0.5">
+                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate mt-0.5">
                             {user.bio}
                           </p>
                         ) : (
-                          <p className="text-xs text-gray-400 mt-0.5">No bio yet</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">No bio yet</p>
                         )}
                       </div>
                     </div>

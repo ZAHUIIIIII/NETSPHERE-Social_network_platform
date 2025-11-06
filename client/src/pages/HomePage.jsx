@@ -162,15 +162,15 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
       onClick={onCollapse}
     >
       <div 
-        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-scaleIn"
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-scaleIn"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
           <div className="flex items-center gap-3">
             <button
               onClick={onCollapse}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600 hover:text-gray-900"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
               disabled={isPosting}
             >
               <X size={20} />
@@ -217,12 +217,12 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
                 </div>
               </div>
               <div>
-                <p className="font-semibold text-gray-900">{user?.username || 'User'}</p>
+                <p className="font-semibold text-gray-900 dark:text-gray-100">{user?.username || 'User'}</p>
                 <div className="flex items-center gap-2 mt-1">
                   <select
                     value={privacy}
                     onChange={(e) => setPrivacy(e.target.value)}
-                    className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full border-none outline-none cursor-pointer hover:bg-gray-200 transition-colors"
+                    className="text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full border-none outline-none cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                   >
                     {privacyOptions.map(opt => (
                       <option key={opt.value} value={opt.value}>
@@ -231,12 +231,12 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
                     ))}
                   </select>
                   {feeling && (
-                    <span className="text-sm text-gray-600">
+                    <span key="feeling-header" className="text-sm text-gray-600 dark:text-gray-400">
                       — feeling {feeling}
                     </span>
                   )}
                   {location && (
-                    <span className="text-sm text-gray-600">
+                    <span key="location-header" className="text-sm text-gray-600 dark:text-gray-400">
                       at {location}
                     </span>
                   )}
@@ -252,7 +252,7 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             maxLength={maxCharacters}
-            className="w-full min-h-32 max-h-64 text-lg text-gray-900 border-0 resize-none focus:outline-none placeholder:text-gray-400"
+            className="w-full min-h-32 max-h-64 text-lg text-gray-900 dark:text-white border-0 resize-none focus:outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
             disabled={isPosting}
           />
 
@@ -260,7 +260,7 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
           <div className="flex justify-between items-center text-sm">
             <div className="flex gap-2">
               {feeling && (
-                <span className="px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full flex items-center gap-1">
+                <span key="feeling" className="px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full flex items-center gap-1">
                   {feelings.find(f => f.label === feeling)?.emoji}
                   <span>{feeling}</span>
                   <button onClick={() => setFeeling('')} className="hover:text-yellow-900">
@@ -269,7 +269,7 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
                 </span>
               )}
               {location && (
-                <span className="px-3 py-1 bg-green-50 text-green-700 rounded-full flex items-center gap-1">
+                <span key="location" className="px-3 py-1 bg-green-50 text-green-700 rounded-full flex items-center gap-1">
                   <MapPin size={14} />
                   <span>{location}</span>
                   <button onClick={() => setLocation('')} className="hover:text-green-900">
@@ -387,36 +387,36 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
 // Quick Create Post Component
 const CreatePostQuick = ({ onExpand, user }) => {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 animate-fadeIn hover:shadow-md transition-all">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 animate-fadeIn hover:shadow-md transition-all">
       <div className="flex items-center gap-3">
         <div className="h-11 w-11 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
-          <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+          <div className="h-full w-full rounded-full bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden">
             {user?.avatar ? (
               <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
             ) : (
-              <span className="text-gray-700 font-medium">{user?.username?.charAt(0) || 'U'}</span>
+              <span className="text-gray-700 dark:text-gray-300 font-medium">{user?.username?.charAt(0) || 'U'}</span>
             )}
           </div>
         </div>
         <button
-          className="flex-1 bg-gray-100 hover:bg-gray-200 rounded-full px-5 py-3 text-left cursor-pointer transition-all"
+          className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full px-5 py-3 text-left cursor-pointer transition-all"
           onClick={onExpand}
         >
-          <p className="text-gray-600">What's on your mind, {user?.username?.split(' ')[0] || 'there'}?</p>
+          <p className="text-gray-600 dark:text-gray-300">What's on your mind, {user?.username?.split(' ')[0] || 'there'}?</p>
         </button>
       </div>
       
-      <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-200">
+      <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <button 
           onClick={onExpand}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-green-600 hover:bg-green-50 rounded-xl transition-all font-medium"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-xl transition-all font-medium"
         >
           <ImageIcon className="h-5 w-5" />
           <span className="text-sm">Photo/Video</span>
         </button>
         <button 
           onClick={onExpand}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-yellow-600 hover:bg-yellow-50 rounded-xl transition-all font-medium"
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-xl transition-all font-medium"
         >
           <Smile className="h-5 w-5" />
           <span className="text-sm">Feeling</span>
@@ -726,7 +726,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
     : post.content;
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 animate-slideUp">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300 animate-slideUp">
       {/* Post Header */}
       <div className="p-4 flex items-start justify-between">
         <div className="flex items-start gap-3 flex-1">
@@ -734,11 +734,11 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
             className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] cursor-pointer flex-shrink-0"
             onClick={() => navigate(`/profile/${author?.username}`)}
           >
-            <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+            <div className="h-full w-full rounded-full bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden">
               {avatarUrl ? (
                 <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-gray-700 font-bold">{userName.charAt(0)}</span>
+                <span className="text-gray-700 dark:text-gray-300 font-bold">{userName.charAt(0)}</span>
               )}
             </div>
           </div>
@@ -746,18 +746,18 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 
-                className="font-semibold text-gray-900 hover:underline cursor-pointer"
+                className="font-semibold text-gray-900 dark:text-gray-100 hover:underline cursor-pointer"
                 onClick={() => navigate(`/profile/${author?.username}`)}
               >
                 {userName}
               </h3>
               {post.feeling && (
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
                   is feeling {post.feeling}
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 mt-0.5">
+            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               <span>{formatTime(post.createdAt)}</span>
               <span>•</span>
               {post.privacy === 'public' && <Globe size={12} />}
@@ -781,9 +781,9 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
           trigger={
             <button 
               onClick={() => setShowOptions(!showOptions)}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
             >
-              <MoreHorizontal size={20} className="text-gray-500" />
+              <MoreHorizontal size={20} className="text-gray-500 dark:text-gray-400" />
             </button>
           }
           className="py-2"
@@ -795,7 +795,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                   setShowOptions(false);
                   setShowEditModal(true);
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
+                className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
               >
                 Edit post
               </button>
@@ -804,11 +804,11 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                   setShowOptions(false);
                   onPostDelete?.(post._id);
                 }}
-                className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm text-red-600"
+                className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm text-red-600 dark:text-red-400"
               >
                 Delete post
               </button>
-              <div className="border-t border-gray-100 my-2"></div>
+              <div className="border-t border-gray-100 dark:border-gray-700 my-2"></div>
             </>
           )}
           <button 
@@ -817,13 +817,13 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
               setShowOptions(false);
             }}
             disabled={isSaving}
-            className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm disabled:opacity-50"
+            className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm disabled:opacity-50"
           >
             {bookmarked ? 'Unsave post' : 'Save post'}
           </button>
           <button 
             onClick={handleCopyLink}
-            className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
+            className="w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
           >
             Copy link
           </button>
@@ -833,7 +833,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                 setShowReportModal(true);
                 setShowOptions(false);
               }}
-              className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm text-red-600"
+              className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm text-red-600 dark:text-red-400"
             >
               Report post
             </button>
@@ -844,13 +844,13 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
       {/* Post Content */}
       {post.content && (
         <div className="px-4 pb-3">
-          <p className="text-gray-800 whitespace-pre-wrap break-words">
+          <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words">
             {contentPreview}
           </p>
           {post.content.length > 300 && (
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-blue-500 hover:text-blue-600 text-sm font-medium mt-1"
+              className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-sm font-medium mt-1"
             >
               {isExpanded ? 'Show less' : 'Read more'}
             </button>
@@ -860,7 +860,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
 
       {/* Post Images - Carousel with Horizontal Crop */}
       {post.images && post.images.length > 0 && (
-        <div className="relative bg-gray-100">
+        <div className="relative bg-gray-100 dark:bg-gray-700">
           <div 
             className="relative w-full overflow-hidden cursor-pointer group"
             style={{ aspectRatio: '16/9' }}
@@ -885,9 +885,9 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                   e.stopPropagation();
                   prevImage();
                 }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 bg-white/90 hover:bg-white rounded-full shadow-lg transition-all hover:scale-110 z-10"
+                className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 rounded-full shadow-lg transition-all hover:scale-110 z-10"
               >
-                <ChevronLeft size={24} className="text-gray-800" />
+                <ChevronLeft size={24} className="text-gray-800 dark:text-gray-200" />
               </button>
             )}
             
@@ -897,9 +897,9 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                   e.stopPropagation();
                   nextImage();
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-white/90 hover:bg-white rounded-full shadow-lg transition-all hover:scale-110 z-10"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 rounded-full shadow-lg transition-all hover:scale-110 z-10"
               >
-                <ChevronRight size={24} className="text-gray-800" />
+                <ChevronRight size={24} className="text-gray-800 dark:text-gray-200" />
               </button>
             )}
 
@@ -1052,14 +1052,14 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                       <span key={index} className="text-base">{reaction.emoji}</span>
                     ))}
                   </div>
-                  <span className="text-sm text-gray-700 font-medium">{totalReactions} Reaction</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">{totalReactions} Reaction</span>
                 </button>
               );
             }
             return null;
           })()}
         </div>
-        <div className="flex items-center gap-4 text-gray-700 font-medium">
+        <div className="flex items-center gap-4 text-gray-700 dark:text-gray-300 font-medium">
           <button 
             onClick={() => setShowComments(!showComments)}
             className="hover:underline"
@@ -1071,19 +1071,19 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
       </div>
 
       {/* Action Buttons */}
-      <div className="px-10 pb-2 pt-1 border-t border-gray-100">
+      <div className="px-10 pb-2 pt-1 border-t border-gray-100 dark:border-gray-700">
         <div className="flex items-center gap-1">
           <div className="flex-1 relative">
             <button
               onClick={() => setShowReactionPicker(!showReactionPicker)}
               className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg transition-all text-sm ${
-                userReaction === 'like' ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' :
-                userReaction === 'love' ? 'text-red-600 bg-red-50 hover:bg-red-100' :
-                userReaction === 'haha' ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100' :
-                userReaction === 'wow' ? 'text-orange-600 bg-orange-50 hover:bg-orange-100' :
-                userReaction === 'sad' ? 'text-blue-500 bg-blue-50 hover:bg-blue-100' :
-                userReaction === 'angry' ? 'text-red-700 bg-red-50 hover:bg-red-100' :
-                'text-gray-600 hover:bg-gray-50'
+                userReaction === 'like' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-800/30' :
+                userReaction === 'love' ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-800/30' :
+                userReaction === 'haha' ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-800/30' :
+                userReaction === 'wow' ? 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-800/30' :
+                userReaction === 'sad' ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-800/30' :
+                userReaction === 'angry' ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-800/30' :
+                'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
               {userReaction === 'like' && <span>👍</span>}
@@ -1112,46 +1112,46 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                   onClick={() => setShowReactionPicker(false)}
                 />
                 <div 
-                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white rounded-full shadow-2xl border border-gray-200 px-3 py-2 flex space-x-2 z-30"
+                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white dark:bg-gray-800 rounded-full shadow-2xl border border-gray-200 dark:border-gray-700 px-3 py-2 flex space-x-2 z-30"
                 >
                   <button
                     onClick={() => { handleReact('like'); setShowReactionPicker(false); }}
-                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                     title="Like"
                   >
                     👍
                   </button>
                   <button
                     onClick={() => { handleReact('love'); setShowReactionPicker(false); }}
-                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                     title="Love"
                   >
                     ❤️
                   </button>
                   <button
                     onClick={() => { handleReact('haha'); setShowReactionPicker(false); }}
-                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                     title="Haha"
                   >
                     😂
                   </button>
                   <button
                     onClick={() => { handleReact('wow'); setShowReactionPicker(false); }}
-                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                     title="Wow"
                   >
                     😮
                   </button>
                   <button
                     onClick={() => { handleReact('sad'); setShowReactionPicker(false); }}
-                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                     title="Sad"
                   >
                     😢
                   </button>
                   <button
                     onClick={() => { handleReact('angry'); setShowReactionPicker(false); }}
-                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100"
+                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
                     title="Angry"
                   >
                     😠
@@ -1163,7 +1163,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
 
           <button
             onClick={() => setShowComments(!showComments)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-all"
+            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
           >
             <MessageCircle size={18} />
             <span className="font-medium">Comment</span>
@@ -1173,8 +1173,8 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
             onClick={handleRepost}
             className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm transition-all ${
               hasReposted 
-                ? 'text-green-600 bg-green-50 hover:bg-green-100' 
-                : 'text-gray-600 hover:bg-gray-50'
+                ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-800/30' 
+                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
             <Repeat size={18} />
@@ -1187,8 +1187,8 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
             aria-label={bookmarked ? 'Unsave post' : 'Save post'}
             className={`p-1.5 rounded-lg transition-all disabled:opacity-50 ${
               bookmarked
-                ? 'text-yellow-500 bg-yellow-50 hover:bg-yellow-100'
-                : 'text-gray-600 hover:bg-gray-50'
+                ? 'text-yellow-500 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-800/30'
+                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
             <Bookmark className={bookmarked ? 'fill-current' : ''} size={16} />
@@ -1211,15 +1211,15 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
           onClick={() => setShowLikesModal(false)}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] flex flex-col animate-scaleIn"
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] flex flex-col animate-scaleIn"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900">Reactions</h3>
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Reactions</h3>
               <button
                 onClick={() => setShowLikesModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-900 dark:text-gray-100"
               >
                 <X size={20} />
               </button>
@@ -1229,7 +1229,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
             <div className="flex-1 overflow-y-auto p-4">
               {loadingLikes ? (
                 <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-blue-500"></div>
+                  <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 dark:border-gray-700 border-t-blue-500 dark:border-t-blue-400"></div>
                 </div>
               ) : likesData.length > 0 ? (
                 <div className="space-y-2">
@@ -1248,25 +1248,25 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                     }[reactionType] || '❤️';
                     
                     const reactionColor = {
-                      like: 'text-blue-600',
-                      love: 'text-red-500',
-                      haha: 'text-yellow-500',
-                      wow: 'text-orange-500',
-                      sad: 'text-blue-400',
-                      angry: 'text-red-700'
-                    }[reactionType] || 'text-red-500';
+                      like: 'text-blue-600 dark:text-blue-400',
+                      love: 'text-red-500 dark:text-red-400',
+                      haha: 'text-yellow-500 dark:text-yellow-400',
+                      wow: 'text-orange-500 dark:text-orange-400',
+                      sad: 'text-blue-400 dark:text-blue-300',
+                      angry: 'text-red-700 dark:text-red-500'
+                    }[reactionType] || 'text-red-500 dark:text-red-400';
                     
                     return (
                       <div 
                         key={user._id} 
-                        className="flex items-center gap-3 p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer"
+                        className="flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-xl transition-colors cursor-pointer"
                         onClick={() => {
                           navigate(`/profile/${user.username}`);
                           setShowLikesModal(false);
                         }}
                       >
                         <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
-                          <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                          <div className="h-full w-full rounded-full bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden">
                             {user.avatar ? (
                               <img 
                                 src={user.avatar} 
@@ -1274,18 +1274,18 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                                 className="w-full h-full object-cover" 
                               />
                             ) : (
-                              <span className="text-gray-700 font-bold">
+                              <span className="text-gray-700 dark:text-gray-300 font-bold">
                                 {user.username?.charAt(0).toUpperCase() || 'U'}
                               </span>
                             )}
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 truncate">
+                          <p className="font-semibold text-gray-900 dark:text-gray-100 truncate">
                             {user.username || user.name || 'User'}
                           </p>
                           {user.name && user.name !== user.username && (
-                            <p className="text-sm text-gray-500 truncate">{user.name}</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user.name}</p>
                           )}
                         </div>
                         <div className={`text-2xl ${reactionColor}`}>
@@ -1296,7 +1296,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                   })}
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
                   <Heart size={48} className="mx-auto mb-3 opacity-30" />
                   <p className="font-medium">No reactions yet</p>
                   <p className="text-sm mt-1">Be the first to react!</p>
@@ -1421,16 +1421,22 @@ export default function HomePage() {
   // Listen for post created event from Navbar
   useEffect(() => {
     const handlePostCreated = (event) => {
-      console.log('📝 New post created event received:', event.detail);
-      
       // If we have the post data in the event, add it to the top of the feed
       if (event.detail && event.detail.post) {
-        const newPost = event.detail.post;
-        console.log('Adding new post to feed:', newPost);
+        const newPost = {
+          ...event.detail.post,
+          // Ensure createdAt exists (should come from server but fallback to now)
+          createdAt: event.detail.post.createdAt || new Date().toISOString(),
+          // Initialize topReactions if not present
+          topReactions: event.detail.post.topReactions || [],
+          // Initialize hasReposted if not present
+          hasReposted: event.detail.post.hasReposted || false,
+          // Initialize repostCount if not present
+          repostCount: event.detail.post.repostCount || 0
+        };
         setPosts(prev => [newPost, ...prev]);
       } else {
         // Fallback: refresh the entire feed if no post data provided
-        console.log('No post data in event, refreshing feed...');
         fetchPosts(0, 10);
       }
     };
@@ -1467,10 +1473,10 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 dark:border-gray-700 border-t-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300 font-medium">Loading...</p>
         </div>
       </div>
     );
@@ -1478,14 +1484,14 @@ export default function HomePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <AlertCircle size={64} className="text-red-500 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Failed to load posts</h3>
-          <p className="text-gray-600 mb-6">We couldn't load your feed. Please try again.</p>
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">Failed to load posts</h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">We couldn't load your feed. Please try again.</p>
           <button 
             onClick={() => fetchPosts()}
-            className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all font-semibold shadow-sm hover:shadow-md"
+            className="px-6 py-3 bg-blue-500 dark:bg-blue-600 text-white rounded-xl hover:bg-blue-600 dark:hover:bg-blue-700 transition-all font-semibold shadow-sm hover:shadow-md"
           >
             Try Again
           </button>
@@ -1495,7 +1501,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
@@ -1530,7 +1536,7 @@ export default function HomePage() {
             <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
               NETSPHERE
             </h1>
-            <p className="text-gray-600 mt-2">Share your moments</p>
+            <p className="text-gray-600 dark:text-gray-300 mt-2">Share your moments</p>
           </div>
 
           {/* Create Post */}
@@ -1542,8 +1548,8 @@ export default function HomePage() {
           {/* Posts Feed */}
           {loadingPosts ? (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-blue-500 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading posts...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 dark:border-gray-700 border-t-blue-500 mx-auto mb-4"></div>
+              <p className="text-gray-600 dark:text-gray-300">Loading posts...</p>
             </div>
           ) : posts.length > 0 ? (
             <div className="space-y-6">
@@ -1577,13 +1583,13 @@ export default function HomePage() {
               )}
             </div>
           ) : (
-            <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-200 animate-fadeIn">
+            <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 animate-fadeIn">
               <div className="text-6xl mb-4">📝</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">No posts yet</h3>
-              <p className="text-gray-600 mb-6">Be the first to share something amazing!</p>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">No posts yet</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">Be the first to share something amazing!</p>
               <button
                 onClick={() => setShowExpandedCreate(true)}
-                className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all font-semibold shadow-sm hover:shadow-md"
+                className="px-6 py-3 bg-blue-500 dark:bg-blue-600 text-white rounded-xl hover:bg-blue-600 dark:hover:bg-blue-700 transition-all font-semibold shadow-sm hover:shadow-md"
               >
                 Create Your First Post
               </button>
@@ -1598,10 +1604,10 @@ export default function HomePage() {
             <SuggestedUsers limit={5} />
 
             {/* Trending Now - SECOND */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 animate-fadeIn">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-fadeIn">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="h-5 w-5 text-orange-500" />
-                <h2 className="text-lg font-bold text-gray-900">Trending Now</h2>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Trending Now</h2>
               </div>
               <div className="space-y-4">
                 {[
@@ -1611,14 +1617,14 @@ export default function HomePage() {
                   { rank: 4, tag: 'Travel', posts: '1.5K', hot: false },
                   { rank: 5, tag: 'Fitness', posts: '987', hot: true }
                 ].map((trend) => (
-                  <div key={trend.rank} className="flex items-center justify-between group cursor-pointer hover:bg-gray-50 p-3 rounded-xl transition-all">
+                  <div key={trend.rank} className="flex items-center justify-between group cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-3 rounded-xl transition-all">
                     <div className="flex items-center gap-3">
-                      <span className="text-gray-400 font-bold text-sm w-6">#{trend.rank}</span>
+                      <span className="text-gray-400 dark:text-gray-500 font-bold text-sm w-6">#{trend.rank}</span>
                       <div>
-                        <p className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">
+                        <p className="font-bold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                           #{trend.tag}
                         </p>
-                        <p className="text-xs text-gray-500">{trend.posts} posts</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{trend.posts} posts</p>
                       </div>
                     </div>
                     {trend.hot && (

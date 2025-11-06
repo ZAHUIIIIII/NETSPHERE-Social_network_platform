@@ -76,7 +76,7 @@ const ReportPostModal = ({ isOpen, onClose, postId, postAuthor }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-slideUp">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-slideUp">
         {/* Header */}
         <div className="bg-gradient-to-r from-red-500 to-orange-500 px-6 py-5">
           <div className="flex items-center justify-between text-white">
@@ -104,19 +104,19 @@ const ReportPostModal = ({ isOpen, onClose, postId, postAuthor }) => {
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
           {/* Post Info */}
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-sm text-gray-600">
-              You are reporting a post by <span className="font-semibold text-gray-900">{postAuthor}</span>
+          <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              You are reporting a post by <span className="font-semibold text-gray-900 dark:text-gray-100">{postAuthor}</span>
             </p>
           </div>
 
           {/* Warning Banner */}
-          <div className="mb-6 p-4 bg-amber-50 border-2 border-amber-200 rounded-xl">
+          <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-800/50 rounded-xl">
             <div className="flex items-start gap-3">
-              <svg viewBox="0 0 24 24" className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg viewBox="0 0 24 24" className="w-5 h-5 text-amber-600 dark:text-amber-500 flex-shrink-0 mt-0.5" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <div className="text-sm text-amber-800">
+              <div className="text-sm text-amber-800 dark:text-amber-300">
                 <p className="font-semibold mb-1">Important Notice</p>
                 <p>False reports may result in action against your account. Please only report content that violates our community guidelines.</p>
               </div>
@@ -125,8 +125,8 @@ const ReportPostModal = ({ isOpen, onClose, postId, postAuthor }) => {
 
           {/* Reason Selection - Dropdown */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-900 mb-3">
-              Why are you reporting this post? <span className="text-red-500">*</span>
+            <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              Why are you reporting this post? <span className="text-red-500 dark:text-red-400">*</span>
             </label>
             <select
               value={selectedReason}
@@ -136,7 +136,7 @@ const ReportPostModal = ({ isOpen, onClose, postId, postAuthor }) => {
                   setCustomReason('');
                 }
               }}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900 font-medium bg-white cursor-pointer transition-all"
+              className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 text-gray-900 dark:text-gray-100 font-medium bg-white dark:bg-gray-900 cursor-pointer transition-all"
               required
             >
               {reportReasons.map((reason) => (
@@ -155,8 +155,8 @@ const ReportPostModal = ({ isOpen, onClose, postId, postAuthor }) => {
           {/* Custom Reason Input (shown only when "Other" is selected) */}
           {selectedReason === 'other' && (
             <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-900 mb-2">
-                Please specify the reason <span className="text-red-500">*</span>
+              <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                Please specify the reason <span className="text-red-500 dark:text-red-400">*</span>
               </label>
               <input
                 type="text"
@@ -164,10 +164,10 @@ const ReportPostModal = ({ isOpen, onClose, postId, postAuthor }) => {
                 onChange={(e) => setCustomReason(e.target.value)}
                 placeholder="Enter your reason for reporting..."
                 maxLength={100}
-                className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                 required
               />
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                 {customReason.length}/100 characters
               </p>
             </div>
@@ -175,8 +175,8 @@ const ReportPostModal = ({ isOpen, onClose, postId, postAuthor }) => {
 
           {/* Additional Details */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-900 mb-2">
-              Additional Details <span className="text-gray-500 font-normal">(Optional)</span>
+            <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              Additional Details <span className="text-gray-500 dark:text-gray-400 font-normal">(Optional)</span>
             </label>
             <textarea
               value={description}
@@ -184,21 +184,21 @@ const ReportPostModal = ({ isOpen, onClose, postId, postAuthor }) => {
               placeholder="Provide more context about why you're reporting this post..."
               maxLength={500}
               rows={4}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none"
+              className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-none bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
             />
             <div className="flex items-center justify-between mt-2">
-              <p className="text-xs text-gray-500">Help us understand the issue better</p>
-              <span className="text-xs text-gray-500">{description.length}/500</span>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Help us understand the issue better</p>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{description.length}/500</span>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3 justify-end pt-4 border-t border-gray-200">
+          <div className="flex gap-3 justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={handleClose}
               disabled={isSubmitting}
-              className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-900 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>

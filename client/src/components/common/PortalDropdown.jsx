@@ -121,7 +121,7 @@ const PortalDropdown = ({
       {isOpen && createPortal(
         <div 
           ref={menuRef}
-          className={`fixed ${width} bg-white rounded-lg shadow-xl border border-gray-200 z-[9999] ${className}`}
+          className={`fixed ${width} bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-[9999] ${className}`}
           style={{
             top: menuPosition ? `${menuPosition.top}px` : '0px',
             left: menuPosition ? `${menuPosition.left}px` : '0px',

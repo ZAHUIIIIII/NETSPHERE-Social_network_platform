@@ -106,24 +106,24 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-white to-gray-50/30 rounded-xl p-6 border border-gray-200/60 shadow-lg overflow-visible">
+    <div className="bg-gradient-to-br from-white to-gray-50/30 dark:from-gray-800 dark:to-gray-800/30 rounded-xl p-6 border border-gray-200/60 dark:border-gray-700/60 shadow-lg overflow-visible">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="font-bold text-xl text-gray-900 flex items-center gap-2">
-            <svg viewBox="0 0 24 24" className="w-6 h-6 text-blue-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <svg viewBox="0 0 24 24" className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z" fill="currentColor"/>
             </svg>
             Post Management
           </h3>
-          <p className="text-sm text-gray-600 mt-1">Monitor and moderate platform content</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Monitor and moderate platform content</p>
         </div>
         <div className="relative">
           <button
             onClick={() => setFilterOpen(!filterOpen)}
-            className="border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/50 flex items-center gap-2 bg-white hover:bg-gray-50 hover:border-gray-400 min-w-[140px] justify-between shadow-sm transition-all"
+            className="border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/50 flex items-center gap-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 min-w-[140px] justify-between shadow-sm transition-all"
           >
-            <span className="text-gray-700">{statusFilter}</span>
-            <svg viewBox="0 0 24 24" className={`w-4 h-4 text-gray-500 transition-transform ${filterOpen ? 'rotate-180' : ''}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+            <span className="text-gray-700 dark:text-gray-300">{statusFilter}</span>
+            <svg viewBox="0 0 24 24" className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${filterOpen ? 'rotate-180' : ''}`} fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
@@ -134,7 +134,7 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                 className="fixed inset-0 z-30" 
                 onClick={() => setFilterOpen(false)}
               />
-              <div className="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-40">
+              <div className="absolute right-0 mt-2 w-44 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-40">
                 {['All Posts', 'Published', 'Flagged', 'Removed'].map(option => (
                   <button
                     key={option}
@@ -142,13 +142,13 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                       setStatusFilter(option);
                       setFilterOpen(false);
                     }}
-                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition-colors flex items-center justify-between ${
-                      statusFilter === option ? 'text-blue-600 font-semibold bg-blue-50/50' : 'text-gray-700'
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors flex items-center justify-between ${
+                      statusFilter === option ? 'text-blue-600 dark:text-blue-400 font-semibold bg-blue-50/50 dark:bg-blue-900/30' : 'text-gray-700 dark:text-gray-300'
                     }`}
                   >
                     <span>{option}</span>
                     {statusFilter === option && (
-                      <svg viewBox="0 0 24 24" className="w-4 h-4 text-blue-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     )}
@@ -160,38 +160,38 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
         </div>
       </div>
 
-      <div className="overflow-x-auto overflow-y-visible rounded-lg border border-gray-200 bg-white shadow-md">
+      <div className="overflow-x-auto overflow-y-visible rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-md">
         <table className="w-full text-left text-sm">
-          <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+          <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-900 border-b-2 border-gray-200 dark:border-gray-700">
             <tr>
-              <th className="py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider">Author</th>
-              <th className="py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider text-center">Content</th>
-              <th className="py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider text-center">Engagement</th>
-              <th className="py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider text-center">Status</th>
-              <th className="py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider text-center">Reports</th>
-              <th className="py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider">Created</th>
-              <th className="py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider text-right">Actions</th>
+              <th className="py-4 px-4 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Author</th>
+              <th className="py-4 px-4 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-center">Content</th>
+              <th className="py-4 px-4 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-center">Engagement</th>
+              <th className="py-4 px-4 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-center">Status</th>
+              <th className="py-4 px-4 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-center">Reports</th>
+              <th className="py-4 px-4 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Created</th>
+              <th className="py-4 px-4 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="relative divide-y divide-gray-100">
+          <tbody className="relative divide-y divide-gray-100 dark:divide-gray-700">
             {filtered.map((p, index) => (
-              <tr key={p._id || p.id} className="hover:bg-blue-50/30 transition-all duration-150 group">
+              <tr key={p._id || p.id} className="hover:bg-blue-50/30 dark:hover:bg-gray-700/50 transition-all duration-150 group">
                 <td className="py-4 px-4">
                   <div className="flex items-center gap-3">
                     {p.author?.avatar ? (
                       <img 
                         src={p.author.avatar} 
                         alt={p.author.username || 'User'} 
-                        className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-200 group-hover:ring-blue-300 transition-all"
+                        className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-blue-300 transition-all"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm ring-2 ring-gray-200 group-hover:ring-blue-300 transition-all shadow-sm">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-blue-300 transition-all shadow-sm">
                         {(p.author?.name || p.author?.username || 'U').charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div>
-                      <div className="font-semibold text-gray-900 text-sm">{p.author?.name || p.author?.username || 'Unknown'}</div>
-                      <div className="text-xs text-gray-500">{p.author?.email || 'No email'}</div>
+                      <div className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{p.author?.name || p.author?.username || 'Unknown'}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{p.author?.email || 'No email'}</div>
                     </div>
                   </div>
                 </td>
@@ -199,7 +199,7 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                   <div className="flex justify-center">
                     <button
                       onClick={() => handleViewPost(p)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 rounded-md hover:from-blue-100 hover:to-blue-200 transition-all duration-200 text-xs font-semibold shadow-sm hover:shadow-md"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-900/30 text-blue-700 dark:text-blue-400 rounded-md hover:from-blue-100 hover:to-blue-200 dark:hover:from-blue-900/50 dark:hover:to-blue-900/50 transition-all duration-200 text-xs font-semibold shadow-sm hover:shadow-md"
                     >
                       <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" strokeWidth="2"/>
@@ -211,14 +211,14 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                 </td>
                 <td className="py-4 px-4">
                   <div className="flex flex-col gap-2 items-center">
-                    <div className="flex items-center gap-2 text-xs text-gray-700">
-                      <svg viewBox="0 0 24 24" className="w-4 h-4 text-red-500" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 text-red-500 dark:text-red-400" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                         <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                       </svg>
                       <span className="font-bold">{p.likes || 0}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-700">
-                      <svg viewBox="0 0 24 24" className="w-4 h-4 text-blue-500" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <div className="flex items-center gap-2 text-xs text-gray-700 dark:text-gray-300">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 text-blue-500 dark:text-blue-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                       <span className="font-bold">{p.commentsCount || 0}</span>
@@ -272,9 +272,9 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                           e.stopPropagation();
                           setOpenDropdown(openDropdown === (p._id || p.id) ? null : (p._id || p.id));
                         }}
-                        className="inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 transition-all group-hover:bg-blue-50"
+                        className="inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30"
                       >
-                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-600 group-hover:text-blue-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <circle cx="12" cy="12" r="1" fill="currentColor"/>
                           <circle cx="12" cy="5" r="1" fill="currentColor"/>
                           <circle cx="12" cy="19" r="1" fill="currentColor"/>
@@ -283,16 +283,16 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                     }
                     className="overflow-hidden"
                   >
-                          <div className="px-4 py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                            <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Actions</span>
+                          <div className="px-4 py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-900 border-b border-gray-200 dark:border-gray-700">
+                            <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Actions</span>
                           </div>
                           
                           <div className="py-1.5">
                             <button
                               onClick={() => handleViewPost(p)}
-                              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-3 transition-all group"
+                              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400 flex items-center gap-3 transition-all group"
                             >
-                              <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 group-hover:text-blue-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" strokeWidth="2"/>
                                 <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke="currentColor" strokeWidth="2"/>
                               </svg>
@@ -304,9 +304,9 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                                 openPostInNewTab(p._id || p.id);
                                 setOpenDropdown(null);
                               }}
-                              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-3 transition-all group"
+                              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400 flex items-center gap-3 transition-all group"
                             >
-                              <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 group-hover:text-blue-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
                               <span className="font-medium">Open in New Tab</span>
@@ -315,9 +315,9 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                             {p.status !== 'removed' ? (
                               <button
                                 onClick={() => handleRemovePost(p)}
-                                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700 flex items-center gap-3 transition-all group"
+                                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-700 dark:hover:text-orange-400 flex items-center gap-3 transition-all group"
                               >
-                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 group-hover:text-orange-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-orange-600 dark:group-hover:text-orange-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
                                   <path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                                 </svg>
@@ -326,9 +326,9 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                             ) : (
                               <button
                                 onClick={() => handleRestorePost(p)}
-                                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 flex items-center gap-3 transition-all group"
+                                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-400 flex items-center gap-3 transition-all group"
                               >
-                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-green-500 group-hover:text-green-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-green-500 dark:text-green-400 group-hover:text-green-600 dark:group-hover:text-green-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                                 <span className="font-medium">Activate Post</span>
@@ -336,14 +336,14 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                             )}
                           </div>
                           
-                          <div className="border-t border-gray-200" />
+                          <div className="border-t border-gray-200 dark:border-gray-700" />
                           
                           <div className="py-1.5">
                             <button
                               onClick={() => handleDeletePost(p)}
-                              className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-all font-semibold group"
+                              className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-3 transition-all font-semibold group"
                             >
-                              <svg viewBox="0 0 24 24" className="w-4 h-4 text-red-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <svg viewBox="0 0 24 24" className="w-4 h-4 text-red-600 dark:text-red-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
                               <span>Delete Post</span>

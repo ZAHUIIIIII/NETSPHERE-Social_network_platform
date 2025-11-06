@@ -355,7 +355,7 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
                 }
               }}
               placeholder="Write a comment..."
-              className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-[#f0f2f5]"
+              className="flex-1 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-600 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 bg-[#f0f2f5] dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400"
               disabled={submitting}
             />
             <button

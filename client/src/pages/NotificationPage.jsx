@@ -563,20 +563,20 @@ const NotificationPage = () => {
     return (
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-4">
-          <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+          <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100 uppercase tracking-wider">
             {title}
           </h3>
-          <div className="flex-1 h-px bg-gradient-to-r from-gray-300 to-transparent" />
+          <div className="flex-1 h-px bg-gradient-to-r from-gray-300 dark:from-gray-700 to-transparent" />
         </div>
         <div className="space-y-3">
           {groupNotifications.map((notification) => (
             <div
               key={notification._id}
               onClick={(e) => handleNotificationClick(notification, e)}
-              className={`group relative p-4 bg-white rounded-xl shadow-sm border transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer ${
+              className={`group relative p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm border transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer ${
                 !notification.read 
-                  ? 'border-blue-200 bg-gradient-to-r from-blue-50/50 to-white ring-2 ring-blue-100' 
-                  : 'border-gray-100 hover:border-gray-200'
+                  ? 'border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50/50 to-white dark:from-blue-900/20 dark:to-gray-800 ring-2 ring-blue-100 dark:ring-blue-900/50' 
+                  : 'border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600'
               } ${openMenuId === notification._id ? 'z-50' : 'z-0'}`}
             >
               {/* Unread indicator */}
@@ -594,11 +594,11 @@ const NotificationPage = () => {
                     }
                     alt=""
                     className={`w-11 h-11 rounded-full object-cover ring-2 transition-all duration-300 ${
-                      !notification.read ? 'ring-blue-200' : 'ring-gray-200'
-                    } group-hover:ring-blue-300 group-hover:scale-105`}
+                      !notification.read ? 'ring-blue-200 dark:ring-blue-800' : 'ring-gray-200 dark:ring-gray-700'
+                    } group-hover:ring-blue-300 dark:group-hover:ring-blue-600 group-hover:scale-105`}
                   />
                   {/* Notification type emoji badge */}
-                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white flex items-center justify-center shadow-lg border-2 border-gray-100 group-hover:scale-110 transition-transform">
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white dark:bg-gray-700 flex items-center justify-center shadow-lg border-2 border-gray-100 dark:border-gray-600 group-hover:scale-110 transition-transform">
                     <span className="text-sm">
                       {getNotificationBadge(notification)}
                     </span>
@@ -610,17 +610,17 @@ const NotificationPage = () => {
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="flex-1">
                       <p className="text-sm leading-relaxed">
-                        <span className="font-bold text-gray-900 hover:underline cursor-pointer">
+                        <span className="font-bold text-gray-900 dark:text-gray-100 hover:underline cursor-pointer">
                           {notification.sender?.username || 'Someone'}
                         </span>
-                        <span className="text-gray-600 ml-1.5">
+                        <span className="text-gray-600 dark:text-gray-400 ml-1.5">
                           {getNotificationMessage(notification)}
                         </span>
                       </p>
 
                       {/* Timestamp */}
-                      <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                        <span className="w-1 h-1 rounded-full bg-gray-300" />
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 flex items-center gap-1">
+                        <span className="w-1 h-1 rounded-full bg-gray-300 dark:bg-gray-600" />
                         {formatTime(new Date(notification.createdAt))}
                       </p>
 
@@ -629,7 +629,7 @@ const NotificationPage = () => {
                         <div className="mt-3 flex items-center gap-2 follow-button-area" onClick={(e) => e.stopPropagation()}>
                           {followStates[notification.sender._id] ? (
                             // Static "Following" badge (non-interactive)
-                            <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 border border-gray-200 shadow-sm">
+                            <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 shadow-sm">
                               <UserCheck className="w-4 h-4" />
                               <span>Following</span>
                             </div>
@@ -661,7 +661,7 @@ const NotificationPage = () => {
                               e.stopPropagation();
                               navigate(`/profile/${notification.sender.username}`);
                             }}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-700 rounded-lg transition-all hover:shadow-md hover:scale-105 whitespace-nowrap shadow-sm"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 hover:from-gray-200 hover:to-gray-300 dark:hover:from-gray-600 dark:hover:to-gray-700 text-gray-700 dark:text-gray-300 rounded-lg transition-all hover:shadow-md hover:scale-105 whitespace-nowrap shadow-sm"
                           >
                             <User className="w-4 h-4" />
                             <span>View Profile</span>
@@ -681,8 +681,8 @@ const NotificationPage = () => {
                             onClick={(e) => handleToggleMenu(notification._id, e)}
                             className={`p-2 rounded-lg transition-all ${
                               openMenuId === notification._id 
-                                ? 'bg-blue-100 text-blue-700 shadow-sm' 
-                                : 'hover:bg-gray-100 text-gray-400 hover:text-gray-700 opacity-0 group-hover:opacity-100'
+                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 shadow-sm' 
+                                : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 opacity-0 group-hover:opacity-100'
                             }`}
                             title="More options"
                           >
@@ -699,19 +699,19 @@ const NotificationPage = () => {
                               e.stopPropagation();
                               notification.read ? handleMarkAsUnread(notification._id, e) : handleMarkAsRead(notification._id, e);
                             }}
-                            className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-blue-50 flex items-center gap-3 transition-all hover:pl-5"
+                            className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-3 transition-all hover:pl-5"
                           >
                             {notification.read ? (
                               <>
-                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                                  <Eye className="w-4 h-4 text-blue-600" />
+                                <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
+                                  <Eye className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                 </div>
                                 <span className="font-semibold">Mark as unread</span>
                               </>
                             ) : (
                               <>
-                                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                                  <Check className="w-4 h-4 text-green-600" />
+                                <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center flex-shrink-0">
+                                  <Check className="w-4 h-4 text-green-600 dark:text-green-400" />
                                 </div>
                                 <span className="font-semibold">Mark as read</span>
                               </>
@@ -727,19 +727,19 @@ const NotificationPage = () => {
                                 e.stopPropagation();
                                 handleMutePost(notification.post._id || notification.post, e);
                               }}
-                              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-amber-50 flex items-center gap-3 transition-all hover:pl-5"
+                              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center gap-3 transition-all hover:pl-5"
                             >
                               {notificationSettings?.mutedPosts?.includes(notification.post._id || notification.post) ? (
                                 <>
-                                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                                    <FileText className="w-4 h-4 text-green-600" />
+                                  <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center flex-shrink-0">
+                                    <FileText className="w-4 h-4 text-green-600 dark:text-green-400" />
                                   </div>
                                   <span className="font-semibold">Unmute post</span>
                                 </>
                               ) : (
                                 <>
-                                  <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                                    <FileText className="w-4 h-4 text-amber-600" />
+                                  <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center flex-shrink-0">
+                                    <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                                   </div>
                                   <span className="font-semibold">Mute post</span>
                                 </>
@@ -748,7 +748,7 @@ const NotificationPage = () => {
                           )}
 
                           {/* Separator Line */}
-                          <div className="border-t border-gray-200 my-1"></div>
+                          <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
 
                           {/* Mute User - Only show if notification has a sender and it's not self */}
                           {notification.sender && notification.sender._id !== authUser._id && (
@@ -759,19 +759,19 @@ const NotificationPage = () => {
                                 e.stopPropagation();
                                 handleMuteUser(notification.sender._id, e);
                               }}
-                              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-purple-50 flex items-center gap-3 transition-all hover:pl-5"
+                              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 flex items-center gap-3 transition-all hover:pl-5"
                             >
                               {notificationSettings?.mutedUsers?.includes(notification.sender._id) ? (
                                 <>
-                                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
-                                    <UserCheck className="w-4 h-4 text-green-600" />
+                                  <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/50 flex items-center justify-center flex-shrink-0">
+                                    <UserCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
                                   </div>
                                   <span className="font-semibold">Unmute @{notification.sender.username}</span>
                                 </>
                               ) : (
                                 <>
-                                  <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
-                                    <UserX className="w-4 h-4 text-purple-600" />
+                                  <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center flex-shrink-0">
+                                    <UserX className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                                   </div>
                                   <span className="font-semibold">Mute @{notification.sender.username}</span>
                                 </>
@@ -787,10 +787,10 @@ const NotificationPage = () => {
                               e.stopPropagation();
                               handleDeleteNotification(notification._id, e);
                             }}
-                            className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-red-50 flex items-center gap-3 transition-all hover:pl-5"
+                            className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-all hover:pl-5"
                           >
-                            <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                              <Trash2 className="w-4 h-4 text-red-600" />
+                            <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center flex-shrink-0">
+                              <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
                             </div>
                             <span className="font-semibold">Delete notification</span>
                           </button>
@@ -800,16 +800,16 @@ const NotificationPage = () => {
 
                   {/* Comment/Reply Content Preview */}
                   {(notification.type === 'comment' || notification.type === 'reply') && notification.metadata?.commentContent && (
-                    <div className="mt-2.5 flex items-center gap-2.5 p-2.5 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border border-blue-100 shadow-sm">
+                    <div className="mt-2.5 flex items-center gap-2.5 p-2.5 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-100 dark:border-blue-800 shadow-sm">
                       <div className="flex items-center gap-1.5 flex-shrink-0">
-                        <div className="w-5 h-5 rounded-md bg-blue-100 flex items-center justify-center">
-                          <MessageCircle className="w-3 h-3 text-blue-600" />
+                        <div className="w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                          <MessageCircle className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                         </div>
-                        <p className="text-[10px] text-blue-700 font-bold uppercase tracking-wide whitespace-nowrap">
+                        <p className="text-[10px] text-blue-700 dark:text-blue-400 font-bold uppercase tracking-wide whitespace-nowrap">
                           {notification.type === 'comment' ? 'Comment' : 'Reply'}
                         </p>
                       </div>
-                      <p className="text-xs text-gray-700 leading-snug line-clamp-1 flex-1 font-medium">
+                      <p className="text-xs text-gray-700 dark:text-gray-300 leading-snug line-clamp-1 flex-1 font-medium">
                         "{notification.metadata.commentContent}"
                       </p>
                     </div>
@@ -817,11 +817,11 @@ const NotificationPage = () => {
 
                   {/* Post Preview */}
                   {notification.metadata?.postContent && (
-                    <div className="mt-2.5 flex items-center gap-2.5 p-2.5 bg-gradient-to-br from-gray-50 to-slate-50 rounded-lg border border-gray-200 shadow-sm">
-                      <div className="w-5 h-5 rounded-md bg-gray-200 flex items-center justify-center flex-shrink-0">
-                        <ImageIcon className="w-3 h-3 text-gray-500" />
+                    <div className="mt-2.5 flex items-center gap-2.5 p-2.5 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-700 dark:to-slate-800 rounded-lg border border-gray-200 dark:border-gray-600 shadow-sm">
+                      <div className="w-5 h-5 rounded-md bg-gray-200 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
+                        <ImageIcon className="w-3 h-3 text-gray-500 dark:text-gray-400" />
                       </div>
-                      <p className="text-xs text-gray-600 line-clamp-1 leading-snug flex-1 font-medium">
+                      <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-1 leading-snug flex-1 font-medium">
                         {notification.metadata.postContent}
                       </p>
                     </div>
@@ -857,14 +857,14 @@ const NotificationPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-3xl mx-auto px-4 py-4">
         {/* Header */}
         <div className="mb-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Bell className="w-6 h-6 text-blue-600" />
+                <Bell className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 {unreadCount > 0 && (
                   <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
                     {unreadCount > 9 ? '9+' : unreadCount}
@@ -872,8 +872,8 @@ const NotificationPage = () => {
                 )}
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Notifications</h1>
-                <p className="text-xs text-gray-500">
+                <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">Notifications</h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {unreadCount > 0 
                     ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`
                     : 'You\'re all caught up!'
@@ -886,7 +886,7 @@ const NotificationPage = () => {
               <button
                 onClick={handleMarkAllAsRead}
                 disabled={unreadCount === 0}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <CheckCheck className="w-4 h-4" />
                 <span className="hidden sm:inline">Mark all read</span>
@@ -895,22 +895,23 @@ const NotificationPage = () => {
               <PortalDropdown
                 isOpen={showOptionsMenu}
                 onClose={() => setShowOptionsMenu(false)}
+                width="w-[220px]"
                 trigger={
                   <button
                     onClick={() => setShowOptionsMenu(!showOptionsMenu)}
-                    className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
                     <Settings className="w-5 h-5" />
                   </button>
                 }
               >
-                <div className="bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[220px]">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1">
                   <button
                     onClick={() => {
                       setShowOptionsMenu(false);
                       navigate('/settings');
                     }}
-                    className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-3"
+                    className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3"
                   >
                     <Bell className="w-4 h-4" />
                     <span>Notification settings</span>
@@ -918,7 +919,7 @@ const NotificationPage = () => {
                   <button
                     onClick={handleClearAllNotifications}
                     disabled={notifications.length === 0}
-                    className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2.5 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Trash2 className="w-4 h-4" />
                     <span>Clear all notifications</span>
@@ -929,19 +930,19 @@ const NotificationPage = () => {
           </div>
 
           {/* Filter Tabs */}
-          <div className="bg-gradient-to-r from-white to-gray-50 rounded-xl shadow-md border border-gray-200/50 px-5 py-3 overflow-x-auto">
+          <div className="bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/50 rounded-xl shadow-md border border-gray-200/50 dark:border-gray-700/50 px-5 py-3 overflow-x-auto">
             <div className="flex gap-2 items-center justify-center flex-wrap">
               <button
                 onClick={() => setActiveTab('all')}
                 className={`relative px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${
                   activeTab === 'all'
                     ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30 scale-105'
-                    : 'text-gray-700 hover:bg-white hover:shadow-md'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 hover:shadow-md'
                 }`}
               >
                 All
                 {getTabCount('all') > 0 && activeTab !== 'all' && (
-                  <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200 text-gray-700">
+                  <span className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                     {getTabCount('all')}
                   </span>
                 )}
@@ -951,13 +952,13 @@ const NotificationPage = () => {
                 className={`relative px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 ${
                   activeTab === 'unread'
                     ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30 scale-105'
-                    : 'text-gray-700 hover:bg-white hover:shadow-md'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 hover:shadow-md'
                 }`}
               >
                 Unread
                 {getTabCount('unread') > 0 && (
                   <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    activeTab === 'unread' ? 'bg-blue-800' : 'bg-red-100 text-red-700'
+                    activeTab === 'unread' ? 'bg-blue-800' : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
                   }`}>
                     {getTabCount('unread')}
                   </span>
@@ -968,14 +969,14 @@ const NotificationPage = () => {
                 className={`relative px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
                   activeTab === 'likes'
                     ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30 scale-105'
-                    : 'text-gray-700 hover:bg-white hover:shadow-md'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 hover:shadow-md'
                 }`}
               >
                 <Heart className="w-3.5 h-3.5" />
                 <span>Likes</span>
                 {getTabCount('likes') > 0 && (
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    activeTab === 'likes' ? 'bg-blue-800' : 'bg-pink-100 text-pink-700'
+                    activeTab === 'likes' ? 'bg-blue-800' : 'bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-400'
                   }`}>
                     {getTabCount('likes')}
                   </span>
@@ -986,14 +987,14 @@ const NotificationPage = () => {
                 className={`relative px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
                   activeTab === 'comments'
                     ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30 scale-105'
-                    : 'text-gray-700 hover:bg-white hover:shadow-md'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 hover:shadow-md'
                 }`}
               >
                 <MessageCircle className="w-3.5 h-3.5" />
                 <span>Comments</span>
                 {getTabCount('comments') > 0 && (
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    activeTab === 'comments' ? 'bg-blue-800' : 'bg-green-100 text-green-700'
+                    activeTab === 'comments' ? 'bg-blue-800' : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                   }`}>
                     {getTabCount('comments')}
                   </span>
@@ -1004,14 +1005,14 @@ const NotificationPage = () => {
                 className={`relative px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 ${
                   activeTab === 'follows'
                     ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/30 scale-105'
-                    : 'text-gray-700 hover:bg-white hover:shadow-md'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-700 hover:shadow-md'
                 }`}
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 <span>Follows</span>
                 {getTabCount('follows') > 0 && (
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    activeTab === 'follows' ? 'bg-blue-800' : 'bg-indigo-100 text-indigo-700'
+                    activeTab === 'follows' ? 'bg-blue-800' : 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400'
                   }`}>
                     {getTabCount('follows')}
                   </span>
@@ -1025,7 +1026,7 @@ const NotificationPage = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-2 text-sm border-none rounded-lg focus:outline-none bg-white hover:bg-gray-50 text-gray-700 font-semibold cursor-pointer appearance-none pr-8 shadow-sm transition-all"
+              className="px-4 py-2 text-sm border-none rounded-lg focus:outline-none bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold cursor-pointer appearance-none pr-8 shadow-sm transition-all"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%234b5563'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
                 backgroundRepeat: 'no-repeat',
@@ -1042,21 +1043,21 @@ const NotificationPage = () => {
         {/* Notifications List */}
         <div className="mt-6">
           {isLoading ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex items-center justify-center py-20">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 flex items-center justify-center py-20">
               <div className="text-center">
-                <Loader className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-3" />
-                <p className="text-sm text-gray-500">Loading notifications...</p>
+                <Loader className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400 mx-auto mb-3" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">Loading notifications...</p>
               </div>
             </div>
           ) : sortedNotifications.length === 0 ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 text-center py-20 px-4">
-              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-gray-100 to-gray-200 rounded-full flex items-center justify-center mb-4">
-                <Bell className="w-10 h-10 text-gray-400" />
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 text-center py-20 px-4">
+              <div className="w-20 h-20 mx-auto bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded-full flex items-center justify-center mb-4">
+                <Bell className="w-10 h-10 text-gray-400 dark:text-gray-500" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 {activeTab === 'unread' ? "All caught up!" : "No notifications yet"}
               </h3>
-              <p className="text-gray-500 text-sm max-w-sm mx-auto leading-relaxed">
+              <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto leading-relaxed">
                 {activeTab === 'unread' 
                   ? "You've read all your notifications. Check back later for new updates!"
                   : activeTab === 'all'

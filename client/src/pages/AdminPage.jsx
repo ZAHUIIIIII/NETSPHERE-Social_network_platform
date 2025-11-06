@@ -301,51 +301,51 @@ const AdminPage = ({ onBack } = {}) => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading admin dashboard...</p>
+          <p className="text-gray-600 dark:text-gray-300">Loading admin dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
       <div className="max-w-[1600px] mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-4">
             {onBack && (
-              <button onClick={onBack} className="p-2 rounded-md hover:bg-gray-100">
-                <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-700" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <button onClick={onBack} className="p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800">
+                <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-700 dark:text-gray-300" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </button>
             )}
 
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-lg bg-white border border-gray-200 flex items-center justify-center shadow-sm">
-                <svg viewBox="0 0 24 24" className="w-5 h-5 text-blue-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <div className="w-9 h-9 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center shadow-sm">
+                <svg viewBox="0 0 24 24" className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 2L15 5L12 8L9 5L12 2Z" fill="currentColor"/>
                   <path d="M12 8V14M8 14C8 16.2091 9.79086 18 12 18C14.2091 18 16 16.2091 16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   <circle cx="12" cy="20" r="2" fill="currentColor"/>
                 </svg>
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
-                <p className="text-xs text-gray-500">Manage users, content, and platform analytics</p>
+                <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Manage users, content, and platform analytics</p>
               </div>
             </div>
           </div>
 
                     <div className="flex items-center gap-2">
-            <button className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-              <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-700" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              <span className="text-sm font-medium text-gray-700">Export Data</span>
+            <button className="inline-flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+              <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-700 dark:text-gray-300" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Export Data</span>
             </button>
 
-            <button className="inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-              <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-700" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              <span className="text-sm font-medium text-gray-700">Settings</span>
+            <button className="inline-flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+              <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-700 dark:text-gray-300" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Settings</span>
             </button>
           </div>
         </div>
@@ -383,9 +383,9 @@ const AdminPage = ({ onBack } = {}) => {
                 {/* Enhanced ban modal */}
         {selectedUser && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all animate-slideUp">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg transform transition-all animate-slideUp">
               {/* Header */}
-              <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-t-2xl p-6">
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 dark:from-orange-600 dark:to-red-600 rounded-t-2xl p-6">
                 <div className="flex items-start gap-4">
                   <div className="flex-shrink-0 w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center">
                     <svg viewBox="0 0 24 24" className="w-7 h-7 text-white" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -394,7 +394,7 @@ const AdminPage = ({ onBack } = {}) => {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-white mb-1">Ban User</h3>
-                    <p className="text-orange-50 text-sm">{selectedUser.username} • {selectedUser.email}</p>
+                    <p className="text-orange-50 dark:text-orange-100 text-sm">{selectedUser.username} • {selectedUser.email}</p>
                   </div>
                   <button
                     onClick={() => {
@@ -412,14 +412,14 @@ const AdminPage = ({ onBack } = {}) => {
 
               {/* Content */}
               <div className="p-6">
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-4 mb-6">
                   <div className="flex gap-3">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                     <div>
-                      <p className="text-sm font-medium text-orange-900 mb-1">Permanent Action</p>
-                      <p className="text-xs text-orange-700">This user will be permanently banned and unable to access the platform. This action cannot be undone automatically.</p>
+                      <p className="text-sm font-medium text-orange-900 dark:text-orange-100 mb-1">Permanent Action</p>
+                      <p className="text-xs text-orange-700 dark:text-orange-300">This user will be permanently banned and unable to access the platform. This action cannot be undone automatically.</p>
                     </div>
                   </div>
                 </div>
@@ -427,13 +427,13 @@ const AdminPage = ({ onBack } = {}) => {
                 <div className="space-y-4">
                   {/* Common Reasons Dropdown */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
                       Quick Select
-                      <span className="ml-2 text-xs font-normal text-gray-500">(Optional)</span>
+                      <span className="ml-2 text-xs font-normal text-gray-500 dark:text-gray-400">(Optional)</span>
                     </label>
                     <div className="relative">
                       <select 
-                        className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm appearance-none cursor-pointer bg-white hover:bg-gray-50 transition-colors"
+                        className="w-full border border-gray-300 dark:border-gray-600 rounded-lg pl-10 pr-4 py-2.5 focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm appearance-none cursor-pointer bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                         onChange={(e) => {
                           if (e.target.value) {
                             setBanReason(e.target.value);
@@ -453,10 +453,10 @@ const AdminPage = ({ onBack } = {}) => {
                         <option value="Illegal activity">🚨 Illegal activity</option>
                         <option value="Account security concerns">🔒 Account security concerns</option>
                       </select>
-                      <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-400 dark:text-gray-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
-                      <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 dark:text-gray-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M19 9l-7 7-7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </div>
@@ -464,23 +464,23 @@ const AdminPage = ({ onBack } = {}) => {
                   
                   {/* Ban Reason Textarea */}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    <label className="block text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">
                       Ban Reason
-                      <span className="text-red-500 ml-1">*</span>
+                      <span className="text-red-500 dark:text-red-400 ml-1">*</span>
                     </label>
                     <div className="relative">
                       <textarea 
-                        className="w-full border-2 border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none transition-all" 
+                        className="w-full border-2 border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none transition-all" 
                         rows={4} 
                         value={banReason} 
                         onChange={(e) => setBanReason(e.target.value)}
                         placeholder="Describe why this user is being banned..."
                       />
-                      <div className="absolute bottom-3 right-3 text-xs text-gray-400">
+                      <div className="absolute bottom-3 right-3 text-xs text-gray-400 dark:text-gray-500">
                         {banReason.length}/500
                       </div>
                     </div>
-                    <p className="mt-2 text-xs text-gray-500 flex items-center gap-1">
+                    <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                       <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
@@ -491,9 +491,9 @@ const AdminPage = ({ onBack } = {}) => {
               </div>
 
               {/* Footer */}
-              <div className="bg-gray-50 rounded-b-2xl px-6 py-4 flex justify-end gap-3 border-t border-gray-200">
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-b-2xl px-6 py-4 flex justify-end gap-3 border-t border-gray-200 dark:border-gray-700">
                 <button 
-                  className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm" 
+                  className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 transition-all shadow-sm" 
                   onClick={() => {
                     setSelectedUser(null);
                     setBanReason('');

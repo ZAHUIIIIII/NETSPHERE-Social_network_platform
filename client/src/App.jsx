@@ -14,6 +14,7 @@ import AdminPage from './pages/AdminPage';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
 import { useNotificationStore } from './store/useNotificationStore';
+import { useThemeStore } from './store/useThemeStore';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { UserProvider } from './UserContext';
@@ -24,12 +25,14 @@ import {Toaster} from 'react-hot-toast';
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore();
   const { addNotification, setUnreadCount } = useNotificationStore();
+  const { initializeTheme } = useThemeStore();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     checkAuth();
-  }, [checkAuth]);
+    initializeTheme();
+  }, [checkAuth, initializeTheme]);
 
   // Real-time notification listener
   useEffect(() => {

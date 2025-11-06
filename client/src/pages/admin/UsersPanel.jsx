@@ -75,25 +75,25 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
   };
 
   return (
-    <div className="bg-gradient-to-br from-white to-gray-50/30 rounded-xl p-6 border border-gray-200/60 shadow-lg overflow-visible">
+    <div className="bg-gradient-to-br from-white to-gray-50/30 dark:from-gray-800 dark:to-gray-800/30 rounded-xl p-6 border border-gray-200/60 dark:border-gray-700/60 shadow-lg overflow-visible">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="font-bold text-xl text-gray-900 flex items-center gap-2">
-            <svg viewBox="0 0 24 24" className="w-6 h-6 text-blue-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <h3 className="font-bold text-xl text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <svg viewBox="0 0 24 24" className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             User Management
           </h3>
-          <p className="text-sm text-gray-600 mt-1">View and manage all platform users</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">View and manage all platform users</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 dark:text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
               <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             </svg>
             <input
-              className="border border-gray-300 pl-9 pr-4 py-2 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/50 w-56 bg-white hover:border-gray-400 transition-all shadow-sm"
+              className="border border-gray-300 dark:border-gray-600 pl-9 pr-4 py-2 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/50 w-56 bg-white dark:bg-gray-700 dark:text-gray-100 hover:border-gray-400 dark:hover:border-gray-500 transition-all shadow-sm"
               placeholder="Search users..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -103,10 +103,10 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
           <div className="relative">
             <button
               onClick={() => setFilterOpen(!filterOpen)}
-              className="border border-gray-300 px-4 py-2 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/50 flex items-center gap-2 bg-white hover:bg-gray-50 hover:border-gray-400 min-w-[140px] justify-between shadow-sm transition-all"
+              className="border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/50 flex items-center gap-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 min-w-[140px] justify-between shadow-sm transition-all"
             >
-              <span className="text-gray-700">{statusFilter}</span>
-              <svg viewBox="0 0 24 24" className={`w-4 h-4 text-gray-500 transition-transform ${filterOpen ? 'rotate-180' : ''}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+              <span className="text-gray-700 dark:text-gray-300">{statusFilter}</span>
+              <svg viewBox="0 0 24 24" className={`w-4 h-4 text-gray-500 dark:text-gray-400 transition-transform ${filterOpen ? 'rotate-180' : ''}`} fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
@@ -117,7 +117,7 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                   className="fixed inset-0 z-30" 
                   onClick={() => setFilterOpen(false)}
                 />
-                <div className="absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-40">
+                <div className="absolute right-0 mt-2 w-44 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-2 z-40">
                   {['All Users', 'Active', 'Suspended', 'Banned'].map(option => (
                     <button
                       key={option}
@@ -125,13 +125,13 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                         setStatusFilter(option);
                         setFilterOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 transition-colors flex items-center justify-between ${
-                        statusFilter === option ? 'text-blue-600 font-semibold bg-blue-50/50' : 'text-gray-700'
+                      className={`w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors flex items-center justify-between ${
+                        statusFilter === option ? 'text-blue-600 dark:text-blue-400 font-semibold bg-blue-50/50 dark:bg-blue-900/30' : 'text-gray-700 dark:text-gray-300'
                       }`}
                     >
                       <span>{option}</span>
                       {statusFilter === option && (
-                        <svg viewBox="0 0 24 24" className="w-4 h-4 text-blue-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       )}
@@ -144,46 +144,46 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
         </div>
       </div>
 
-      <div className="overflow-x-auto overflow-y-visible rounded-lg border border-gray-200 bg-white shadow-md">
+      <div className="overflow-x-auto overflow-y-visible rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-md">
         <table className="w-full text-left text-sm">
-          <thead className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+          <thead className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-900 border-b-2 border-gray-200 dark:border-gray-700">
             <tr>
-              <th className="py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider">User</th>
-              <th className="py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider text-center">Status</th>
-              <th className="py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider">Join Date</th>
-              <th className="py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider text-center">Posts</th>
-              <th className="py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider text-center">Followers</th>
-              <th className="py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider text-center">Following</th>
-              <th className="py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider">Last Active</th>
-              <th className="py-4 px-4 text-xs font-bold text-gray-700 uppercase tracking-wider text-right">Actions</th>
+              <th className="py-4 px-4 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">User</th>
+              <th className="py-4 px-4 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-center">Status</th>
+              <th className="py-4 px-4 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Join Date</th>
+              <th className="py-4 px-4 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-center">Posts</th>
+              <th className="py-4 px-4 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-center">Followers</th>
+              <th className="py-4 px-4 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-center">Following</th>
+              <th className="py-4 px-4 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Last Active</th>
+              <th className="py-4 px-4 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="relative divide-y divide-gray-100">
+          <tbody className="relative divide-y divide-gray-100 dark:divide-gray-700">
             {filtered.map((u, index) => (
-              <tr key={u._id || u.id} className="hover:bg-blue-50/30 transition-all duration-150 group">{/* Check if this is one of the last 2 rows */}
+              <tr key={u._id || u.id} className="hover:bg-blue-50/30 dark:hover:bg-gray-700/50 transition-all duration-150 group">{/* Check if this is one of the last 2 rows */}
                 <td className="py-4 px-4">
                   <div className="flex items-center gap-3">
                     {u.avatar ? (
                       <img 
                         src={u.avatar} 
                         alt={u.username || 'User'} 
-                        className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-200 group-hover:ring-blue-300 transition-all"
+                        className="w-10 h-10 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-blue-300 transition-all"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm ring-2 ring-gray-200 group-hover:ring-blue-300 transition-all shadow-sm">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-blue-300 transition-all shadow-sm">
                         {u.username?.charAt(0).toUpperCase() || '?'}
                       </div>
                     )}
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-gray-900 text-sm">{u.username || 'Unknown'}</span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{u.username || 'Unknown'}</span>
                         {u.verified && (
-                          <svg viewBox="0 0 24 24" className="w-4 h-4 text-blue-500" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                          <svg viewBox="0 0 24 24" className="w-4 h-4 text-blue-500 dark:text-blue-400" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                             <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                           </svg>
                         )}
                       </div>
-                      <div className="text-xs text-gray-500">{u.email || 'N/A'}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">{u.email || 'N/A'}</div>
                     </div>
                   </div>
                 </td>
@@ -202,29 +202,29 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                       {u.status || 'active'}
                     </span>
                     {u.status === 'suspended' && u.suspendedUntil && (
-                      <span className="text-xs text-gray-600 text-center font-medium">
+                      <span className="text-xs text-gray-600 dark:text-gray-400 text-center font-medium">
                         Until {new Date(u.suspendedUntil).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
                     )}
                   </div>
                 </td>
-                <td className="py-4 px-4 text-gray-700 text-sm font-medium">{u.joinDate || 'N/A'}</td>
-                <td className="py-4 px-4 text-gray-800 text-sm text-center font-bold">
-                  <span className="inline-flex items-center justify-center min-w-[32px] h-7 px-2 rounded-md bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700">
+                <td className="py-4 px-4 text-gray-700 dark:text-gray-300 text-sm font-medium">{u.joinDate || 'N/A'}</td>
+                <td className="py-4 px-4 text-gray-800 dark:text-gray-200 text-sm text-center font-bold">
+                  <span className="inline-flex items-center justify-center min-w-[32px] h-7 px-2 rounded-md bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-900/30 text-purple-700 dark:text-purple-400">
                     {u.postCount || u.posts || 0}
                   </span>
                 </td>
-                <td className="py-4 px-4 text-gray-800 text-sm text-center font-bold">
-                  <span className="inline-flex items-center justify-center min-w-[32px] h-7 px-2 rounded-md bg-gradient-to-r from-green-50 to-green-100 text-green-700">
+                <td className="py-4 px-4 text-gray-800 dark:text-gray-200 text-sm text-center font-bold">
+                  <span className="inline-flex items-center justify-center min-w-[32px] h-7 px-2 rounded-md bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-900/30 text-green-700 dark:text-green-400">
                     {u.followersCount || u.followers?.toLocaleString() || 0}
                   </span>
                 </td>
-                <td className="py-4 px-4 text-gray-800 text-sm text-center font-bold">
-                  <span className="inline-flex items-center justify-center min-w-[32px] h-7 px-2 rounded-md bg-gradient-to-r from-cyan-50 to-cyan-100 text-cyan-700">
+                <td className="py-4 px-4 text-gray-800 dark:text-gray-200 text-sm text-center font-bold">
+                  <span className="inline-flex items-center justify-center min-w-[32px] h-7 px-2 rounded-md bg-gradient-to-r from-cyan-50 to-cyan-100 dark:from-cyan-900/30 dark:to-cyan-900/30 text-cyan-700 dark:text-cyan-400">
                     {u.followingCount || u.following?.toLocaleString() || 0}
                   </span>
                 </td>
-                <td className="py-4 px-4 text-gray-700 text-sm font-medium">{formatLastActive(u.lastActive)}</td>
+                <td className="py-4 px-4 text-gray-700 dark:text-gray-300 text-sm font-medium">{formatLastActive(u.lastActive)}</td>
                 <td className="py-4 px-4 text-right">
                   <PortalDropdown
                     isOpen={openDropdown === (u._id || u.id)}
@@ -236,9 +236,9 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                           e.stopPropagation();
                           setOpenDropdown(openDropdown === (u._id || u.id) ? null : (u._id || u.id));
                         }}
-                        className="inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 transition-all group-hover:bg-blue-50"
+                        className="inline-flex items-center justify-center w-9 h-9 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all group-hover:bg-blue-50 dark:group-hover:bg-gray-700"
                       >
-                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-600 group-hover:text-blue-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <circle cx="12" cy="12" r="1" fill="currentColor"/>
                           <circle cx="12" cy="5" r="1" fill="currentColor"/>
                           <circle cx="12" cy="19" r="1" fill="currentColor"/>
@@ -247,8 +247,8 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                     }
                     className="overflow-hidden"
                   >
-                          <div className="px-4 py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-                            <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Actions</span>
+                          <div className="px-4 py-2.5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-900 border-b border-gray-200 dark:border-gray-700">
+                            <span className="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Actions</span>
                           </div>
                           
                           <div className="py-1.5">
@@ -257,9 +257,9 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                                 setShowDetailsModal(u);
                                 setOpenDropdown(null);
                               }}
-                              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-3 transition-all group"
+                              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400 flex items-center gap-3 transition-all group"
                             >
-                              <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 group-hover:text-blue-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke="currentColor" strokeWidth="2"/>
                                 <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke="currentColor" strokeWidth="2"/>
                               </svg>
@@ -269,9 +269,9 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                             {u.status === 'active' ? (
                               <button
                                 onClick={() => handleSuspendClick(u)}
-                                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 flex items-center gap-3 transition-all group"
+                                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 hover:text-yellow-700 dark:hover:text-yellow-400 flex items-center gap-3 transition-all group"
                               >
-                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-yellow-500 group-hover:text-yellow-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-yellow-500 dark:text-yellow-400 group-hover:text-yellow-600 dark:group-hover:text-yellow-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
                                   <path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                                 </svg>
@@ -286,9 +286,9 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                                   confirmText: 'Activate',
                                   confirmClass: 'bg-green-600 hover:bg-green-700'
                                 })}
-                                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 flex items-center gap-3 transition-all group"
+                                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-400 flex items-center gap-3 transition-all group"
                               >
-                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-green-500 group-hover:text-green-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-green-500 dark:text-green-400 group-hover:text-green-600 dark:group-hover:text-green-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
                                   <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
@@ -303,9 +303,9 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                                   confirmText: 'Unban User',
                                   confirmClass: 'bg-green-600 hover:bg-green-700'
                                 })}
-                                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 flex items-center gap-3 transition-all group"
+                                className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-green-50 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-400 flex items-center gap-3 transition-all group"
                               >
-                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-green-500 group-hover:text-green-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-green-500 dark:text-green-400 group-hover:text-green-600 dark:group-hover:text-green-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                                   <path d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                                 </svg>
                                 <span className="font-medium">Unban User</span>
@@ -317,9 +317,9 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                                 setOpenDropdown(null);
                                 setSelectedUser(u);
                               }}
-                              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700 flex items-center gap-3 transition-all group"
+                              className="w-full text-left px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-orange-50 dark:hover:bg-orange-900/30 hover:text-orange-700 dark:hover:text-orange-400 flex items-center gap-3 transition-all group"
                             >
-                              <svg viewBox="0 0 24 24" className="w-4 h-4 text-orange-500 group-hover:text-orange-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <svg viewBox="0 0 24 24" className="w-4 h-4 text-orange-500 dark:text-orange-400 group-hover:text-orange-600 dark:group-hover:text-orange-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
                                 <path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                               </svg>
@@ -327,7 +327,7 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                             </button>
                           </div>
                           
-                          <div className="border-t border-gray-200" />
+                          <div className="border-t border-gray-200 dark:border-gray-700" />
                           
                           <div className="py-1.5">
                             <button
@@ -340,9 +340,9 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                                 requiresConfirmation: true,
                                 confirmationText: u.username
                               })}
-                              className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-all font-semibold group"
+                              className="w-full text-left px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-3 transition-all font-semibold group"
                             >
-                              <svg viewBox="0 0 24 24" className="w-4 h-4 text-red-600" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <svg viewBox="0 0 24 24" className="w-4 h-4 text-red-600 dark:text-red-400" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                               </svg>
                               <span>Delete User</span>

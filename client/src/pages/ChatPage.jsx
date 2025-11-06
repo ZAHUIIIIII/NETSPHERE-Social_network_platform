@@ -34,9 +34,9 @@ const ChatPage = () => {
   }, [location.state, selectedUser, setSelectedUser, getMessages, navigate, location.pathname]);
 
   return (
-   <div className='h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50'>
+   <div className='h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800'>
     <div className='flex h-full max-w-7xl mx-auto'>
-      <div className='flex h-full w-full bg-white/80 backdrop-blur-sm shadow-2xl rounded-none lg:rounded-xl overflow-hidden border border-white/20'>
+      <div className='flex h-full w-full bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-2xl rounded-none lg:rounded-xl overflow-hidden border border-white/20 dark:border-gray-700/20'>
         <Sidebar />
         {!selectedUser ? <NoChatSelected /> : <ChatContainer />}
       </div>

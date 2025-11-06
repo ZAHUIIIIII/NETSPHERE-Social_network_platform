@@ -64,17 +64,17 @@ const StatsCards = ({ stats }) => {
       {stats.map((s) => {
         const { svg, bg, color } = IconFor(s.title);
         return (
-          <div key={s.title} className="relative p-4 bg-white rounded-lg shadow-sm border border-gray-100 flex flex-col hover:shadow-md transition-shadow">
+          <div key={s.title} className="relative p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center justify-center">
-                {svg && React.cloneElement(svg, { className: `${color} w-5 h-5` })}
+                {svg && React.cloneElement(svg, { className: `${color} dark:opacity-90 w-5 h-5` })}
               </div>
-              <span className={`text-xs font-semibold ${s.change.startsWith('+') ? 'text-green-600' : s.change.startsWith('-') ? 'text-red-600' : 'text-gray-600'}`}>{s.change}</span>
+              <span className={`text-xs font-semibold ${s.change.startsWith('+') ? 'text-green-600 dark:text-green-400' : s.change.startsWith('-') ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>{s.change}</span>
             </div>
 
             <div>
-              <p className="text-xs font-medium text-gray-600 mb-1">{s.title}</p>
-              <p className="text-xl font-bold text-gray-900">{s.value}</p>
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{s.title}</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{s.value}</p>
             </div>
           </div>
         );

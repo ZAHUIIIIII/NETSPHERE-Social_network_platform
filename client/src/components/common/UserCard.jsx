@@ -33,7 +33,7 @@ const UserCard = ({ user, showFollowButton = true, onFollowChange }) => {
   };
 
   return (
-    <div className="group px-4 py-3 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 transition-all duration-300">
+    <div className="group px-4 py-3 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-purple-50/50 dark:hover:from-blue-900/20 dark:hover:to-purple-900/20 transition-all duration-300">
       <div className="flex items-center justify-between gap-3">
         <div
           className="flex items-center gap-3 flex-1 cursor-pointer min-w-0"
@@ -46,10 +46,10 @@ const UserCard = ({ user, showFollowButton = true, onFollowChange }) => {
               <img
                 src={user.avatar}
                 alt={user.username}
-                className="relative w-12 h-12 rounded-full object-cover ring-2 ring-gray-200 group-hover:ring-blue-300 transition-all duration-300"
+                className="relative w-12 h-12 rounded-full object-cover ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-blue-300 dark:group-hover:ring-blue-500 transition-all duration-300"
               />
             ) : (
-              <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center ring-2 ring-gray-200 group-hover:ring-blue-300 transition-all duration-300">
+              <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center ring-2 ring-gray-200 dark:ring-gray-700 group-hover:ring-blue-300 dark:group-hover:ring-blue-500 transition-all duration-300">
                 <span className="text-white font-bold text-lg">
                   {user.username?.charAt(0).toUpperCase()}
                 </span>
@@ -59,19 +59,19 @@ const UserCard = ({ user, showFollowButton = true, onFollowChange }) => {
 
           {/* User Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors duration-200">
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
               {user.username}
             </h3>
             {user.bio && (
-              <p className="text-sm text-gray-600 truncate leading-tight">
+              <p className="text-sm text-gray-600 dark:text-gray-400 truncate leading-tight">
                 {user.bio}
               </p>
             )}
             {user.followersCount !== undefined && (
               <p className={`text-xs mt-0.5 transition-all duration-300 ${
                 countChanged 
-                  ? 'text-blue-600 font-semibold animate-pulse-once' 
-                  : 'text-gray-500'
+                  ? 'text-blue-600 dark:text-blue-400 font-semibold animate-pulse-once' 
+                  : 'text-gray-500 dark:text-gray-400'
               }`}>
                 {user.followersCount === 0 ? 'No followers yet' : 
                  user.followersCount === 1 ? '1 follower' : 

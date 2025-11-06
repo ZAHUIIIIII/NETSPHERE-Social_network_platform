@@ -33,15 +33,15 @@ const ChatContainer = () => {
   // Safety check for required data
   if (!selectedUser || !authUser) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-gray-50/30 to-white/30">
-        <div className="text-gray-500">Loading...</div>
+      <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-gray-50/30 to-white/30 dark:from-gray-800/30 dark:to-gray-900/30">
+        <div className="text-gray-500 dark:text-gray-400">Loading...</div>
       </div>
     );
   }
 
   if (isMessagesLoading) {
     return (
-      <div className="flex-1 flex flex-col overflow-auto bg-gradient-to-b from-gray-50/50 to-white/50">
+      <div className="flex-1 flex flex-col overflow-auto bg-gradient-to-b from-gray-50/50 to-white/50 dark:from-gray-800/50 dark:to-gray-900/50">
         <ChatHeader />
         <MessageSkeleton />
         <MessageInput />
@@ -50,16 +50,16 @@ const ChatContainer = () => {
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-auto bg-gradient-to-b from-gray-50/30 to-white/30">
+    <div className="flex-1 flex flex-col overflow-auto bg-gradient-to-b from-gray-50/30 to-white/30 dark:from-gray-800/30 dark:to-gray-900/30">
       <ChatHeader />
 
       {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 bg-gradient-to-b from-blue-50/10 via-white/30 to-gray-50/10">
+      <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 bg-gradient-to-b from-blue-50/10 via-white/30 to-gray-50/10 dark:from-blue-900/10 dark:via-gray-800/30 dark:to-gray-900/10">
         {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500">
+          <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
             <div className="text-6xl mb-4">💬</div>
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">Start a conversation</h3>
-            <p className="text-sm text-gray-500 text-center max-w-sm">
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-2">Start a conversation</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center max-w-sm">
               Send your first message to {selectedUser?.username || "this user"} to get the conversation started!
             </p>
           </div>
@@ -88,7 +88,7 @@ const ChatContainer = () => {
               >
                 {/* Message time - positioned above the message */}
                 {showAvatar && (
-                  <div className={`text-xs text-gray-400 mb-2 px-2 ${
+                  <div className={`text-xs text-gray-400 dark:text-gray-500 mb-2 px-2 ${
                     isMyMessage ? "text-right" : "text-left"
                   }`}>
                     {formatMessageTime(message.createdAt)}
@@ -105,7 +105,7 @@ const ChatContainer = () => {
                           <img
                             src={selectedUser?.avatar || "/avatar.png"}
                             alt={selectedUser?.username || "User"}
-                            className="w-8 h-8 rounded-full border-2 border-white shadow-sm object-cover"
+                            className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-700 shadow-sm object-cover"
                             onError={(e) => {
                               e.target.src = "/avatar.png";
                             }}
@@ -121,8 +121,8 @@ const ChatContainer = () => {
                   <div
                     className={`relative max-w-md ${
                       isMyMessage
-                        ? "bg-blue-500 text-white"
-                        : "bg-white text-gray-800 border border-gray-100 shadow-sm"
+                        ? "bg-blue-500 dark:bg-blue-600 text-white"
+                        : "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-gray-600 shadow-sm"
                     } rounded-2xl px-4 py-3`}
                   >
                     {/* Message content */}
@@ -150,8 +150,8 @@ const ChatContainer = () => {
                     <div
                       className={`absolute bottom-3 w-3 h-3 ${
                         isMyMessage
-                          ? "-right-1 bg-blue-500 transform rotate-45"
-                          : "-left-1 bg-white border-l border-b border-gray-100 transform rotate-45"
+                          ? "-right-1 bg-blue-500 dark:bg-blue-600 transform rotate-45"
+                          : "-left-1 bg-white dark:bg-gray-700 border-l border-b border-gray-100 dark:border-gray-600 transform rotate-45"
                       }`}
                     />
                   </div>
@@ -164,7 +164,7 @@ const ChatContainer = () => {
                           <img
                             src={authUser?.avatar || "/avatar.png"}
                             alt={authUser?.username || "You"}
-                            className="w-8 h-8 rounded-full border-2 border-white shadow-sm object-cover"
+                            className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-700 shadow-sm object-cover"
                             onError={(e) => {
                               e.target.src = "/avatar.png";
                             }}

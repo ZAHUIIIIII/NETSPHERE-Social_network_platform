@@ -22,7 +22,7 @@ const TabNav = ({ activeTab, setActiveTab }) => {
   const tabs = ['overview', 'users', 'posts', 'reports', 'analytics'];
   return (
     <div className="w-full mb-4">
-      <div className="bg-gray-100 rounded-full border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-gray-100 dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
         <div className="grid grid-cols-5">
           {tabs.map((tab, index) => (
             <button
@@ -30,8 +30,8 @@ const TabNav = ({ activeTab, setActiveTab }) => {
               onClick={() => setActiveTab(tab)}
               className={`relative flex items-center justify-center gap-2 px-4 py-2 text-sm transition-all ${
                 activeTab === tab 
-                  ? 'bg-white text-gray-900 font-semibold shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900 font-medium'
+                  ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 font-semibold shadow-sm' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 font-medium'
               } ${index === 0 ? 'rounded-l-full' : ''} ${index === tabs.length - 1 ? 'rounded-r-full' : ''}`}
             >
               {ICONS[tab]}

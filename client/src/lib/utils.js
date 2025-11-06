@@ -1,7 +1,17 @@
 // Format time for posts/comments (relative time)
 export function formatTime(date) {
+  // Handle invalid or missing date
+  if (!date) return 'just now';
+  
   const now = new Date();
   const targetDate = new Date(date);
+  
+  // Check if date is invalid
+  if (isNaN(targetDate.getTime())) {
+    console.error('Invalid date passed to formatTime:', date);
+    return 'just now';
+  }
+  
   const diffMs = now - targetDate;
   const diffMins = Math.floor(diffMs / 60000);
   const diffHours = Math.floor(diffMs / 3600000);
@@ -12,11 +22,16 @@ export function formatTime(date) {
   if (diffHours < 24) return `${diffHours}h`;
   if (diffDays < 7) return `${diffDays}d`;
   
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: targetDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
-  }).format(targetDate);
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: targetDate.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    }).format(targetDate);
+  } catch (error) {
+    console.error('Error formatting date:', error);
+    return 'just now';
+  }
 }
 
 // Format time for messages (in chat) - detailed time

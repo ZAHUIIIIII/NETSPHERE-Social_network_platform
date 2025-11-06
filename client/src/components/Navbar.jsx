@@ -5,6 +5,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { useNotificationStore } from '../store/useNotificationStore';
 import { useChatStore } from '../store/useChatStore';
 import CreatePostModal from './CreatePostModal';
+import ThemeToggle from './common/ThemeToggle';
 
 const Navbar = ({ isCollapsed, setIsCollapsed }) => {
   const { authUser, logout } = useAuthStore();
@@ -46,36 +47,42 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
   }
 
   return (
-    <nav className={`fixed left-0 top-0 h-full ${isCollapsed ? 'w-20' : 'w-64'} bg-white border-r border-gray-200 shadow-lg z-50 transition-all duration-300`}>
+    <nav className={`fixed left-0 top-0 h-full ${isCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-lg z-50 transition-all duration-300`}>
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             {isCollapsed ? (
-              <button
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="flex items-center justify-center w-full p-1 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-            ) : (
-              <>
-                <Link to="/" className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">N</span>
-                  </div>
-                  <span className="font-bold text-lg text-blue-600">NETSPHERE</span>
-                </Link>
+              <div className="flex flex-col items-center space-y-2 w-full">
                 <button
                   onClick={() => setIsCollapsed(!isCollapsed)}
-                  className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center justify-center w-full p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                 >
-                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
+                <ThemeToggle />
+              </div>
+            ) : (
+              <>
+                <Link to="/" className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-600 dark:bg-blue-500 rounded-lg flex items-center justify-center">
+                    <span className="text-white font-bold text-sm">N</span>
+                  </div>
+                  <span className="font-bold text-lg text-blue-600 dark:text-blue-400">NETSPHERE</span>
+                </Link>
+                <div className="flex items-center space-x-2">
+                  <ThemeToggle />
+                  <button
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -85,7 +92,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
         <div className="p-3">
           <button 
             onClick={() => setShowCreatePost(true)}
-            className={`w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-3 rounded-lg transition-colors flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}
+            className={`w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 py-2 px-3 rounded-lg transition-colors flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}
           >
             <span className="text-lg">+</span>
             {!isCollapsed && <span className="font-medium">Create Post</span>}
@@ -99,8 +106,8 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
               to="/" 
               className={`flex items-center px-3 py-2 rounded-lg transition-colors ${isCollapsed ? 'justify-center' : 'space-x-3'} ${
                 location.pathname === '/' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'hover:bg-gray-100 text-gray-700'
+                  ? 'bg-blue-600 dark:bg-blue-500 text-white' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'
               }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,8 +120,8 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
               to="/search" 
               className={`flex items-center px-3 py-2 rounded-lg transition-colors ${isCollapsed ? 'justify-center' : 'space-x-3'} ${
                 location.pathname === '/search' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'hover:bg-gray-100 text-gray-700'
+                  ? 'bg-blue-600 dark:bg-blue-500 text-white' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'
               }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,8 +134,8 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
               to="/messages" 
               className={`flex items-center px-3 py-2 rounded-lg transition-colors relative ${isCollapsed ? 'justify-center' : 'space-x-3'} ${
                 location.pathname === '/messages' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'hover:bg-gray-100 text-gray-700'
+                  ? 'bg-blue-600 dark:bg-blue-500 text-white' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'
               }`}
             >
               <div className="relative">
@@ -154,8 +161,8 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
               to="/notifications" 
               className={`flex items-center px-3 py-2 rounded-lg transition-colors relative ${isCollapsed ? 'justify-center' : 'space-x-3'} ${
                 location.pathname === '/notifications' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'hover:bg-gray-100 text-gray-700'
+                  ? 'bg-blue-600 dark:bg-blue-500 text-white' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'
               }`}
             >
               <div className="relative">
@@ -181,8 +188,8 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
               to="/profile" 
               className={`flex items-center px-3 py-2 rounded-lg transition-colors ${isCollapsed ? 'justify-center' : 'space-x-3'} ${
                 location.pathname === '/profile' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'hover:bg-gray-100 text-gray-700'
+                  ? 'bg-blue-600 dark:bg-blue-500 text-white' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'
               }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -195,8 +202,8 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
               to="/settings" 
               className={`flex items-center px-3 py-2 rounded-lg transition-colors ${isCollapsed ? 'justify-center' : 'space-x-3'} ${
                 location.pathname === '/settings' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'hover:bg-gray-100 text-gray-700'
+                  ? 'bg-blue-600 dark:bg-blue-500 text-white' 
+                  : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'
               }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -212,8 +219,8 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
                 to="/admin" 
                 className={`flex items-center px-3 py-2 rounded-lg transition-colors ${isCollapsed ? 'justify-center' : 'space-x-3'} ${
                   location.pathname === '/admin' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'hover:bg-gray-100 text-gray-700'
+                    ? 'bg-blue-600 dark:bg-blue-500 text-white' 
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'
                 }`}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -226,7 +233,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
         </div>
 
         {/* User Profile & Logout */}
-        <div className="p-3 border-t border-gray-200">
+        <div className="p-3 border-t border-gray-200 dark:border-gray-700">
           {!isCollapsed && (
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-8 h-8 rounded-full overflow-hidden relative">
@@ -248,8 +255,8 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
                 </div>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-gray-900 text-sm truncate">{authUser.username}</p>
-                <p className="text-xs text-gray-500 truncate">{authUser.email}</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">{authUser.username}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{authUser.email}</p>
               </div>
             </div>
           )}
@@ -279,7 +286,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
           
           <button
             onClick={handleLogout}
-            className={`w-full bg-red-600 text-white py-2 px-3 rounded-lg hover:bg-red-700 transition-colors flex items-center ${isCollapsed ? 'justify-center' : 'justify-center space-x-2'}`}
+            className={`w-full bg-red-600 dark:bg-red-500 text-white py-2 px-3 rounded-lg hover:bg-red-700 dark:hover:bg-red-600 transition-colors flex items-center ${isCollapsed ? 'justify-center' : 'justify-center space-x-2'}`}
             title="Logout"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

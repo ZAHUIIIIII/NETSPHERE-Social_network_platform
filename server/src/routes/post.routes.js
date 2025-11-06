@@ -13,7 +13,10 @@ const storage = multer.memoryStorage(); //
 
 const upload = multer({ 
   storage: storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit
+  limits: { 
+    fileSize: 10 * 1024 * 1024, // 10MB per file limit
+    files: 10 // Maximum 10 files
+  },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith('image/')) {
       cb(null, true);
@@ -23,10 +26,24 @@ const upload = multer({
   }
 });
 
+// Multer error handler middleware
+const handleMulterError = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ message: 'File size exceeds 10MB limit' });
+    }
+    if (err.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({ message: 'Too many files. Maximum 10 files allowed' });
+    }
+    return res.status(400).json({ message: err.message });
+  }
+  next(err);
+};
+
 // Post routes
 router.get('/', protectRoute, filterBlockedUsers, postController.getAllPosts);
 router.get('/saved', protectRoute, filterBlockedUsers, postController.getSavedPosts);
-router.post('/upload', protectRoute, upload.array('images', 10), postController.uploadImages);
+router.post('/upload', protectRoute, upload.array('images', 10), handleMulterError, postController.uploadImages);
 router.get('/user/:userId', protectRoute, filterBlockedUsers, getUserPosts);
 
 // Specific routes before generic :postId routes to avoid conflicts

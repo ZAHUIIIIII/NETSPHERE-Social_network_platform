@@ -72,9 +72,9 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
 
     const validFiles = files.filter(file => {
       const isValid = file.type.startsWith('image/');
-      const isUnderLimit = file.size <= 5 * 1024 * 1024; // 5MB
+      const isUnderLimit = file.size <= 10 * 1024 * 1024; // 10MB
       if (!isValid) toast.error(`${file.name} is not an image`);
-      if (!isUnderLimit) toast.error(`${file.name} exceeds 5MB limit`);
+      if (!isUnderLimit) toast.error(`${file.name} exceeds 10MB limit`);
       return isValid && isUnderLimit;
     });
 
@@ -185,18 +185,18 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
         }
       }}
     >
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Edit Post
           </h2>
           <button
             onClick={onClose}
             disabled={isUpdating}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors disabled:opacity-50"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-50"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 text-gray-700 dark:text-gray-300" />
           </button>
         </div>
 
@@ -210,11 +210,11 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
               className="w-10 h-10 rounded-full object-cover"
             />
             <div>
-              <p className="font-semibold text-gray-900">{post.author?.username}</p>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">{post.author?.username}</p>
               <select
                 value={privacy}
                 onChange={(e) => setPrivacy(e.target.value)}
-                className="text-xs bg-gray-100 rounded-full px-3 py-1 border-none focus:ring-2 focus:ring-blue-500"
+                className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-full px-3 py-1 border-none focus:ring-2 focus:ring-blue-500"
                 disabled={isUpdating}
               >
                 {privacyOptions.map(option => (
@@ -232,13 +232,13 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder={`What's on your mind, ${post.author?.username}?`}
-            className="w-full min-h-[120px] max-h-[300px] text-lg resize-none focus:outline-none placeholder-gray-400"
+            className="w-full min-h-[120px] max-h-[300px] text-lg resize-none focus:outline-none placeholder-gray-400 dark:placeholder-gray-500 bg-transparent text-gray-900 dark:text-gray-100"
             maxLength={maxCharacters}
             disabled={isUpdating}
           />
 
           {/* Character count */}
-          <div className="text-right text-xs text-gray-500 mt-1">
+          <div className="text-right text-xs text-gray-500 dark:text-gray-400 mt-1">
             {content.length}/{maxCharacters}
           </div>
 
@@ -246,12 +246,12 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
           {(feeling || location) && (
             <div className="flex flex-wrap gap-2 mt-3">
               {feeling && (
-                <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm">
+                <span className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-3 py-1 rounded-full text-sm">
                   <Smile className="w-4 h-4" />
                   feeling {feeling}
                   <button
                     onClick={() => setFeeling('')}
-                    className="ml-1 hover:bg-blue-100 rounded-full p-0.5"
+                    className="ml-1 hover:bg-blue-100 dark:hover:bg-blue-800/50 rounded-full p-0.5"
                     disabled={isUpdating}
                   >
                     <X className="w-3 h-3" />
@@ -259,12 +259,12 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
                 </span>
               )}
               {location && (
-                <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm">
+                <span className="inline-flex items-center gap-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full text-sm">
                   <MapPin className="w-4 h-4" />
                   at {location}
                   <button
                     onClick={() => setLocation('')}
-                    className="ml-1 hover:bg-green-100 rounded-full p-0.5"
+                    className="ml-1 hover:bg-green-100 dark:hover:bg-green-800/50 rounded-full p-0.5"
                     disabled={isUpdating}
                   >
                     <X className="w-3 h-3" />
@@ -299,26 +299,26 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
           {/* Upload Progress */}
           {isUpdating && uploadProgress > 0 && (
             <div className="mt-4">
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  className="bg-blue-600 dark:bg-blue-500 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
                 Uploading... {uploadProgress}%
               </p>
             </div>
           )}
 
           {/* Add to Post Options */}
-          <div className="mt-4 border border-gray-300 rounded-lg p-3">
+          <div className="mt-4 border border-gray-300 dark:border-gray-600 rounded-lg p-3">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-gray-700">Add to your post</span>
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Add to your post</span>
               <div className="flex items-center gap-2">
                 {/* Image Upload */}
-                <label className="cursor-pointer p-2 hover:bg-gray-100 rounded-full transition-colors">
-                  <ImageIcon className="w-5 h-5 text-green-600" />
+                <label className="cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+                  <ImageIcon className="w-5 h-5 text-green-600 dark:text-green-500" />
                   <input
                     type="file"
                     accept="image/*"
@@ -333,14 +333,14 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
                 <div className="relative">
                   <button
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                     disabled={isUpdating}
                   >
-                    <Smile className="w-5 h-5 text-yellow-600" />
+                    <Smile className="w-5 h-5 text-yellow-600 dark:text-yellow-500" />
                   </button>
                   {showEmojiPicker && (
-                    <div className="absolute right-0 bottom-full mb-2 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 w-64">
-                      <p className="text-xs font-semibold text-gray-700 mb-2">How are you feeling?</p>
+                    <div className="absolute right-0 bottom-full mb-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 z-10 w-64">
+                      <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">How are you feeling?</p>
                       <div className="grid grid-cols-4 gap-2">
                         {feelings.map((f) => (
                           <button
@@ -349,10 +349,10 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
                               setFeeling(f.label);
                               setShowEmojiPicker(false);
                             }}
-                            className="flex flex-col items-center gap-1 p-2 hover:bg-gray-100 rounded-lg"
+                            className="flex flex-col items-center gap-1 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
                           >
                             <span className="text-2xl">{f.emoji}</span>
-                            <span className="text-xs text-gray-600">{f.label}</span>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{f.label}</span>
                           </button>
                         ))}
                       </div>
@@ -367,10 +367,10 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
                       const loc = prompt('Enter location:', location);
                       if (loc !== null) setLocation(loc);
                     }}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                     disabled={isUpdating}
                   >
-                    <MapPin className="w-5 h-5 text-red-600" />
+                    <MapPin className="w-5 h-5 text-red-600 dark:text-red-500" />
                   </button>
                 </div>
               </div>
@@ -379,7 +379,7 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-4">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-4">
           <button
             onClick={handleSubmit}
             disabled={isUpdating || (!content.trim() && visibleImages.length === 0)}
