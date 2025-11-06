@@ -15,8 +15,7 @@ import {
   uploadPostImages,
   savePost as savePostAPI,
   checkPostSaved,
-  reactToPost as reactToPostAPI,
-  repostPost as repostPostAPI
+  reactToPost as reactToPostAPI
 } from "../services/api";
 
 import axiosInstance from "../lib/axios";
@@ -440,6 +439,7 @@ const CreatePostQuick = ({ onExpand, user }) => {
 // Enhanced Post Card Component  
 const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpdate }) => {
   const navigate = useNavigate();
+  const { socket } = useAuthStore();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [userReaction, setUserReaction] = useState(null);
@@ -450,9 +450,6 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
   const [loadingCommentCount, setLoadingCommentCount] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [reposted, setReposted] = useState(false);
-  const [repostCount, setRepostCount] = useState(0);
-  const [isReposting, setIsReposting] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -463,6 +460,14 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
   const [loadingLikes, setLoadingLikes] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [hasReposted, setHasReposted] = useState(post.hasReposted || false);
+  const [repostCount, setRepostCount] = useState(post.repostCount || 0);
+
+  useEffect(() => {
+    // Initialize repost status from post data
+    setHasReposted(post.hasReposted || false);
+    setRepostCount(post.repostCount || 0);
+  }, [post.hasReposted, post.repostCount]);
 
   useEffect(() => {
     // Initialize reactions from post data
@@ -491,16 +496,12 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
       setLikeCount(post.likes?.length || 0);
     }
     
-    // Initialize repost state
-    setReposted(post.reposts?.includes(currentUser?._id) || false);
-    setRepostCount(post.repostCount || 0);
-    
     // Fetch accurate comment count on mount
     fetchInitialCommentCount();
     
     // Check if post is saved
     checkIfSaved();
-  }, [post.likes, post.reactions, post.comments, post.reposts, currentUser, post._id]);
+  }, [post.likes, post.reactions, post.comments, currentUser, post._id]);
 
   const fetchInitialCommentCount = async () => {
     try {
@@ -622,30 +623,51 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
     }
   };
 
-  const handleRepost = async () => {
-    if (isReposting) return;
-    
+  const handleCopyLink = async () => {
     try {
-      setIsReposting(true);
-      const response = await repostPostAPI(post._id);
-      
-      if (response.reposted) {
-        setReposted(true);
-        setRepostCount(prev => prev + 1);
-        toast.success('Post reposted!');
-      } else {
-        setReposted(false);
-        setRepostCount(prev => Math.max(0, prev - 1));
-        toast.success('Repost removed');
-      }
+      const postUrl = `${window.location.origin}/post/${post._id}`;
+      await navigator.clipboard.writeText(postUrl);
+      toast.success('Link copied to clipboard!');
+      setShowOptions(false); // Close the dropdown menu
     } catch (error) {
-      console.error('Error reposting:', error);
-      toast.error(error.response?.data?.message || 'Failed to repost');
-    } finally {
-      setIsReposting(false);
+      console.error('Error copying link:', error);
+      toast.error('Failed to copy link');
     }
   };
 
+  const handleRepost = async () => {
+    try {
+      const response = await axiosInstance.post(`/posts/${post._id}/repost`);
+      
+      if (response.data.reposted) {
+        toast.success('Post reposted to your profile!');
+      } else {
+        toast.success('Repost removed');
+      }
+
+      // Update local state immediately
+      setHasReposted(response.data.reposted);
+      setRepostCount(response.data.repostCount);
+
+      // Update post with new repost data
+      if (onReactionUpdate) {
+        onReactionUpdate(post._id, {
+          hasReposted: response.data.reposted,
+          repostCount: response.data.repostCount
+        });
+      }
+
+      // Emit socket event to update other users' feeds
+      socket?.emit('postUpdated', { 
+        postId: post._id, 
+        hasReposted: response.data.reposted,
+        repostCount: response.data.repostCount
+      });
+    } catch (error) {
+      console.error('Error reposting:', error);
+      toast.error(error.response?.data?.message || 'Failed to repost');
+    }
+  };
 
   // Image Lightbox Handlers
   const openLightbox = (index) => {
@@ -710,7 +732,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
         <div className="flex items-start gap-3 flex-1">
           <div 
             className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] cursor-pointer flex-shrink-0"
-            onClick={() => navigate(`/profile`)}
+            onClick={() => navigate(`/profile/${author?.username}`)}
           >
             <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
               {avatarUrl ? (
@@ -725,7 +747,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
             <div className="flex items-center gap-2">
               <h3 
                 className="font-semibold text-gray-900 hover:underline cursor-pointer"
-                onClick={() => navigate(`/profile`)}
+                onClick={() => navigate(`/profile/${author?.username}`)}
               >
                 {userName}
               </h3>
@@ -800,17 +822,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
             {bookmarked ? 'Unsave post' : 'Save post'}
           </button>
           <button 
-            onClick={async () => {
-              try {
-                const postUrl = `${window.location.origin}/post/${post._id}`;
-                await navigator.clipboard.writeText(postUrl);
-                toast.success('Link copied to clipboard!');
-                setShowOptions(false);
-              } catch (error) {
-                console.error('Error copying link:', error);
-                toast.error('Failed to copy link');
-              }
-            }}
+            onClick={handleCopyLink}
             className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
           >
             Copy link
@@ -1054,7 +1066,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
           >
             {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
           </button>
-          <span>{post.repostCount || 0} {post.repostCount === 1 ? 'repost' : 'reposts'}</span>
+          <span>{repostCount} {repostCount === 1 ? 'repost' : 'reposts'}</span>
         </div>
       </div>
 
@@ -1159,13 +1171,13 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
 
           <button
             onClick={handleRepost}
-            disabled={isReposting}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm transition-all disabled:opacity-50 ${
-              reposted
-                ? 'text-green-600 bg-green-50 hover:bg-green-100'
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm transition-all ${
+              hasReposted 
+                ? 'text-green-600 bg-green-50 hover:bg-green-100' 
                 : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
+            <Repeat size={18} />
             <span className="font-medium">Repost</span>
           </button>
 
@@ -1321,7 +1333,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
 
 // Main HomePage Component
 export default function HomePage() {
-  const { authUser: user, isCheckingAuth: loading, socket } = useAuthStore();
+  const { authUser: user, isCheckingAuth: loading } = useAuthStore();
   const [posts, setPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [error, setError] = useState(false);
@@ -1437,41 +1449,6 @@ export default function HomePage() {
     window.addEventListener('postUpdated', handlePostUpdate);
     return () => window.removeEventListener('postUpdated', handlePostUpdate);
   }, []);
-
-  // Listen for real-time repost count updates via socket
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleRepostUpdate = (data) => {
-      const { postId, repostCount, reposted, userId } = data;
-      
-      setPosts(prev => prev.map(post => {
-        if (post._id === postId) {
-          // Update the repost count and reposts array
-          let updatedReposts = [...(post.reposts || [])];
-          
-          if (reposted && !updatedReposts.includes(userId)) {
-            updatedReposts.push(userId);
-          } else if (!reposted && updatedReposts.includes(userId)) {
-            updatedReposts = updatedReposts.filter(id => id !== userId);
-          }
-          
-          return {
-            ...post,
-            repostCount,
-            reposts: updatedReposts
-          };
-        }
-        return post;
-      }));
-    };
-
-    socket.on('post:repost', handleRepostUpdate);
-
-    return () => {
-      socket.off('post:repost', handleRepostUpdate);
-    };
-  }, [socket]);
 
   // Infinite scroll
   useEffect(() => {

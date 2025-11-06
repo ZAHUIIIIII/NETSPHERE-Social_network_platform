@@ -2,6 +2,7 @@
 import express from 'express';
 import multer from 'multer';
 import { protectRoute } from '../middleware/auth.middleware.js';
+import { filterBlockedUsers } from '../middleware/block.middleware.js';
 import * as postController from '../controllers/post.controller.js';
 import { getUserPosts } from '../controllers/user.controller.js';
 
@@ -23,10 +24,10 @@ const upload = multer({
 });
 
 // Post routes
-router.get('/', protectRoute, postController.getAllPosts);
-router.get('/saved', protectRoute, postController.getSavedPosts);
+router.get('/', protectRoute, filterBlockedUsers, postController.getAllPosts);
+router.get('/saved', protectRoute, filterBlockedUsers, postController.getSavedPosts);
 router.post('/upload', protectRoute, upload.array('images', 10), postController.uploadImages);
-router.get('/user/:userId', protectRoute, getUserPosts);
+router.get('/user/:userId', protectRoute, filterBlockedUsers, getUserPosts);
 
 // Specific routes before generic :postId routes to avoid conflicts
 router.get('/:postId/saved-status', protectRoute, postController.checkPostSavedStatus);

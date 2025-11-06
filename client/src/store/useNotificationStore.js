@@ -129,7 +129,15 @@ export const useNotificationStore = create((set, get) => ({
       return data.settings;
     } catch (error) {
       console.error('Error fetching notification settings:', error);
-      throw error;
+      // Set default settings on error instead of throwing
+      const defaultSettings = {
+        allNotificationsMuted: false,
+        mutedPosts: [],
+        mutedUsers: [],
+        mutedConversations: []
+      };
+      set({ notificationSettings: defaultSettings });
+      return defaultSettings;
     }
   },
 

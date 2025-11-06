@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Heart, MessageCircle, Bookmark, MoreHorizontal, 
-  Loader, Globe, Users, Lock, MapPin, ChevronLeft, ChevronRight, X, Eye, Repeat
+  Loader, Globe, Users, Lock, MapPin, ChevronLeft, ChevronRight, X, Eye, Repeat 
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import axiosInstance from '../lib/axios';
@@ -12,12 +12,11 @@ import CommentsSection from '../components/comment/CommentsSection';
 import EditPostModal from '../components/EditPostModal';
 import ReportPostModal from '../components/ReportPostModal';
 import PortalDropdown from '../components/common/PortalDropdown';
-import { repostPost as repostPostAPI } from '../services/api';
 
 const PostDetailPage = () => {
   const { postId } = useParams();
   const navigate = useNavigate();
-  const { authUser, socket } = useAuthStore();
+  const { authUser } = useAuthStore();
   
   const [post, setPost] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,9 +37,8 @@ const PostDetailPage = () => {
   const [commentCount, setCommentCount] = useState(0);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
-  const [reposted, setReposted] = useState(false);
+  const [hasReposted, setHasReposted] = useState(false);
   const [repostCount, setRepostCount] = useState(0);
-  const [isReposting, setIsReposting] = useState(false);
 
   const handleCommentCountChange = (newCount) => {
     setCommentCount(newCount);
@@ -59,50 +57,6 @@ const PostDetailPage = () => {
   useEffect(() => {
     fetchPost();
   }, [postId]);
-
-  // Listen for real-time repost count updates via socket
-  useEffect(() => {
-    if (!socket) return;
-
-    const handleRepostUpdate = (data) => {
-      const { postId: updatedPostId, repostCount: newRepostCount, reposted: newReposted, userId } = data;
-      
-      // Only update if this is the current post
-      if (updatedPostId === postId) {
-        setRepostCount(newRepostCount);
-        
-        // Update reposted state if it's the current user
-        if (userId === authUser?._id) {
-          setReposted(newReposted);
-        }
-        
-        // Update post object if it exists
-        setPost(prev => {
-          if (!prev) return prev;
-          
-          let updatedReposts = [...(prev.reposts || [])];
-          
-          if (newReposted && !updatedReposts.includes(userId)) {
-            updatedReposts.push(userId);
-          } else if (!newReposted && updatedReposts.includes(userId)) {
-            updatedReposts = updatedReposts.filter(id => id !== userId);
-          }
-          
-          return {
-            ...prev,
-            repostCount: newRepostCount,
-            reposts: updatedReposts
-          };
-        });
-      }
-    };
-
-    socket.on('post:repost', handleRepostUpdate);
-
-    return () => {
-      socket.off('post:repost', handleRepostUpdate);
-    };
-  }, [socket, postId, authUser]);
 
   const fetchPost = async () => {
     try {
@@ -144,13 +98,13 @@ const PostDetailPage = () => {
         }
       }
       
+      // Initialize repost state
+      setRepostCount(postData.repostCount || 0);
+      setHasReposted(postData.reposts?.includes(authUser._id) || false);
+      
       // Check if post is saved
       const savedResponse = await axiosInstance.get(`/posts/${postId}/saved-status`);
       setIsSaved(savedResponse.data.isSaved);
-      
-      // Initialize repost state
-      setReposted(postData.reposts?.includes(authUser._id) || false);
-      setRepostCount(postData.repostCount || 0);
     } catch (error) {
       console.error('Error fetching post:', error);
       toast.error('Failed to load post');
@@ -285,27 +239,51 @@ const PostDetailPage = () => {
     }
   };
 
-  const handleRepost = async () => {
-    if (isReposting) return;
-    
+  const handleCopyLink = async () => {
     try {
-      setIsReposting(true);
-      const response = await repostPostAPI(post._id);
+      const postUrl = `${window.location.origin}/post/${postId}`;
+      await navigator.clipboard.writeText(postUrl);
+      toast.success('Link copied to clipboard!');
+      setShowOptions(false);
+    } catch (error) {
+      console.error('Error copying link:', error);
+      toast.error('Failed to copy link');
+    }
+  };
+
+  const handleRepost = async () => {
+    try {
+      const response = await axiosInstance.post(`/posts/${postId}/repost`);
       
-      if (response.reposted) {
-        setReposted(true);
-        setRepostCount(prev => prev + 1);
-        toast.success('Post reposted!');
+      if (response.data.reposted) {
+        toast.success('Post reposted to your profile!');
+        setHasReposted(true);
       } else {
-        setReposted(false);
-        setRepostCount(prev => Math.max(0, prev - 1));
         toast.success('Repost removed');
+        setHasReposted(false);
       }
+
+      // Update local repost count
+      setRepostCount(response.data.repostCount);
+
+      // Update post with new repost data
+      setPost(prev => ({
+        ...prev,
+        repostCount: response.data.repostCount
+      }));
+
+      // Emit event for other pages to update
+      window.dispatchEvent(new CustomEvent('postUpdated', {
+        detail: {
+          postId: postId,
+          updates: {
+            repostCount: response.data.repostCount
+          }
+        }
+      }));
     } catch (error) {
       console.error('Error reposting:', error);
-      toast.error(error.response?.data?.message || 'Failed to repost');
-    } finally {
-      setIsReposting(false);
+      toast.error('Failed to repost');
     }
   };
 
@@ -512,17 +490,7 @@ const PostDetailPage = () => {
                 {isSaved ? 'Unsave post' : 'Save post'}
               </button>
               <button 
-                onClick={async () => {
-                  try {
-                    const postUrl = `${window.location.origin}/post/${postId}`;
-                    await navigator.clipboard.writeText(postUrl);
-                    toast.success('Link copied to clipboard!');
-                    setShowOptions(false);
-                  } catch (error) {
-                    console.error('Error copying link:', error);
-                    toast.error('Failed to copy link');
-                  }
-                }}
+                onClick={handleCopyLink}
                 className="w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors text-sm"
               >
                 Copy link
@@ -765,7 +733,7 @@ const PostDetailPage = () => {
             </div>
             <div className="flex items-center gap-4 text-gray-700 font-medium">
               <span>{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</span>
-              <span>{post.repostCount || 0} {post.repostCount === 1 ? 'repost' : 'reposts'}</span>
+              <span>{repostCount} {repostCount === 1 ? 'repost' : 'reposts'}</span>
             </div>
           </div>
 
@@ -867,13 +835,13 @@ const PostDetailPage = () => {
 
               <button
                 onClick={handleRepost}
-                disabled={isReposting}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm transition-all disabled:opacity-50 ${
-                  reposted
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm transition-all ${
+                  hasReposted
                     ? 'text-green-600 bg-green-50 hover:bg-green-100'
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
+                <Repeat size={18} />
                 <span className="font-medium">Repost</span>
               </button>
 

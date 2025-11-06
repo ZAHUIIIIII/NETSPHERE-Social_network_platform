@@ -399,7 +399,7 @@ const Overview = ({ recentActivities = [], users = [], posts = [], reports = [],
           </div>
         </div>
 
-        <div className="space-y-0 divide-y divide-gray-100 max-h-96 overflow-y-auto">
+        <div className="space-y-0 divide-y divide-gray-100">
           {filteredActivities.length === 0 ? (
             <div className="text-sm text-gray-400 py-8 text-center">
               <svg viewBox="0 0 24 24" className="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -411,19 +411,20 @@ const Overview = ({ recentActivities = [], users = [], posts = [], reports = [],
             filteredActivities.map((activity) => (
               <div key={activity.id} className="flex items-start justify-between py-3 first:pt-0 hover:bg-gray-50 transition-colors px-2 -mx-2 rounded">
                 <div className="flex items-start gap-3 flex-1 min-w-0">
-                  <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
-                    activity.status === 'success' ? 'bg-green-500' :
-                    activity.status === 'warning' ? 'bg-yellow-500' :
-                    activity.status === 'error' ? 'bg-red-500' :
-                    'bg-gray-400'
+                  <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-base mt-0.5 ${
+                    activity.status === 'success' ? 'bg-green-100' :
+                    activity.status === 'warning' ? 'bg-yellow-100' :
+                    activity.status === 'error' ? 'bg-red-100' :
+                    'bg-gray-100'
                   }`}>
+                    {activity.icon || '📋'}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900">
                       {activity.action}
                     </p>
                     <p className="text-xs text-gray-600 mt-0.5">
-                      <span className="font-semibold">{activity.user}</span>
+                      <span className="font-semibold">@{activity.user}</span>
                       {activity.detail && <span className="text-gray-500"> · {activity.detail}</span>}
                     </p>
                   </div>

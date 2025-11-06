@@ -13,7 +13,8 @@ import {
   toggleMutePost,
   toggleMuteUser,
   checkPostMuteStatus,
-  checkUserMuteStatus
+  checkUserMuteStatus,
+  updateNotificationPreference
 } from '../controllers/notification.controller.js';
 
 const router = express.Router();
@@ -27,6 +28,15 @@ router.get('/', getNotifications);
 // Get unread count
 router.get('/unread-count', getUnreadCount);
 
+// Notification Settings
+router.get('/settings', getNotificationSettings);
+router.post('/settings/mute-all/toggle', toggleMuteAllNotifications);
+router.post('/settings/preference', updateNotificationPreference);
+router.post('/settings/mute-post/:postId/toggle', toggleMutePost);
+router.post('/settings/mute-user/:userId/toggle', toggleMuteUser);
+router.get('/settings/mute-post/:postId/status', checkPostMuteStatus);
+router.get('/settings/mute-user/:userId/status', checkUserMuteStatus);
+
 // Mark notification as read
 router.patch('/:notificationId/read', markAsRead);
 
@@ -38,13 +48,5 @@ router.patch('/mark-all-read', markAllAsRead);
 
 // Delete notification
 router.delete('/:notificationId', deleteNotification);
-
-// Notification settings
-router.get('/settings', getNotificationSettings);
-router.post('/settings/mute-all/toggle', toggleMuteAllNotifications);
-router.post('/settings/mute-post/:postId/toggle', toggleMutePost);
-router.post('/settings/mute-user/:targetUserId/toggle', toggleMuteUser);
-router.get('/settings/mute-post/:postId/status', checkPostMuteStatus);
-router.get('/settings/mute-user/:targetUserId/status', checkUserMuteStatus);
 
 export default router;

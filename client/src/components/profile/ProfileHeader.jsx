@@ -1,11 +1,13 @@
 // client/src/components/profile/ProfileHeader.jsx
 import React, { useState, useEffect } from 'react';
-import { Camera, MoreHorizontal, Edit, MapPin, Link as LinkIcon, Calendar, MessageCircle } from 'lucide-react';
+import { Camera, MoreHorizontal, Edit, MapPin, Link as LinkIcon, Calendar, MessageCircle, UserX, UserCheck } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import FollowButton from './FollowButton';
 import FollowersModal from './FollowersModal';
+import { blockUser, unblockUser, checkBlockStatus } from '../../services/api';
+import PortalDropdown from '../common/PortalDropdown';
 
 const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowChange }) => {
   const { updateProfile, isUpdatingProfile } = useAuthStore();
@@ -16,6 +18,9 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   // Update counts and following status whenever user prop changes
   useEffect(() => {
@@ -38,6 +43,22 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
       setIsFollowing(newIsFollowing);
     }
   }, [user?.username, user?.isFollowing, user?.followers?.length, user?.following?.length]);
+
+  // Check block status when viewing another user's profile
+  useEffect(() => {
+    const fetchBlockStatus = async () => {
+      if (!isOwnProfile && user?._id) {
+        try {
+          const response = await checkBlockStatus(user._id);
+          setIsBlocked(response.isBlocked);
+        } catch (error) {
+          console.error('Failed to check block status:', error);
+        }
+      }
+    };
+
+    fetchBlockStatus();
+  }, [user?._id, isOwnProfile]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -117,7 +138,40 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
   };
 
   const handleMessage = () => {
-    navigate(`/messages?user=${user._id}`);
+    navigate('/messages', { 
+      state: { 
+        selectedUser: {
+          _id: user._id,
+          username: user.username,
+          name: user.name,
+          avatar: user.avatar
+        }
+      } 
+    });
+  };
+
+  const handleBlock = async () => {
+    if (!user?._id) return;
+    
+    setBlockLoading(true);
+    try {
+      if (isBlocked) {
+        await unblockUser(user._id);
+        setIsBlocked(false);
+        toast.success(`Unblocked ${user.username}`);
+      } else {
+        await blockUser(user._id);
+        setIsBlocked(true);
+        setIsFollowing(false);
+        toast.success(`Blocked ${user.username}`);
+      }
+      setShowMoreMenu(false);
+    } catch (error) {
+      console.error('Failed to toggle block status:', error);
+      toast.error(error.response?.data?.message || 'Failed to update block status');
+    } finally {
+      setBlockLoading(false);
+    }
   };
 
   const handleFollowersModalClose = () => {
@@ -169,14 +223,23 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                     src={selectedImg || user.avatar}
                     alt={user.username}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      console.log('Image failed to load:', e.target.src);
+                      e.target.style.display = 'none';
+                      if (e.target.nextSibling) {
+                        e.target.nextSibling.style.display = 'flex';
+                      }
+                    }}
                   />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                    <span className="text-gray-600 font-semibold text-5xl">
-                      {user?.username?.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                )}
+                ) : null}
+                <div 
+                  className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center"
+                  style={{ display: (selectedImg || user?.avatar) ? 'none' : 'flex' }}
+                >
+                  <span className="text-gray-600 font-semibold text-5xl">
+                    {user?.username?.charAt(0).toUpperCase()}
+                  </span>
+                </div>
               </div>
 
               {isOwnProfile && (
@@ -237,6 +300,37 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                     >
                       Message
                     </button>
+                    <PortalDropdown
+                      isOpen={showMoreMenu}
+                      onClose={() => setShowMoreMenu(false)}
+                      width="w-48"
+                      trigger={
+                        <button 
+                          onClick={() => setShowMoreMenu(!showMoreMenu)}
+                          className="p-2 hover:bg-gray-50 border border-gray-300 rounded-lg transition-colors"
+                        >
+                          <MoreHorizontal size={20} className="text-gray-900" />
+                        </button>
+                      }
+                    >
+                      <button
+                        onClick={handleBlock}
+                        disabled={blockLoading}
+                        className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center gap-3 text-sm disabled:opacity-50 transition-colors"
+                      >
+                        {isBlocked ? (
+                          <>
+                            <UserCheck size={18} className="text-green-600" />
+                            <span className="text-gray-700">Unblock {user?.username}</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserX size={18} className="text-red-600" />
+                            <span className="text-gray-700">Block {user?.username}</span>
+                          </>
+                        )}
+                      </button>
+                    </PortalDropdown>
                   </div>
                 )}
               </div>

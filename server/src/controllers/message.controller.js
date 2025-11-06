@@ -8,9 +8,15 @@ export const getUsersForSidebar = async (req, res) => {
   try {
     console.log("getUsersForSidebar called by user:", req.user._id);
     const loggedInUserId = req.user._id;
+    const blockedUserIds = req.blockedUserIds || [];
     
+    // Get current user's muted conversations
+    const currentUser = await User.findById(loggedInUserId);
+    const mutedConversations = currentUser?.notificationSettings?.mutedConversations || [];
     
-    const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
+    // Exclude logged in user and blocked users
+    const excludeIds = [loggedInUserId, ...blockedUserIds];
+    const filteredUsers = await User.find({ _id: { $nin: excludeIds } }).select("-password");
     
     // Get last message and unread count for each user
     const usersWithLastMessage = await Promise.all(
@@ -20,16 +26,22 @@ export const getUsersForSidebar = async (req, res) => {
             { senderId: loggedInUserId, receiverId: user._id },
             { senderId: user._id, receiverId: loggedInUserId },
           ],
+          deletedFor: { $ne: loggedInUserId } // Exclude messages deleted by current user
         })
         .sort({ createdAt: -1 })
         .populate('senderId', 'username')
         .populate('receiverId', 'username');
 
-        // Count unread messages from this user
-        const unreadCount = await Message.countDocuments({
+        // Check if this conversation is muted
+        const isMuted = mutedConversations.some(id => id.toString() === user._id.toString());
+
+        // Count unread messages from this user (excluding deleted)
+        // If conversation is muted, don't count unread messages
+        const unreadCount = isMuted ? 0 : await Message.countDocuments({
           senderId: user._id,
           receiverId: loggedInUserId,
-          read: false
+          read: false,
+          deletedFor: { $ne: loggedInUserId }
         });
 
         return {
@@ -43,7 +55,8 @@ export const getUsersForSidebar = async (req, res) => {
             createdAt: lastMessage.createdAt,
             isFromMe: lastMessage.senderId._id.toString() === loggedInUserId.toString()
           } : null,
-          unreadCount
+          unreadCount,
+          isMuted
         };
       })
     );
@@ -74,6 +87,7 @@ export const getMessages = async (req, res) => {
         { senderId: myId, receiverId: userToChatId },
         { senderId: userToChatId, receiverId: myId },
       ],
+      deletedFor: { $ne: myId } // Exclude messages deleted by current user
     })
     .sort({ createdAt: 1 }); // Sort by creation time in ascending order (oldest first)
 
@@ -82,7 +96,8 @@ export const getMessages = async (req, res) => {
       {
         senderId: userToChatId,
         receiverId: myId,
-        read: false
+        read: false,
+        deletedFor: { $ne: myId }
       },
       {
         $set: { read: true }
@@ -118,14 +133,140 @@ export const sendMessage = async (req, res) => {
 
     await newMessage.save();
 
+    // Check if receiver has muted this conversation or disabled message notifications
+    const receiver = await User.findById(receiverId);
+    const settings = receiver?.notificationSettings || {};
+    const mutedConversations = settings.mutedConversations || [];
+    const isConversationMuted = mutedConversations.some(id => id.toString() === senderId.toString());
+    
+    // Check if all notifications are muted or messages are disabled
+    const allNotificationsMuted = settings.allNotificationsMuted === true;
+    const messagesDisabled = settings.messages === false;
+    const pushDisabled = settings.push === false;
+
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
+      // Always emit the message so it appears in chat
       io.to(receiverSocketId).emit("newMessage", newMessage);
+      
+      // Only emit notification if:
+      // 1. Conversation is not muted
+      // 2. All notifications are not muted
+      // 3. Messages notifications are not disabled
+      if (!isConversationMuted && !allNotificationsMuted && !messagesDisabled) {
+        io.to(receiverSocketId).emit("newMessageNotification", {
+          message: newMessage,
+          sender: req.user,
+          showToast: !pushDisabled
+        });
+      }
     }
 
     res.status(201).json(newMessage);
   } catch (error) {
     console.log("Error in sendMessage controller: ", error.message);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Toggle mute conversation (mute/unmute message notifications for specific conversation)
+export const toggleMuteConversation = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { id: targetUserId } = req.params;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Initialize notificationSettings if it doesn't exist
+    if (!user.notificationSettings) {
+      user.notificationSettings = {
+        allNotificationsMuted: false,
+        mutedPosts: [],
+        mutedUsers: [],
+        mutedConversations: []
+      };
+    }
+
+    // Initialize mutedConversations array if it doesn't exist
+    if (!user.notificationSettings.mutedConversations) {
+      user.notificationSettings.mutedConversations = [];
+    }
+
+    const mutedConversations = user.notificationSettings.mutedConversations || [];
+    const isMuted = mutedConversations.some(id => id.toString() === targetUserId);
+
+    if (isMuted) {
+      // Unmute conversation
+      user.notificationSettings.mutedConversations = mutedConversations.filter(
+        id => id.toString() !== targetUserId
+      );
+    } else {
+      // Mute conversation
+      user.notificationSettings.mutedConversations.push(targetUserId);
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      message: isMuted ? 'Conversation unmuted' : 'Conversation muted',
+      isMuted: !isMuted,
+      mutedConversations: user.notificationSettings.mutedConversations
+    });
+  } catch (error) {
+    console.error('Error in toggleMuteConversation:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Check if conversation is muted
+export const checkConversationMuteStatus = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { id: targetUserId } = req.params;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const mutedConversations = user.notificationSettings?.mutedConversations || [];
+    const isMuted = mutedConversations.some(id => id.toString() === targetUserId);
+
+    res.status(200).json({ isMuted });
+  } catch (error) {
+    console.error('Error in checkConversationMuteStatus:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Delete conversation (one-sided - only for the current user)
+export const deleteConversation = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { id: targetUserId } = req.params;
+
+    // Mark all messages in this conversation as deleted for the current user
+    const result = await Message.updateMany(
+      {
+        $or: [
+          { senderId: userId, receiverId: targetUserId },
+          { senderId: targetUserId, receiverId: userId }
+        ]
+      },
+      {
+        $addToSet: { deletedFor: userId }
+      }
+    );
+
+    res.status(200).json({ 
+      message: 'Conversation deleted successfully',
+      deletedCount: result.modifiedCount
+    });
+  } catch (error) {
+    console.error('Error in deleteConversation:', error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 };

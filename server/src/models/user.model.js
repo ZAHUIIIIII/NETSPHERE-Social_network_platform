@@ -49,7 +49,7 @@ const userSchema = new mongoose.Schema({
   },
   avatar: {
     type: String,
-    default: "",
+    default: "/assets/avatars/default-avatar.svg",
   },
   bio: {
     type: String,
@@ -89,6 +89,15 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Post'
   }],
+  // Block/Unblock
+  blockedUsers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  blockedBy: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   // Notification settings
   notificationSettings: {
     allNotificationsMuted: {
@@ -102,7 +111,32 @@ const userSchema = new mongoose.Schema({
     mutedUsers: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
-    }]
+    }],
+    mutedConversations: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }],
+    // Notification type preferences
+    push: {
+      type: Boolean,
+      default: true
+    },
+    messages: {
+      type: Boolean,
+      default: true
+    },
+    likes: {
+      type: Boolean,
+      default: false
+    },
+    comments: {
+      type: Boolean,
+      default: true
+    },
+    follows: {
+      type: Boolean,
+      default: true
+    }
   },
   googleId: {
     type: String,

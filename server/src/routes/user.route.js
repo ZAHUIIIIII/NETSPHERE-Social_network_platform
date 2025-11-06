@@ -30,5 +30,10 @@ router.get('/saved-posts', protectRoute, userController.getSavedPosts);
 
 router.get('/suggestions', protectRoute, userController.getSuggestedUsers);
 
+// Block routes
+router.post('/:userId/block', protectRoute, userController.blockUser);
+router.post('/:userId/unblock', protectRoute, userController.unblockUser);
+router.get('/blocked-users', protectRoute, userController.getBlockedUsers);
+router.get('/:userId/block-status', protectRoute, userController.checkBlockStatus);
 
 export default router;

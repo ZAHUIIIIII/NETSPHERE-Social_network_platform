@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useNotificationStore } from '../store/useNotificationStore';
+import { getBlockedUsers, unblockUser, updateNotificationPreference } from '../services/api';
 import axios from '../lib/axios';
 import toast from 'react-hot-toast';
 
@@ -54,16 +55,13 @@ const SettingPage = () => {
   const [termsDialogOpen, setTermsDialogOpen] = useState(false);
   const [privacyDialogOpen, setPrivacyDialogOpen] = useState(false);
 
-  const [notifications, setNotifications] = useState(() => {
-    const saved = localStorage.getItem('notificationSettings');
-    return saved ? JSON.parse(saved) : {
-      email: true,
-      push: true,
-      messages: true,
-      likes: false,
-      comments: true,
-      follows: true,
-    };
+  // Get notification settings from Zustand store
+  const { notificationSettings, fetchNotificationSettings } = useNotificationStore();
+  
+  // Local state for email (not yet implemented in backend)
+  const [emailNotifications, setEmailNotifications] = useState(() => {
+    const saved = localStorage.getItem('emailNotifications');
+    return saved ? JSON.parse(saved) === true : true;
   });
 
   const [privacy, setPrivacy] = useState(() => {
@@ -85,10 +83,17 @@ const SettingPage = () => {
     };
   });
 
-  // Save settings to localStorage when they change
+  // Fetch notification settings on mount
   useEffect(() => {
-    localStorage.setItem('notificationSettings', JSON.stringify(notifications));
-  }, [notifications]);
+    fetchNotificationSettings().catch(err => {
+      console.error('Failed to fetch notification settings:', err);
+    });
+  }, []);
+
+  // Save email notifications to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('emailNotifications', JSON.stringify(emailNotifications));
+  }, [emailNotifications]);
 
   useEffect(() => {
     localStorage.setItem('privacySettings', JSON.stringify(privacy));
@@ -204,13 +209,31 @@ const SettingPage = () => {
     }
   };
 
+  // Fetch blocked users when the blocked users section is opened
+  useEffect(() => {
+    const fetchBlockedUsers = async () => {
+      if (blockedUsersOpen) {
+        try {
+          const response = await getBlockedUsers();
+          setBlockedUsers(response.blockedUsers || []);
+        } catch (error) {
+          console.error('Failed to fetch blocked users:', error);
+          toast.error('Failed to load blocked users');
+        }
+      }
+    };
+
+    fetchBlockedUsers();
+  }, [blockedUsersOpen]);
+
   const handleUnblockUser = async (userId) => {
     try {
-      // In a real app, this would call the backend
+      await unblockUser(userId);
       setBlockedUsers(prev => prev.filter(user => user._id !== userId));
       toast.success('User unblocked successfully!');
     } catch (error) {
-      toast.error('Failed to unblock user');
+      console.error('Failed to unblock user:', error);
+      toast.error(error.response?.data?.message || 'Failed to unblock user');
     }
   };
 
@@ -261,6 +284,23 @@ const SettingPage = () => {
   const handleThemeChange = (value) => {
     setPreferences(prev => ({ ...prev, theme: value }));
     toast.success(`Theme changed to ${value}`);
+  };
+
+  const handleNotificationToggle = async (type, currentValue) => {
+    const newValue = !currentValue;
+    
+    try {
+      // Optimistically update UI (will be synced from store after API call)
+      await updateNotificationPreference(type, newValue);
+      
+      // Refetch settings to sync with backend
+      await fetchNotificationSettings();
+      
+      toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} notifications ${newValue ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Error updating notification preference:', error);
+      toast.error('Failed to update notification settings');
+    }
   };
 
   const handleShowEmailToggle = async (newValue) => {
@@ -380,22 +420,47 @@ const SettingPage = () => {
             <p className="text-sm text-gray-600">Choose how you want to be notified</p>
           </div>
           <div className="p-6 space-y-4">
-            {/* Mute All Notifications */}
+            {/* Mute All Notifications - Connected to backend */}
             <NotificationMuteToggle />
             
             <div className="border-t border-gray-200 my-4"></div>
             
-            {Object.entries({
-              email: { label: 'Email Notifications', desc: 'Receive notifications via email' },
-              push: { label: 'Push Notifications', desc: 'Receive push notifications' },
-              messages: { label: 'New Messages', desc: null },
-              likes: { label: 'Likes', desc: null },
-              comments: { label: 'Comments', desc: null },
-              follows: { label: 'New Followers', desc: null },
-            }).map(([key, { label, desc }], index) => (
-              <React.Fragment key={key}>
-                {index === 2 && <div className="border-t border-gray-200 my-4"></div>}
-                <div className="flex items-center justify-between">
+            {/* Email Notifications - Local only (not yet implemented in backend) */}
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <label className="text-sm font-medium text-gray-900">Email Notifications</label>
+                <p className="text-sm text-gray-600">Receive notifications via email (Coming soon)</p>
+              </div>
+              <button
+                onClick={() => {
+                  setEmailNotifications(prev => !prev);
+                  toast.success(`Email notifications ${!emailNotifications ? 'enabled' : 'disabled'} (Local only)`);
+                }}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  emailNotifications ? 'bg-blue-600' : 'bg-gray-200'
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    emailNotifications ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+
+            <div className="border-t border-gray-200 my-4"></div>
+            
+            {/* Backend-connected notification preferences */}
+            {[
+              { key: 'push', label: 'Push Notifications', desc: 'Show toast popup notifications' },
+              { key: 'messages', label: 'New Messages', desc: null },
+              { key: 'likes', label: 'Likes', desc: null },
+              { key: 'comments', label: 'Comments', desc: null },
+              { key: 'follows', label: 'New Followers', desc: null },
+            ].map(({ key, label, desc }) => {
+              const isEnabled = notificationSettings?.[key] ?? true;
+              return (
+                <div key={key} className="flex items-center justify-between">
                   {desc ? (
                     <div className="space-y-0.5">
                       <label className="text-sm font-medium text-gray-900">{label}</label>
@@ -405,23 +470,20 @@ const SettingPage = () => {
                     <label className="text-sm font-medium text-gray-900">{label}</label>
                   )}
                   <button
-                    onClick={() => {
-                      setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
-                      toast.success(`${label} ${!notifications[key] ? 'enabled' : 'disabled'}`);
-                    }}
+                    onClick={() => handleNotificationToggle(key, isEnabled)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      notifications[key] ? 'bg-blue-600' : 'bg-gray-200'
+                      isEnabled ? 'bg-blue-600' : 'bg-gray-200'
                     }`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        notifications[key] ? 'translate-x-6' : 'translate-x-1'
+                        isEnabled ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
                   </button>
                 </div>
-              </React.Fragment>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -1084,34 +1146,32 @@ const SettingPage = () => {
 const NotificationMuteToggle = () => {
   const { notificationSettings, fetchNotificationSettings, toggleMuteAll } = useNotificationStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    fetchNotificationSettings();
-  }, [fetchNotificationSettings]);
+    if (!mounted) {
+      setMounted(true);
+      fetchNotificationSettings().catch(err => {
+        console.error('Failed to fetch notification settings:', err);
+      });
+    }
+  }, [mounted]);
 
   const handleToggle = async () => {
     setIsLoading(true);
     try {
-      console.log('🔇 Toggling mute all notifications...');
-      const result = await toggleMuteAll();
-      console.log('✅ Toggle result:', result);
-      
-      // After toggling, check the updated settings from the store
-      const { notificationSettings: updatedSettings } = useNotificationStore.getState();
-      console.log('📦 Updated notificationSettings:', updatedSettings);
-      
-      toast.success(
-        updatedSettings?.allNotificationsMuted 
-          ? '🔇 All notifications muted' 
-          : '🔊 Notifications unmuted'
-      );
+      await toggleMuteAll();
+      const isMuted = useNotificationStore.getState().notificationSettings?.allNotificationsMuted;
+      toast.success(isMuted ? '🔇 All notifications muted' : '🔊 Notifications unmuted');
     } catch (error) {
-      console.error('❌ Error toggling mute all:', error);
+      console.error('Error toggling mute all:', error);
       toast.error('Failed to update notification settings');
     } finally {
       setIsLoading(false);
     }
   };
+
+  const isMuted = notificationSettings?.allNotificationsMuted || false;
 
   return (
     <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -1126,12 +1186,12 @@ const NotificationMuteToggle = () => {
         onClick={handleToggle}
         disabled={isLoading}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-          notificationSettings?.allNotificationsMuted ? 'bg-red-600' : 'bg-gray-200'
+          isMuted ? 'bg-red-600' : 'bg-gray-200'
         } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         <span
           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-            notificationSettings?.allNotificationsMuted ? 'translate-x-6' : 'translate-x-1'
+            isMuted ? 'translate-x-6' : 'translate-x-1'
           }`}
         />
       </button>

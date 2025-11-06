@@ -30,14 +30,23 @@ const getTopReactions = (post) => {
 export const getAllPosts = async (req, res) => {
   try {
     const { skip = 0, limit = 20 } = req.query;
+    const blockedUserIds = req.blockedUserIds || [];
     
     // Only fetch published and flagged posts (exclude removed posts and reposts)
     // Flagged posts are shown to users until they reach 5 reports (then removed)
     // Reposts are excluded from feed as they only appear in user's Reposts tab
-    const posts = await Post.find({ 
+    // Also exclude posts from blocked users
+    const query = { 
       status: { $in: ['published', 'flagged', null, undefined] },
       isRepost: { $ne: true }
-    })
+    };
+    
+    // Filter out posts from blocked users
+    if (blockedUserIds.length > 0) {
+      query.author = { $nin: blockedUserIds };
+    }
+    
+    const posts = await Post.find(query)
       .sort({ createdAt: -1 })
       .skip(Number(skip))
       .limit(Number(limit))
@@ -50,10 +59,15 @@ export const getAllPosts = async (req, res) => {
         }
       });
 
-    // Add top reactions to each post
+    // Add top reactions and repost status to each post
     const postsWithTopReactions = posts.map(post => {
       const postObj = post.toObject();
       postObj.topReactions = getTopReactions(post);
+      
+      // Add repost information - use database field, not array length
+      postObj.hasReposted = post.reposts?.includes(req.user._id) || false;
+      // repostCount is already in the post object from database
+      
       return postObj;
     });
 
@@ -386,6 +400,7 @@ export const savePost = async (req, res) => {
 export const getSavedPosts = async (req, res) => {
   try {
     const userId = req.user._id;
+    const blockedUserIds = req.blockedUserIds || [];
 
     const user = await User.findById(userId).populate({
       path: 'savedPosts',
@@ -402,9 +417,17 @@ export const getSavedPosts = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Filter out posts from blocked users
+    let savedPosts = user.savedPosts || [];
+    if (blockedUserIds.length > 0) {
+      savedPosts = savedPosts.filter(post => 
+        !blockedUserIds.includes(post.author._id.toString())
+      );
+    }
+
     // For each saved post, fetch only root comments with totalDescendants
     const postsWithComments = await Promise.all(
-      (user.savedPosts || []).map(async (post) => {
+      savedPosts.map(async (post) => {
         const rootComments = await Comment.find({
           postId: post._id,
           logicalDepth: 0,
@@ -613,15 +636,25 @@ export const repostPost = async (req, res) => {
         post: postId
       });
 
-      // Emit socket event for repost count update
-      io.emit('post:repost', {
-        postId: postId.toString(),
-        repostCount: Math.max(0, originalPost.repostCount - 1),
-        reposted: false,
-        userId: userId.toString()
-      });
+      // Get updated post to get correct count
+      const updatedPost = await Post.findById(postId);
+      const newRepostCount = updatedPost.reposts?.length || 0;
 
-      return res.json({ message: 'Repost removed', reposted: false });
+      // Emit socket event for repost count update
+      if (io) {
+        io.emit('post:repost', {
+          postId: postId.toString(),
+          repostCount: newRepostCount,
+          reposted: false,
+          userId: userId.toString()
+        });
+      }
+
+      return res.json({ 
+        message: 'Repost removed', 
+        reposted: false,
+        repostCount: newRepostCount
+      });
     }
 
     // Create repost
@@ -638,6 +671,10 @@ export const repostPost = async (req, res) => {
       $inc: { repostCount: 1 }
     });
 
+    // Get updated post to get correct count
+    const updatedPost = await Post.findById(postId);
+    const newRepostCount = updatedPost.reposts?.length || 0;
+
     // Create notification for post owner (if not reposting own post)
     if (originalPost.author.toString() !== userId.toString()) {
       await createNotification({
@@ -649,12 +686,14 @@ export const repostPost = async (req, res) => {
     }
 
     // Emit socket event for repost count update
-    io.emit('post:repost', {
-      postId: postId.toString(),
-      repostCount: originalPost.repostCount + 1,
-      reposted: true,
-      userId: userId.toString()
-    });
+    if (io) {
+      io.emit('post:repost', {
+        postId: postId.toString(),
+        repostCount: newRepostCount,
+        reposted: true,
+        userId: userId.toString()
+      });
+    }
 
     // Populate the repost with original post data
     await repost.populate({
@@ -667,10 +706,19 @@ export const repostPost = async (req, res) => {
 
     await repost.populate('author', 'username name avatar');
 
-    res.json({ message: 'Post reposted', repost, reposted: true });
+    res.json({ 
+      message: 'Post reposted', 
+      repost, 
+      reposted: true,
+      repostCount: newRepostCount
+    });
   } catch (error) {
     console.error('Error reposting:', error);
-    res.status(500).json({ message: 'Error reposting post' });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      message: 'Error reposting post',
+      error: error.message 
+    });
   }
 };
 
@@ -681,26 +729,51 @@ export const getUserReposts = async (req, res) => {
 
     const reposts = await Post.find({
       author: userId,
-      isRepost: true,
-      isDeleted: false
+      isRepost: true
     })
       .populate({
         path: 'originalPost',
-        select: 'content images author createdAt isDeleted',
+        select: 'content images author createdAt reactions status',
         populate: {
           path: 'author',
-          select: 'username avatar'
+          select: 'username avatar name'
         }
       })
-      .populate('author', 'username avatar')
-      .sort({ createdAt: -1 });
+      .populate('author', 'username avatar name')
+      .sort({ createdAt: -1 })
+      .lean();
 
-    // Filter out reposts where original post was deleted
-    const validReposts = reposts.filter(repost => repost.originalPost);
+    // Filter out reposts where original post was deleted or doesn't exist
+    const validReposts = reposts.filter(repost => repost.originalPost && repost.originalPost.status !== 'removed');
 
-    res.json(validReposts);
+    // For each repost's original post, fetch only root comments with totalDescendants
+    const repostsWithComments = await Promise.all(
+      validReposts.map(async (repost) => {
+        if (repost.originalPost) {
+          const rootComments = await Comment.find({
+            postId: repost.originalPost._id,
+            logicalDepth: 0,
+            isDeleted: false
+          })
+          .select('_id totalDescendants')
+          .lean();
+
+          return {
+            ...repost,
+            originalPost: {
+              ...repost.originalPost,
+              comments: rootComments,
+              reactions: repost.originalPost.reactions || {}
+            }
+          };
+        }
+        return repost;
+      })
+    );
+
+    res.json(repostsWithComments);
   } catch (error) {
     console.error('Error fetching reposts:', error);
     res.status(500).json({ message: 'Error fetching reposts' });
   }
-};;
+};

@@ -284,3 +284,88 @@ export const checkUserMuteStatus = async (userId) => {
     throw error;
   }
 };
+
+export const updateNotificationPreference = async (type, enabled) => {
+  try {
+    const response = await axiosInstance.post('/notifications/settings/preference', {
+      type,
+      enabled
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating notification preference:', error);
+    throw error;
+  }
+};
+
+// ==================== CONVERSATION MUTE (MESSAGES) ====================
+export const toggleMuteConversation = async (userId) => {
+  try {
+    const response = await axiosInstance.post(`/messages/conversation/${userId}/mute/toggle`);
+    return response.data;
+  } catch (error) {
+    console.error('Error toggling mute conversation:', error);
+    throw error;
+  }
+};
+
+export const checkConversationMuteStatus = async (userId) => {
+  try {
+    const response = await axiosInstance.get(`/messages/conversation/${userId}/mute/status`);
+    return response.data;
+  } catch (error) {
+    console.error('Error checking conversation mute status:', error);
+    throw error;
+  }
+};
+
+export const deleteConversation = async (userId) => {
+  try {
+    const response = await axiosInstance.delete(`/messages/conversation/${userId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    throw error;
+  }
+};
+
+// ==================== BLOCK USER ====================
+export const blockUser = async (userId) => {
+  try {
+    const response = await axiosInstance.post(`/users/${userId}/block`);
+    return response.data;
+  } catch (error) {
+    console.error('Error blocking user:', error);
+    throw error;
+  }
+};
+
+export const unblockUser = async (userId) => {
+  try {
+    const response = await axiosInstance.post(`/users/${userId}/unblock`);
+    return response.data;
+  } catch (error) {
+    console.error('Error unblocking user:', error);
+    throw error;
+  }
+};
+
+export const getBlockedUsers = async () => {
+  try {
+    const response = await axiosInstance.get('/users/blocked-users');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching blocked users:', error);
+    throw error;
+  }
+};
+
+export const checkBlockStatus = async (userId) => {
+  try {
+    const response = await axiosInstance.get(`/users/${userId}/block-status`);
+    return response.data;
+  } catch (error) {
+    console.error('Error checking block status:', error);
+    throw error;
+  }
+};

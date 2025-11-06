@@ -11,25 +11,52 @@ export const createNotification = async (data) => {
       return null;
     }
 
-    // Check recipient's notification settings
-    const recipient = await User.findById(data.recipient).select('notificationSettings');
-    if (!recipient) return null;
-
-    // Check if all notifications are muted
-    if (recipient.notificationSettings?.allNotificationsMuted) {
-      console.log('Notification skipped - all notifications muted');
+    // Get recipient's notification settings (fresh from DB)
+    const recipient = await User.findById(data.recipient).select('notificationSettings').lean();
+    
+    if (!recipient) {
+      return null;
+    }
+    
+    // Ensure notificationSettings exists with defaults
+    const settings = recipient.notificationSettings || {};
+    const allMuted = settings.allNotificationsMuted === true;
+    
+    // Check if recipient has muted ALL notifications
+    if (allMuted) {
       return null;
     }
 
-    // Check if sender is muted
-    if (recipient.notificationSettings?.mutedUsers?.includes(data.sender.toString())) {
-      console.log('Notification skipped - sender is muted');
-      return null;
+    // Check notification type preferences
+    if (data.type) {
+      // Map notification types to user settings keys
+      const typeMapping = {
+        'like': 'likes',
+        'comment': 'comments',
+        'reply': 'comments',
+        'follow': 'follows',
+        'reaction': 'likes',
+        'repost': 'comments'
+      };
+      
+      const settingKey = typeMapping[data.type];
+      if (settingKey) {
+        const typePreference = settings[settingKey];
+        
+        // Only block if explicitly set to false (not undefined/null)
+        if (typePreference === false) {
+          return null;
+        }
+      }
     }
 
-    // Check if post is muted (for post-related notifications)
-    if (data.post && recipient.notificationSettings?.mutedPosts?.includes(data.post.toString())) {
-      console.log('Notification skipped - post is muted');
+    // Check if recipient has muted this post
+    if (data.post && settings.mutedPosts?.includes(data.post.toString())) {
+      return null;
+    }
+    
+    // Check if recipient has muted the sender
+    if (settings.mutedUsers?.some(id => id.toString() === data.sender.toString())) {
       return null;
     }
 
@@ -37,10 +64,18 @@ export const createNotification = async (data) => {
     const notification = await Notification.createNotification(data);
     
     if (notification) {
+      // Check if user wants toast notifications (push notifications setting)
+      const showToast = settings.push !== false;
+      
       // Emit real-time notification via socket
       const receiverSocketId = getReceiverSocketId(data.recipient.toString());
       if (receiverSocketId) {
-        io.to(receiverSocketId).emit('newNotification', notification);
+        // Add showToast flag to notification
+        const notificationWithToast = {
+          ...notification.toObject(),
+          showToast
+        };
+        io.to(receiverSocketId).emit('newNotification', notificationWithToast);
       }
       
       // Emit updated unread count
@@ -203,17 +238,20 @@ export const getUnreadCount = async (req, res) => {
   }
 };
 
+// ==================== NOTIFICATION SETTINGS ====================
+
 // Get notification settings
 export const getNotificationSettings = async (req, res) => {
   try {
     const userId = req.user._id;
     const user = await User.findById(userId).select('notificationSettings');
     
-    res.json({
+    res.json({ 
       settings: user.notificationSettings || {
         allNotificationsMuted: false,
         mutedPosts: [],
-        mutedUsers: []
+        mutedUsers: [],
+        mutedConversations: []
       }
     });
   } catch (error) {
@@ -228,26 +266,14 @@ export const toggleMuteAllNotifications = async (req, res) => {
     const userId = req.user._id;
     const user = await User.findById(userId);
     
-    // Ensure notificationSettings exists
-    if (!user.notificationSettings) {
-      user.notificationSettings = {
-        allNotificationsMuted: false,
-        mutedPosts: [],
-        mutedUsers: []
-      };
-      await user.save();
-    }
+    user.notificationSettings.allNotificationsMuted = !user.notificationSettings.allNotificationsMuted;
+    await user.save();
     
-    const currentValue = user.notificationSettings.allNotificationsMuted || false;
-    const newValue = !currentValue;
-    
-    await User.findByIdAndUpdate(userId, {
-      'notificationSettings.allNotificationsMuted': newValue
-    });
-    
-    res.json({
-      message: newValue ? 'All notifications muted' : 'All notifications unmuted',
-      allNotificationsMuted: newValue
+    res.json({ 
+      message: user.notificationSettings.allNotificationsMuted 
+        ? 'All notifications muted' 
+        : 'All notifications unmuted',
+      settings: user.notificationSettings
     });
   } catch (error) {
     console.error('Error toggling mute all:', error);
@@ -255,154 +281,124 @@ export const toggleMuteAllNotifications = async (req, res) => {
   }
 };
 
-// Mute/unmute a specific post
+// Toggle mute post
 export const toggleMutePost = async (req, res) => {
   try {
-    console.log('🔇 toggleMutePost called');
-    console.log('📋 Params:', req.params);
-    console.log('👤 User ID:', req.user._id);
-    
-    const { postId } = req.params;
     const userId = req.user._id;
-    
+    const { postId } = req.params;
     const user = await User.findById(userId);
-    console.log('📦 User found:', user ? 'YES' : 'NO');
-    console.log('⚙️  Current notificationSettings:', user?.notificationSettings);
     
-    // Ensure notificationSettings exists
-    if (!user.notificationSettings) {
-      console.log('🆕 Creating new notificationSettings');
-      user.notificationSettings = {
-        allNotificationsMuted: false,
-        mutedPosts: [],
-        mutedUsers: []
-      };
-      await user.save();
-      console.log('✅ notificationSettings created');
-    }
-    
-    const mutedPosts = user.notificationSettings.mutedPosts || [];
-    const isMuted = mutedPosts.some(id => id.toString() === postId);
-    console.log('🔍 Is post currently muted?', isMuted);
-    console.log('📝 Current mutedPosts:', mutedPosts);
-    
-    if (isMuted) {
-      // Unmute
-      console.log('🔊 Unmuting post...');
-      await User.findByIdAndUpdate(userId, {
-        $pull: { 'notificationSettings.mutedPosts': postId }
-      });
-      console.log('✅ Post unmuted successfully');
-      res.json({ message: 'Post unmuted', isMuted: false });
+    const index = user.notificationSettings.mutedPosts.indexOf(postId);
+    if (index > -1) {
+      user.notificationSettings.mutedPosts.splice(index, 1);
     } else {
-      // Mute
-      console.log('🔇 Muting post...');
-      await User.findByIdAndUpdate(userId, {
-        $addToSet: { 'notificationSettings.mutedPosts': postId }
-      });
-      console.log('✅ Post muted successfully');
-      res.json({ message: 'Post muted', isMuted: true });
+      user.notificationSettings.mutedPosts.push(postId);
     }
+    
+    await user.save();
+    
+    res.json({ 
+      message: index > -1 ? 'Post unmuted' : 'Post muted',
+      isMuted: index === -1,
+      settings: user.notificationSettings
+    });
   } catch (error) {
-    console.error('❌ Error toggling mute post:', error);
-    console.error('❌ Error stack:', error.stack);
-    res.status(500).json({ message: 'Error updating settings', error: error.message });
+    console.error('Error toggling mute post:', error);
+    res.status(500).json({ message: 'Error updating settings' });
   }
 };
 
-// Mute/unmute a specific user
+// Toggle mute user
 export const toggleMuteUser = async (req, res) => {
   try {
-    console.log('🔇 toggleMuteUser called');
-    console.log('📋 Params:', req.params);
-    console.log('👤 User ID:', req.user._id);
-    
-    const { targetUserId } = req.params;
     const userId = req.user._id;
+    const { userId: targetUserId } = req.params;
+    const user = await User.findById(userId);
     
-    // Can't mute yourself
-    if (userId.toString() === targetUserId) {
-      console.log('⚠️  User trying to mute themselves');
-      return res.status(400).json({ message: 'Cannot mute yourself' });
+    const index = user.notificationSettings.mutedUsers.findIndex(
+      id => id.toString() === targetUserId
+    );
+    
+    if (index > -1) {
+      user.notificationSettings.mutedUsers.splice(index, 1);
+    } else {
+      user.notificationSettings.mutedUsers.push(targetUserId);
+    }
+    
+    await user.save();
+    
+    res.json({ 
+      message: index > -1 ? 'User unmuted' : 'User muted',
+      isMuted: index === -1,
+      settings: user.notificationSettings
+    });
+  } catch (error) {
+    console.error('Error toggling mute user:', error);
+    res.status(500).json({ message: 'Error updating settings' });
+  }
+};
+
+// Check post mute status
+export const checkPostMuteStatus = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { postId } = req.params;
+    const user = await User.findById(userId).select('notificationSettings');
+    
+    const isMuted = user.notificationSettings.mutedPosts.includes(postId);
+    
+    res.json({ isMuted });
+  } catch (error) {
+    console.error('Error checking post mute status:', error);
+    res.status(500).json({ message: 'Error checking status' });
+  }
+};
+
+// Check user mute status
+export const checkUserMuteStatus = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { userId: targetUserId } = req.params;
+    const user = await User.findById(userId).select('notificationSettings');
+    
+    const isMuted = user.notificationSettings.mutedUsers.some(
+      id => id.toString() === targetUserId
+    );
+    
+    res.json({ isMuted });
+  } catch (error) {
+    console.error('Error checking user mute status:', error);
+    res.status(500).json({ message: 'Error checking status' });
+  }
+};
+
+// Update notification preference (push, messages, likes, comments, follows)
+export const updateNotificationPreference = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { type, enabled } = req.body;
+    
+    // Validate notification type
+    const validTypes = ['push', 'messages', 'likes', 'comments', 'follows'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ message: 'Invalid notification type' });
     }
     
     const user = await User.findById(userId);
-    console.log('📦 User found:', user ? 'YES' : 'NO');
-    console.log('⚙️  Current notificationSettings:', user?.notificationSettings);
-    
-    // Ensure notificationSettings exists
-    if (!user.notificationSettings) {
-      console.log('🆕 Creating new notificationSettings');
-      user.notificationSettings = {
-        allNotificationsMuted: false,
-        mutedPosts: [],
-        mutedUsers: []
-      };
-      await user.save();
-      console.log('✅ notificationSettings created');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
     
-    const mutedUsers = user.notificationSettings.mutedUsers || [];
-    const isMuted = mutedUsers.some(id => id.toString() === targetUserId);
-    console.log('🔍 Is user currently muted?', isMuted);
-    console.log('📝 Current mutedUsers:', mutedUsers);
+    // Update the specific notification preference
+    user.notificationSettings[type] = enabled;
+    await user.save();
     
-    if (isMuted) {
-      // Unmute
-      console.log('🔊 Unmuting user...');
-      await User.findByIdAndUpdate(userId, {
-        $pull: { 'notificationSettings.mutedUsers': targetUserId }
-      });
-      console.log('✅ User unmuted successfully');
-      res.json({ message: 'User unmuted', isMuted: false });
-    } else {
-      // Mute
-      console.log('🔇 Muting user...');
-      await User.findByIdAndUpdate(userId, {
-        $addToSet: { 'notificationSettings.mutedUsers': targetUserId }
-      });
-      console.log('✅ User muted successfully');
-      res.json({ message: 'User muted', isMuted: true });
-    }
+    res.json({ 
+      message: `${type} notifications ${enabled ? 'enabled' : 'disabled'}`,
+      settings: user.notificationSettings
+    });
   } catch (error) {
-    console.error('❌ Error toggling mute user:', error);
-    console.error('❌ Error stack:', error.stack);
-    res.status(500).json({ message: 'Error updating settings', error: error.message });
-  }
-};
-
-// Check if post is muted
-export const checkPostMuteStatus = async (req, res) => {
-  try {
-    const { postId } = req.params;
-    const userId = req.user._id;
-    
-    const user = await User.findById(userId).select('notificationSettings');
-    const mutedPosts = user.notificationSettings?.mutedPosts || [];
-    
-    const isMuted = mutedPosts.some(id => id.toString() === postId);
-    
-    res.json({ isMuted });
-  } catch (error) {
-    console.error('Error checking mute status:', error);
-    res.status(500).json({ message: 'Error checking status' });
-  }
-};
-
-// Check if user is muted
-export const checkUserMuteStatus = async (req, res) => {
-  try {
-    const { targetUserId } = req.params;
-    const userId = req.user._id;
-    
-    const user = await User.findById(userId).select('notificationSettings');
-    const mutedUsers = user.notificationSettings?.mutedUsers || [];
-    
-    const isMuted = mutedUsers.some(id => id.toString() === targetUserId);
-    
-    res.json({ isMuted });
-  } catch (error) {
-    console.error('Error checking mute status:', error);
-    res.status(500).json({ message: 'Error checking status' });
+    console.error('Error updating notification preference:', error);
+    res.status(500).json({ message: 'Error updating preference' });
   }
 };

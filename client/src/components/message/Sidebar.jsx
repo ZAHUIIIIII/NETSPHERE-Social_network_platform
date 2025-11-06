@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useChatStore } from "../../store/useChatStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
-import { Users, Search } from "lucide-react";
+import { Users, Search, BellOff } from "lucide-react";
 
 // Helper function to format time
 const formatTime = (dateString) => {
@@ -121,7 +121,12 @@ const Sidebar = () => {
             {/* User info - only visible on larger screens */}
             <div className="hidden lg:block text-left min-w-0 flex-1">
               <div className="flex items-center justify-between">
-                <div className="font-semibold text-gray-800 truncate text-sm">{user.username || "Unknown User"}</div>
+                <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                  <div className="font-semibold text-gray-800 truncate text-sm">{user.username || "Unknown User"}</div>
+                  {user.isMuted && (
+                    <BellOff className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" title="Muted" />
+                  )}
+                </div>
                 {user.unreadCount > 0 && (
                   <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1.5 ml-2">
                     {user.unreadCount > 99 ? '99+' : user.unreadCount}

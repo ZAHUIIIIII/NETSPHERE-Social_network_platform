@@ -14,7 +14,6 @@ import AdminPage from './pages/AdminPage';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
 import { useNotificationStore } from './store/useNotificationStore';
-import { useChatStore } from './store/useChatStore';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { UserProvider } from './UserContext';
@@ -25,28 +24,12 @@ import {Toaster} from 'react-hot-toast';
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore();
   const { addNotification, setUnreadCount } = useNotificationStore();
-  const { getUsers, subscribeToMessages, unsubscribeFromMessages } = useChatStore();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
-
-  // Initialize chat store and subscribe to messages globally
-  useEffect(() => {
-    if (!authUser) return;
-
-    // Fetch users list to populate unread counts
-    getUsers();
-
-    // Subscribe to real-time messages
-    subscribeToMessages();
-
-    return () => {
-      unsubscribeFromMessages();
-    };
-  }, [authUser, getUsers, subscribeToMessages, unsubscribeFromMessages]);
 
   // Real-time notification listener
   useEffect(() => {
@@ -55,22 +38,28 @@ const App = () => {
     const handleNewNotification = (event) => {
       const notification = event.detail;
       
-      // Add to store
+      // Add to store (notifications are already filtered server-side, but this is the display)
       addNotification(notification);
       
-      // Show toast notification
-      const messages = {
-        follow: `${notification.sender?.username} started following you`,
-        comment: `${notification.sender?.username} commented on your post`,
-        reply: `${notification.sender?.username} replied to your comment`,
-        reaction: `${notification.sender?.username} reacted ${notification.reactionType ? `with ${notification.reactionType}` : ''} to your ${notification.post ? 'post' : 'comment'}`,
-        like: `${notification.sender?.username} liked your post`
-      };
+      // Check if push notifications (toast popups) are enabled
+      // If push is disabled, notification is still added but no toast shown
+      const showToast = notification.showToast !== false; // Server will set this based on user preference
       
-      toast.success(messages[notification.type] || 'New notification', {
-        duration: 4000,
-        icon: '🔔'
-      });
+      if (showToast) {
+        // Show toast notification
+        const messages = {
+          follow: `${notification.sender?.username} started following you`,
+          comment: `${notification.sender?.username} commented on your post`,
+          reply: `${notification.sender?.username} replied to your comment`,
+          reaction: `${notification.sender?.username} reacted ${notification.reactionType ? `with ${notification.reactionType}` : ''} to your ${notification.post ? 'post' : 'comment'}`,
+          like: `${notification.sender?.username} liked your post`
+        };
+        
+        toast.success(messages[notification.type] || 'New notification', {
+          duration: 4000,
+          icon: '🔔'
+        });
+      }
     };
 
     const handleUnreadCountUpdate = (event) => {
@@ -144,7 +133,7 @@ const App = () => {
             <Route path='/chat' element={authUser ? <ChatPage /> : <Navigate to="/login" />} />
             <Route path='/profile' element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />
             <Route path='/settings' element={authUser ? <SettingPage /> : <Navigate to="/login" />} />
-            <Route path='/admin' element={authUser ? <AdminPage /> : <Navigate to="/login" />} />
+            <Route path='/admin' element={authUser && authUser.role === 'admin' ? <AdminPage /> : <Navigate to="/" />} />
             <Route path='/search' element={authUser ? <SearchPage /> : <Navigate to="/login" />} />
             <Route path='/profile/:username?' element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />
             <Route path='/post/:postId' element={authUser ? <PostDetailPage /> : <Navigate to="/login" />} />

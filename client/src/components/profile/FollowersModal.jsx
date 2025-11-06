@@ -92,12 +92,19 @@ const FollowersModal = ({ userId, type, onClose, userName, onCountChange }) => {
   };
 
   const handleMessage = (user) => {
-    // Set the selected user in chat store
-    setSelectedUser(user);
     // Close modal
     onClose();
-    // Navigate to chat page
-    navigate('/chat');
+    // Navigate to messages page with user state
+    navigate('/messages', { 
+      state: { 
+        selectedUser: {
+          _id: user._id,
+          username: user.username,
+          name: user.name,
+          avatar: user.avatar
+        }
+      } 
+    });
   };
 
   return (

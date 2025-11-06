@@ -107,7 +107,7 @@ export const useChatStore = create((set, get) => ({
         });
       }
       
-      // Update the user's last message and unread count in the users list
+      // Update the user's last message in the users list (but don't increment unread count here)
       const updatedUsers = users.map(user => {
         if (user._id === newMessage.senderId) {
           return {
@@ -121,8 +121,8 @@ export const useChatStore = create((set, get) => ({
               createdAt: newMessage.createdAt || new Date().toISOString(),
               isFromMe: false
             },
-            // Increment unread count only if not from selected user (not currently viewing)
-            unreadCount: isMessageSentFromSelectedUser ? user.unreadCount : (user.unreadCount || 0) + 1
+            // Don't increment unread count here - it will be handled by newMessageNotification event
+            // This ensures muted conversations don't show unread counts
           };
         }
         return user;
@@ -138,11 +138,42 @@ export const useChatStore = create((set, get) => ({
       
       set({ users: updatedUsers });
     });
+
+    // Listen for notification event (only emitted if conversation is not muted)
+    // This is where we increment unread count
+    socket.on("newMessageNotification", ({ message, sender, showToast }) => {
+      const { selectedUser, users } = get();
+      const isMessageFromCurrentChat = message.senderId === selectedUser?._id;
+      
+      // Increment unread count for this conversation (only if not currently viewing)
+      if (!isMessageFromCurrentChat) {
+        const updatedUsers = users.map(user => {
+          if (user._id === message.senderId) {
+            return {
+              ...user,
+              unreadCount: (user.unreadCount || 0) + 1
+            };
+          }
+          return user;
+        });
+        set({ users: updatedUsers });
+        
+        // Show toast notification only if showToast is not explicitly false
+        if (showToast !== false) {
+          const messageText = message.text || 'Sent an image';
+          toast.success(`${sender.username}: ${messageText}`, {
+            duration: 4000,
+            icon: '💬'
+          });
+        }
+      }
+    });
   },
 
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
     socket.off("newMessage");
+    socket.off("newMessageNotification");
   },
 
   setSelectedUser: (selectedUser) => set({ selectedUser }),

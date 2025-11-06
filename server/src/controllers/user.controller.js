@@ -18,6 +18,26 @@ export const getUserProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Check if users have blocked each other
+    if (req.user) {
+      const currentUser = await User.findById(req.user._id).select('blockedUsers blockedBy');
+      
+      const hasBlocked = currentUser.blockedUsers.some(
+        id => id.toString() === user._id.toString()
+      );
+      
+      const isBlockedBy = currentUser.blockedBy.some(
+        id => id.toString() === user._id.toString()
+      );
+
+      if (hasBlocked || isBlockedBy) {
+        return res.status(403).json({ 
+          message: 'This profile is not available',
+          blocked: true
+        });
+      }
+    }
+
     // Get post count
     const postCount = await Post.countDocuments({ author: user._id });
 
@@ -478,5 +498,138 @@ export const getSuggestedUsers = async (req, res) => {
   } catch (error) {
     console.error('Error in getSuggestedUsers:', error);
     res.status(500).json({ message: 'Error fetching suggested users' });
+  }
+};
+
+// Block a user
+export const blockUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+
+    // Cannot block yourself
+    if (userId === currentUserId.toString()) {
+      return res.status(400).json({ message: 'You cannot block yourself' });
+    }
+
+    const userToBlock = await User.findById(userId);
+    if (!userToBlock) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const currentUser = await User.findById(currentUserId);
+
+    // Check if already blocked
+    if (currentUser.blockedUsers.includes(userId)) {
+      return res.status(400).json({ message: 'User already blocked' });
+    }
+
+    // Add to blocked list
+    currentUser.blockedUsers.push(userId);
+    userToBlock.blockedBy.push(currentUserId);
+
+    // Remove from following/followers if exists
+    currentUser.following = currentUser.following.filter(
+      id => id.toString() !== userId
+    );
+    currentUser.followers = currentUser.followers.filter(
+      id => id.toString() !== userId
+    );
+    userToBlock.following = userToBlock.following.filter(
+      id => id.toString() !== currentUserId.toString()
+    );
+    userToBlock.followers = userToBlock.followers.filter(
+      id => id.toString() !== currentUserId.toString()
+    );
+
+    await currentUser.save();
+    await userToBlock.save();
+
+    res.json({ 
+      message: 'User blocked successfully',
+      blocked: true 
+    });
+  } catch (error) {
+    console.error('Error blocking user:', error);
+    res.status(500).json({ message: 'Error blocking user' });
+  }
+};
+
+// Unblock a user
+export const unblockUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+
+    const userToUnblock = await User.findById(userId);
+    if (!userToUnblock) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const currentUser = await User.findById(currentUserId);
+
+    // Check if user is blocked
+    if (!currentUser.blockedUsers.includes(userId)) {
+      return res.status(400).json({ message: 'User is not blocked' });
+    }
+
+    // Remove from blocked list
+    currentUser.blockedUsers = currentUser.blockedUsers.filter(
+      id => id.toString() !== userId
+    );
+    userToUnblock.blockedBy = userToUnblock.blockedBy.filter(
+      id => id.toString() !== currentUserId.toString()
+    );
+
+    await currentUser.save();
+    await userToUnblock.save();
+
+    res.json({ 
+      message: 'User unblocked successfully',
+      blocked: false 
+    });
+  } catch (error) {
+    console.error('Error unblocking user:', error);
+    res.status(500).json({ message: 'Error unblocking user' });
+  }
+};
+
+// Get blocked users list
+export const getBlockedUsers = async (req, res) => {
+  try {
+    const currentUserId = req.user._id;
+    
+    const user = await User.findById(currentUserId)
+      .populate('blockedUsers', 'username avatar email bio')
+      .select('blockedUsers');
+
+    res.json({ 
+      blockedUsers: user.blockedUsers || []
+    });
+  } catch (error) {
+    console.error('Error fetching blocked users:', error);
+    res.status(500).json({ message: 'Error fetching blocked users' });
+  }
+};
+
+// Check if a user is blocked
+export const checkBlockStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.user._id;
+
+    const currentUser = await User.findById(currentUserId).select('blockedUsers blockedBy');
+    
+    const isBlocked = currentUser.blockedUsers.includes(userId);
+    const isBlockedBy = currentUser.blockedBy.includes(userId);
+
+    res.json({ 
+      isBlocked,      // Current user blocked this user
+      isBlockedBy,    // Current user is blocked by this user
+      hasBlockRelation: isBlocked || isBlockedBy
+    });
+  } catch (error) {
+    console.error('Error checking block status:', error);
+    res.status(500).json({ message: 'Error checking block status' });
   }
 };

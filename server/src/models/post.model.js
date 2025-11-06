@@ -95,14 +95,10 @@ const postSchema = new mongoose.Schema({
   location: { type: String },
   
   // Repost fields
-  isRepost: { type: Boolean, default: false },
-  originalPost: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Post',
-    default: null
-  },
   reposts: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   repostCount: { type: Number, default: 0 },
+  isRepost: { type: Boolean, default: false },
+  originalPost: { type: mongoose.Schema.Types.ObjectId, ref: 'Post' },
   
   // Admin moderation fields
   status: {
@@ -111,8 +107,7 @@ const postSchema = new mongoose.Schema({
     default: 'published'
   },
   reportsCount: { type: Number, default: 0 },
-  commentsCount: { type: Number, default: 0 },
-  isDeleted: { type: Boolean, default: false }
+  commentsCount: { type: Number, default: 0 }
 }, { timestamps: true });
 
 postSchema.index({ author: 1, createdAt: -1 });

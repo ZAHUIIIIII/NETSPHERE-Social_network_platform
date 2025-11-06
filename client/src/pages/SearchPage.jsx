@@ -45,6 +45,7 @@ const SearchPage = () => {
   useEffect(() => {
     loadTrending();
     loadPopularSearches();
+    loadRecentSearches();
     
     // If URL has query, search immediately
     if (urlQuery) {
@@ -64,13 +65,6 @@ const SearchPage = () => {
       window.removeEventListener('postUpdated', handlePostUpdate);
     };
   }, []); // Only run once on mount
-
-  // Load recent searches when authUser is available
-  useEffect(() => {
-    if (authUser?._id) {
-      loadRecentSearches();
-    }
-  }, [authUser?._id]);
 
   // Handle URL query changes
   useEffect(() => {
@@ -103,10 +97,7 @@ const SearchPage = () => {
 
   const loadRecentSearches = () => {
     try {
-      if (!authUser?._id) return;
-      
-      const storageKey = `recentSearches_${authUser._id}`;
-      const stored = localStorage.getItem(storageKey);
+      const stored = localStorage.getItem('recentSearches');
       if (stored) {
         const parsed = JSON.parse(stored);
         // Validate it's an array
@@ -117,9 +108,7 @@ const SearchPage = () => {
     } catch (e) {
       console.error('Error loading recent searches:', e);
       // Clear corrupted data
-      if (authUser?._id) {
-        localStorage.removeItem(`recentSearches_${authUser._id}`);
-      }
+      localStorage.removeItem('recentSearches');
     }
   };
 
@@ -274,8 +263,6 @@ const SearchPage = () => {
 
   const saveRecentSearch = (query) => {
     try {
-      if (!authUser?._id) return;
-      
       const cleanQuery = query.trim();
       if (!cleanQuery) return;
 
@@ -285,8 +272,7 @@ const SearchPage = () => {
       ].slice(0, 10); // Keep only 10 most recent
       
       setRecentSearches(newRecentSearches);
-      const storageKey = `recentSearches_${authUser._id}`;
-      localStorage.setItem(storageKey, JSON.stringify(newRecentSearches));
+      localStorage.setItem('recentSearches', JSON.stringify(newRecentSearches));
     } catch (e) {
       console.error('Error saving recent search:', e);
     }
@@ -295,10 +281,7 @@ const SearchPage = () => {
   const clearRecentSearches = () => {
     setRecentSearches([]);
     try {
-      if (authUser?._id) {
-        const storageKey = `recentSearches_${authUser._id}`;
-        localStorage.removeItem(storageKey);
-      }
+      localStorage.removeItem('recentSearches');
       toast.success('Recent searches cleared');
     } catch (e) {
       console.error('Error clearing recent searches:', e);

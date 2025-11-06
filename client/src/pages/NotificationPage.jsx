@@ -53,6 +53,7 @@ const NotificationPage = () => {
   const [activeTab, setActiveTab] = useState('all'); // 'all', 'unread', 'comments', 'likes', 'follows'
   const [sortBy, setSortBy] = useState('recent'); // 'recent' or 'unread'
   const [showSettings, setShowSettings] = useState(false);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false); // Track options dropdown menu
   const [openMenuId, setOpenMenuId] = useState(null); // Track which notification menu is open
   const [followStates, setFollowStates] = useState({}); // Track follow state for each user
   const [followLoading, setFollowLoading] = useState({}); // Track loading state for follow buttons
@@ -219,6 +220,33 @@ const NotificationPage = () => {
       toast.success('All notifications marked as read');
     } catch (error) {
       toast.error('Failed to mark all as read');
+    }
+  };
+
+  const handleClearAllNotifications = async () => {
+    try {
+      if (notifications.length === 0) {
+        toast.error('No notifications to clear');
+        return;
+      }
+      
+      // Confirm with user
+      if (!window.confirm('Are you sure you want to delete all notifications? This action cannot be undone.')) {
+        return;
+      }
+      
+      setShowOptionsMenu(false);
+      
+      // Delete all notifications one by one
+      const deletePromises = notifications.map(notification => 
+        deleteNotificationFromStore(notification._id)
+      );
+      
+      await Promise.all(deletePromises);
+      toast.success('All notifications cleared');
+    } catch (error) {
+      console.error('Failed to clear all notifications:', error);
+      toast.error('Failed to clear all notifications');
     }
   };
 
@@ -805,8 +833,7 @@ const NotificationPage = () => {
                     {(notification.type === 'like' || 
                       notification.type === 'comment' || 
                       notification.type === 'reply' || 
-                      notification.type === 'reaction' ||
-                      notification.type === 'share') && 
+                      notification.type === 'reaction') && 
                       (notification.post?._id || notification.post) && (
                       <button
                         onClick={(e) => {
@@ -859,18 +886,45 @@ const NotificationPage = () => {
               <button
                 onClick={handleMarkAllAsRead}
                 disabled={unreadCount === 0}
-                className="flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <CheckCheck className="w-3.5 h-3.5" />
+                <CheckCheck className="w-4 h-4" />
                 <span className="hidden sm:inline">Mark all read</span>
               </button>
               
-              <button
-                onClick={() => setShowSettings(!showSettings)}
-                className="p-1.5 text-gray-600 hover:text-gray-900 transition-colors"
+              <PortalDropdown
+                isOpen={showOptionsMenu}
+                onClose={() => setShowOptionsMenu(false)}
+                trigger={
+                  <button
+                    onClick={() => setShowOptionsMenu(!showOptionsMenu)}
+                    className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </button>
+                }
               >
-                <Settings className="w-4 h-4" />
-              </button>
+                <div className="bg-white rounded-lg shadow-lg border border-gray-200 py-1 min-w-[220px]">
+                  <button
+                    onClick={() => {
+                      setShowOptionsMenu(false);
+                      navigate('/settings');
+                    }}
+                    className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-3"
+                  >
+                    <Bell className="w-4 h-4" />
+                    <span>Notification settings</span>
+                  </button>
+                  <button
+                    onClick={handleClearAllNotifications}
+                    disabled={notifications.length === 0}
+                    className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Clear all notifications</span>
+                  </button>
+                </div>
+              </PortalDropdown>
             </div>
           </div>
 

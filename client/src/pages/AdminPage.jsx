@@ -376,7 +376,7 @@ const AdminPage = ({ onBack } = {}) => {
           <ReportsPanel reports={reports} resolveReport={resolveReport} dismissReport={dismissReport} />
         )}
 
-        {activeTab === 'usage' && (
+        {activeTab === 'analytics' && (
           <Analytics />
         )}
 

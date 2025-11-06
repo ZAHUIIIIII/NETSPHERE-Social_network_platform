@@ -7,6 +7,7 @@ import mongoose from 'mongoose';
 export const search = async (req, res) => {
   try {
     const { q, type, sortBy, skip = 0, limit = 20 } = req.query;
+    const blockedUserIds = req.blockedUserIds || [];
     
     console.log('=== SEARCH REQUEST ===');
     console.log('Query:', q);
@@ -34,14 +35,23 @@ export const search = async (req, res) => {
     // Search Users with priority scoring
     if (!type || type === 'users' || type === 'all') {
       const userSearchQuery = {
-        $or: [
-          { username: exactMatch },      // Highest priority
-          { username: startsWithRegex }, // High priority
-          { username: containsRegex },   // Medium priority
-          { email: containsRegex },
-          { bio: containsRegex }
+        $and: [
+          {
+            $or: [
+              { username: exactMatch },      // Highest priority
+              { username: startsWithRegex }, // High priority
+              { username: containsRegex },   // Medium priority
+              { email: containsRegex },
+              { bio: containsRegex }
+            ]
+          }
         ]
       };
+
+      // Filter out blocked users
+      if (blockedUserIds.length > 0) {
+        userSearchQuery.$and.push({ _id: { $nin: blockedUserIds } });
+      }
 
       let users = await User.find(userSearchQuery)
         .select('username email bio avatar createdAt')
@@ -90,6 +100,11 @@ export const search = async (req, res) => {
           }
         ]
       };
+
+      // Filter out posts from blocked users
+      if (blockedUserIds.length > 0) {
+        postSearchQuery.$and.push({ author: { $nin: blockedUserIds } });
+      }
 
       // Sorting options
       let sortOptions = {};

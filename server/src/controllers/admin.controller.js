@@ -118,11 +118,9 @@ export const getDashboardStats = async (req, res) => {
 
     // Activity distribution - get REAL counts from actual collections and data
     const postsCount = await Post.countDocuments();
-    console.log('📊 Posts count:', postsCount);
     
     // Check if comments are in separate collection or embedded
     const commentsCount = await Comment.countDocuments({ isDeleted: false });
-    console.log('📊 Comments count (separate collection, non-deleted):', commentsCount);
     
     // Also check embedded comments in posts (legacy system)
     const embeddedCommentsResult = await Post.aggregate([
@@ -139,35 +137,11 @@ export const getDashboardStats = async (req, res) => {
       }
     ]);
     const embeddedCommentsCount = embeddedCommentsResult[0]?.total || 0;
-    console.log('📊 Embedded comments in posts:', embeddedCommentsCount);
     
     // Use the larger number (in case system uses one or the other)
     const finalCommentsCount = Math.max(commentsCount, embeddedCommentsCount);
-    console.log('📊 Final comments count used:', finalCommentsCount);
-    
-    // Debug: Sample some data
-    if (commentsCount > 0) {
-      const sampleComments = await Comment.find().limit(2).lean();
-      console.log('📊 Sample standalone comments:', JSON.stringify(sampleComments.map(c => ({
-        postId: c.postId,
-        content: c.content?.substring(0, 50),
-        isDeleted: c.isDeleted
-      })), null, 2));
-    }
-    
-    if (embeddedCommentsCount > 0) {
-      const postWithComments = await Post.findOne({ 'comments.0': { $exists: true } }).lean();
-      if (postWithComments) {
-        console.log('📊 Sample embedded comment:', JSON.stringify({
-          postId: postWithComments._id,
-          commentsCount: postWithComments.comments?.length,
-          firstComment: postWithComments.comments?.[0]?.content?.substring(0, 50)
-        }, null, 2));
-      }
-    }
     
     // Count all likes across all posts (including both legacy likes and reactions)
-    console.log('📊 Aggregating post likes and reactions...');
     const likesResult = await Post.aggregate([
       {
         $project: {
@@ -196,28 +170,8 @@ export const getDashboardStats = async (req, res) => {
       }
     ]);
 
-    // Sample a post to see its structure
-    const samplePost = await Post.findOne().lean();
-    if (samplePost) {
-      console.log('📊 Sample post structure:', JSON.stringify({
-        hasLikes: !!samplePost.likes,
-        likesCount: samplePost.likes?.length || 0,
-        hasReactions: !!samplePost.reactions,
-        reactions: samplePost.reactions ? {
-          like: samplePost.reactions.like?.length || 0,
-          love: samplePost.reactions.love?.length || 0,
-          haha: samplePost.reactions.haha?.length || 0,
-          wow: samplePost.reactions.wow?.length || 0,
-          sad: samplePost.reactions.sad?.length || 0,
-          angry: samplePost.reactions.angry?.length || 0
-        } : null
-      }, null, 2));
-    }
-
     // Calculate total likes/reactions - ONLY from posts (not comments)
     const postLikesData = likesResult[0] || {};
-    
-    console.log('📊 Post likes data:', postLikesData);
     
     const totalPostReactions = 
       (postLikesData.totalLegacyLikes || 0) +
@@ -230,17 +184,6 @@ export const getDashboardStats = async (req, res) => {
 
     // Use only post reactions for the "Likes" metric
     const likesCount = totalPostReactions;
-
-    console.log('📊 Activity Distribution Final Result:', {
-      posts: postsCount,
-      comments: finalCommentsCount,
-      likes: likesCount,
-      breakdown: {
-        postReactions: totalPostReactions,
-        embeddedComments: embeddedCommentsCount,
-        standaloneComments: commentsCount
-      }
-    });
 
     res.json({
       stats: {
@@ -747,54 +690,61 @@ export const getRecentActivities = async (req, res) => {
         timestamp: user.updatedAt,
         type: 'moderation',
         icon: '🚫',
-        status: 'warning'
-      });
-    });
-
-    // Get recently banned users
-    const bannedUsers = await User.find({ status: 'banned' })
-      .sort({ updatedAt: -1 })
-      .limit(5)
-      .select('name username updatedAt')
-      .lean();
-
-    bannedUsers.forEach(user => {
-      activities.push({
-        id: `banned-${user._id}`,
-        action: 'User banned',
-        user: user.username,
-        detail: user.name,
-        time: formatTimeAgo(user.updatedAt),
-        timestamp: user.updatedAt,
-        type: 'moderation',
-        icon: '🚫',
         status: 'error'
       });
     });
 
-    // Get recently deleted posts
-    const deletedPosts = await Post.find({ 
+    // Get recently activated users (unsuspended)
+    const activeUsers = await User.find({ 
+      status: 'active',
+      updatedAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } // Last 7 days
+    })
+      .sort({ updatedAt: -1 })
+      .limit(3)
+      .select('name username updatedAt createdAt')
+      .lean();
+
+    // Filter only those who were likely unsuspended (updated after creation)
+    activeUsers.forEach(user => {
+      const daysSinceCreation = (new Date(user.updatedAt) - new Date(user.createdAt)) / (1000 * 60 * 60 * 24);
+      if (daysSinceCreation > 1) { // Only if updated more than a day after creation
+        activities.push({
+          id: `activated-${user._id}`,
+          action: 'User activated',
+          user: user.username,
+          detail: user.name,
+          time: formatTimeAgo(user.updatedAt),
+          timestamp: user.updatedAt,
+          type: 'moderation',
+          icon: '✅',
+          status: 'success'
+        });
+      }
+    });
+
+    // Get recently deleted comments (if tracked)
+    const deletedComments = await Comment.find({ 
       isDeleted: true,
       updatedAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
     })
       .sort({ updatedAt: -1 })
-      .limit(5)
-      .populate('author', 'name username')
-      .select('author content updatedAt')
+      .limit(3)
+      .populate('authorId', 'name username')
+      .select('authorId content updatedAt')
       .lean();
 
-    deletedPosts.forEach(post => {
-      if (post.author) {
+    deletedComments.forEach(comment => {
+      if (comment.authorId) {
         activities.push({
-          id: `deleted-post-${post._id}`,
-          action: 'Post deleted',
-          user: post.author.username,
-          detail: post.content ? post.content.substring(0, 50) + (post.content.length > 50 ? '...' : '') : 'Image post',
-          time: formatTimeAgo(post.updatedAt),
-          timestamp: post.updatedAt,
+          id: `deleted-comment-${comment._id}`,
+          action: 'Comment deleted',
+          user: comment.authorId.username,
+          detail: comment.content ? comment.content.substring(0, 50) + (comment.content.length > 50 ? '...' : '') : '',
+          time: formatTimeAgo(comment.updatedAt),
+          timestamp: comment.updatedAt,
           type: 'moderation',
           icon: '🗑️',
-          status: 'error'
+          status: 'warning'
         });
       }
     });
@@ -804,8 +754,6 @@ export const getRecentActivities = async (req, res) => {
 
     // Return limited results
     const limitedActivities = activities.slice(0, Number(limit));
-
-    console.log(`📊 Fetched ${limitedActivities.length} admin-relevant activities`);
 
     res.json({ 
       activities: limitedActivities,

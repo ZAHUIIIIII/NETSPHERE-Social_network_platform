@@ -77,38 +77,6 @@ notificationSchema.statics.createNotification = async function(data) {
     return null;
   }
 
-  // Only group similar notifications for reactions and likes (not comments/replies)
-  // Comments and replies should always create new notifications
-  if (data.type === 'like' || data.type === 'reaction' || data.type === 'follow') {
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const existing = await this.findOne({
-      recipient: data.recipient,
-      sender: data.sender,
-      type: data.type,
-      post: data.post,
-      read: false,
-      createdAt: { $gte: oneHourAgo }
-    });
-
-    if (existing) {
-      // Update the timestamp and metadata to make it recent
-      existing.createdAt = new Date();
-      existing.read = false; // Mark as unread again
-      if (data.metadata) {
-        existing.metadata = data.metadata;
-      }
-      await existing.save();
-      
-      // Re-populate sender and post to ensure they're included
-      await existing.populate('sender', 'username avatar');
-      if (existing.post) {
-        await existing.populate('post', 'content images');
-      }
-      
-      return existing;
-    }
-  }
-
   // Create new notification
   const notification = await this.create(data);
   await notification.populate('sender', 'username avatar');

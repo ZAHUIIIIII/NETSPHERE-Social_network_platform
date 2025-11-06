@@ -74,7 +74,14 @@ const ProfilePage = () => {
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      toast.error('Failed to load profile');
+      
+      // Check if it's a blocked user error
+      if (error.response?.status === 403 && error.response?.data?.blocked) {
+        toast.error('This profile is not available');
+        navigate('/');
+      } else {
+        toast.error('Failed to load profile');
+      }
     } finally {
       setLoading(false);
     }

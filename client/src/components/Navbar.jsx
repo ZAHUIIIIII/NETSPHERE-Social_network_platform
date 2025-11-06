@@ -9,7 +9,7 @@ import CreatePostModal from './CreatePostModal';
 const Navbar = ({ isCollapsed, setIsCollapsed }) => {
   const { authUser, logout } = useAuthStore();
   const { unreadCount, fetchNotifications } = useNotificationStore();
-  const { users } = useChatStore();
+  const { users, getUsers, subscribeToMessages, unsubscribeFromMessages } = useChatStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [showCreatePost, setShowCreatePost] = useState(false);
@@ -17,12 +17,19 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
   // Calculate unread message count from users with unread messages
   const unreadMessageCount = users.filter(user => user.unreadCount > 0).length;
 
-  // Fetch initial unread count when component mounts
+  // Fetch initial data and subscribe to messages when component mounts
   useEffect(() => {
     if (authUser) {
       fetchNotifications(false);
+      getUsers(); // Fetch users list for message count
+      subscribeToMessages(); // Subscribe to real-time message updates
+      
+      return () => {
+        unsubscribeFromMessages(); // Cleanup on unmount
+      };
     }
-  }, [authUser, fetchNotifications]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser]); // Only run when authUser changes, not when functions change
 
   const handleLogout = async () => {
     try {
@@ -185,20 +192,6 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
             </Link>
             
             <Link 
-              to="/admin" 
-              className={`flex items-center px-3 py-2 rounded-lg transition-colors ${isCollapsed ? 'justify-center' : 'space-x-3'} ${
-                location.pathname === '/admin' 
-                  ? 'bg-blue-600 text-white' 
-                  : 'hover:bg-gray-100 text-gray-700'
-              }`}
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <path d="M12 2l8 4v6c0 5-3.58 9.74-8 11-4.42-1.26-8-6-8-11V6l8-4z" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              {!isCollapsed && <span className="font-medium">Admin</span>}
-            </Link>
-
-            <Link 
               to="/settings" 
               className={`flex items-center px-3 py-2 rounded-lg transition-colors ${isCollapsed ? 'justify-center' : 'space-x-3'} ${
                 location.pathname === '/settings' 
@@ -212,6 +205,23 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
               </svg>
               {!isCollapsed && <span className="font-medium">Settings</span>}
             </Link>
+
+            {/* Only show Admin link for admin users */}
+            {authUser?.role === 'admin' && (
+              <Link 
+                to="/admin" 
+                className={`flex items-center px-3 py-2 rounded-lg transition-colors ${isCollapsed ? 'justify-center' : 'space-x-3'} ${
+                  location.pathname === '/admin' 
+                    ? 'bg-blue-600 text-white' 
+                    : 'hover:bg-gray-100 text-gray-700'
+                }`}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M12 2l8 4v6c0 5-3.58 9.74-8 11-4.42-1.26-8-6-8-11V6l8-4z" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {!isCollapsed && <span className="font-medium">Admin</span>}
+              </Link>
+            )}
           </div>
         </div>
 
@@ -219,19 +229,21 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
         <div className="p-3 border-t border-gray-200">
           {!isCollapsed && (
             <div className="flex items-center space-x-3 mb-3">
-              <div className="w-8 h-8 rounded-full overflow-hidden">
+              <div className="w-8 h-8 rounded-full overflow-hidden relative">
                 {authUser.avatar ? (
                   <img 
                     src={authUser.avatar} 
                     alt={authUser.username}
                     className="w-full h-full object-cover"
                     onError={(e) => {
+                      console.log('Navbar avatar failed to load:', e.target.src);
                       e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
+                      const fallback = e.target.parentElement.querySelector('.avatar-fallback');
+                      if (fallback) fallback.style.display = 'flex';
                     }}
                   />
                 ) : null}
-                <div className={`w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center ${authUser.avatar ? 'hidden' : 'flex'}`}>
+                <div className={`avatar-fallback w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center absolute inset-0`} style={{ display: authUser.avatar ? 'none' : 'flex' }}>
                   <span className="text-white font-bold text-sm">{authUser.username.charAt(0).toUpperCase()}</span>
                 </div>
               </div>
@@ -244,19 +256,21 @@ const Navbar = ({ isCollapsed, setIsCollapsed }) => {
           
           {isCollapsed && (
             <div className="flex justify-center mb-3">
-              <div className="w-8 h-8 rounded-full overflow-hidden">
+              <div className="w-8 h-8 rounded-full overflow-hidden relative">
                 {authUser.avatar ? (
                   <img 
                     src={authUser.avatar} 
                     alt={authUser.username}
                     className="w-full h-full object-cover"
                     onError={(e) => {
+                      console.log('Navbar collapsed avatar failed to load:', e.target.src);
                       e.target.style.display = 'none';
-                      e.target.nextSibling.style.display = 'flex';
+                      const fallback = e.target.parentElement.querySelector('.avatar-fallback');
+                      if (fallback) fallback.style.display = 'flex';
                     }}
                   />
                 ) : null}
-                <div className={`w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center ${authUser.avatar ? 'hidden' : 'flex'}`}>
+                <div className={`avatar-fallback w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center absolute inset-0`} style={{ display: authUser.avatar ? 'none' : 'flex' }}>
                   <span className="text-white font-bold text-sm">{authUser.username.charAt(0).toUpperCase()}</span>
                 </div>
               </div>
