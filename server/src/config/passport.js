@@ -76,12 +76,22 @@ function ensureGoogleStrategy() {
                             }
 
                         } else {
-                            // Update existing user with Google data if not already set
+                            // Existing user found - check if it's a password-based account
+                            if (!user.isGoogleUser && !user.googleId) {
+                                // This is a password-based account trying to login via Google
+                                // Prevent this to avoid confusion between login methods
+                                return done(null, false, { 
+                                    message: 'This email is already registered with a password. Please login using your email and password instead.',
+                                    status: 'password_account',
+                                    email: user.email
+                                });
+                            }
+                            
+                            // Update existing Google user data if needed
                             let updated = false;
                             
                             if (!user.googleId) {
                                 user.googleId = profile.id;
-                                user.isGoogleUser = true;
                                 updated = true;
                             }
                             

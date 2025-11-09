@@ -176,23 +176,23 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute top-20 left-20 w-16 h-16 bg-blue-400 rounded-full opacity-20 animate-pulse"></div>
-      <div className="absolute top-32 right-32 w-8 h-8 bg-purple-400 rounded-full opacity-30 animate-bounce"></div>
-      <div className="absolute bottom-32 right-20 w-12 h-12 bg-pink-400 rounded-full opacity-25"></div>
-      <div className="absolute bottom-20 left-32 w-6 h-6 bg-green-400 rounded-full opacity-40"></div>
-      <div className="absolute top-1/2 left-10 w-4 h-4 bg-red-400 rounded-full opacity-30"></div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-3 sm:px-4 py-6 sm:py-8 relative overflow-hidden">
+      {/* Background decorative elements - hidden on mobile */}
+      <div className="hidden sm:block absolute top-20 left-20 w-16 h-16 bg-blue-400 rounded-full opacity-20 animate-pulse"></div>
+      <div className="hidden sm:block absolute top-32 right-32 w-8 h-8 bg-purple-400 rounded-full opacity-30 animate-bounce"></div>
+      <div className="hidden sm:block absolute bottom-32 right-20 w-12 h-12 bg-pink-400 rounded-full opacity-25"></div>
+      <div className="hidden sm:block absolute bottom-20 left-32 w-6 h-6 bg-green-400 rounded-full opacity-40"></div>
+      <div className="hidden sm:block absolute top-1/2 left-10 w-4 h-4 bg-red-400 rounded-full opacity-30"></div>
       
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-gray-100 p-8 relative z-10">
-        <div className="mb-6">
-          <div className="flex justify-between mb-4">
+      <div className="w-full max-w-md bg-white rounded-xl sm:rounded-2xl shadow-2xl border border-gray-100 p-5 sm:p-8 relative z-10">
+        <div className="mb-4 sm:mb-6">
+          <div className="flex justify-between mb-3 sm:mb-4 gap-0.5 sm:gap-1">
             {steps.map((label, idx) => (
               <div 
                 key={label} 
-                className={`flex-1 text-center text-xs ${
+                className={`flex-1 text-center text-[10px] sm:text-xs ${
                   idx === step 
-                    ? 'font-bold text-blue-600 bg-blue-100 py-1 px-2 rounded-md' 
+                    ? 'font-bold text-blue-600 bg-blue-100 py-0.5 sm:py-1 px-0.5 sm:px-2 rounded-md' 
                     : idx < step 
                     ? 'text-blue-500 font-medium'
                     : 'text-gray-400'
@@ -202,43 +202,43 @@ export default function SignUpPage() {
               </div>
             ))}
           </div>
-          <div className="w-full bg-gray-200 h-2 rounded-full">
+          <div className="w-full bg-gray-200 h-1.5 sm:h-2 rounded-full">
             <div 
-              className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-300" 
+              className="bg-gradient-to-r from-blue-500 to-blue-600 h-1.5 sm:h-2 rounded-full transition-all duration-300" 
               style={{ width: `${((step + 1) / steps.length) * 100}%` }}
             ></div>
           </div>
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-center animate-fade-in flex items-center justify-center gap-2" role="alert">
-            <svg className="w-5 h-5 mr-1 text-red-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl mb-3 sm:mb-4 text-center text-xs sm:text-sm animate-fade-in flex items-center justify-center gap-2" role="alert">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M12 9v2m0 4h.01M21 12c0 4.418-4.03 8-9 8s-9-3.582-9-8 4.03-8 9-8 9 3.582 9 8z"/>
             </svg>
-            {error}
+            <span className="break-words">{error}</span>
           </div>
         )}
 
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-4 text-center animate-fade-in flex items-center justify-center gap-2" role="alert">
-            <svg className="w-5 h-5 mr-1 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <div className="bg-green-50 border border-green-200 text-green-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl mb-3 sm:mb-4 text-center text-xs sm:text-sm animate-fade-in flex items-center justify-center gap-2" role="alert">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M5 13l4 4L19 7"/>
             </svg>
-            Account created successfully! Redirecting you...
+            <span>Account created successfully! Redirecting you...</span>
           </div>
         )}
 
         {/* Step 0: Username */}
         {step === 0 && (
           <div>
-            <label className="block mb-2 font-medium text-gray-700">Username</label>
+            <label className="block mb-1.5 sm:mb-2 text-sm sm:text-base font-medium text-gray-700">Username</label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <input 
                 name="username" 
                 value={form.username} 
                 onChange={handleChange} 
-                className={`w-full border rounded-lg px-10 py-3 ${
+                className={`w-full border rounded-lg px-9 sm:px-10 py-2.5 sm:py-3 text-sm sm:text-base ${
                   fieldError.username ? 'border-red-400' : 'border-gray-200'
                 } focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all text-gray-900`} 
                 placeholder="Choose a username" 
@@ -250,24 +250,24 @@ export default function SignUpPage() {
               </div>
             )}
             <button 
-              className="mt-6 w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-lg flex items-center justify-center font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed" 
+              className="mt-4 sm:mt-6 w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2.5 sm:py-3 rounded-lg text-sm sm:text-base flex items-center justify-center font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg" 
               onClick={nextStep} 
               disabled={!form.username || loading}
             >
-              {loading ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : null}
+              {loading ? <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-spin" /> : null}
               {loading ? 'Loading...' : 'Next'}
             </button>
-            <div className="relative my-6">
+            <div className="relative my-4 sm:my-6">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200"></div>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">Already have an account?</span>
+              <div className="relative flex justify-center text-xs sm:text-sm">
+                <span className="px-3 sm:px-4 bg-white text-gray-500">Already have an account?</span>
               </div>
             </div>
             <Link
               to="/login"
-              className="w-full block text-center py-3 border border-gray-200 rounded-lg text-gray-700 font-medium"
+              className="w-full block text-center py-2.5 sm:py-3 border border-gray-200 rounded-lg text-sm sm:text-base text-gray-700 font-medium hover:bg-gray-50 transition-colors"
             >
               Sign In
             </Link>
@@ -277,15 +277,15 @@ export default function SignUpPage() {
         {/* Step 1: Birthday */}
         {step === 1 && (
           <div>
-            <label className="block mb-2 font-medium text-gray-700">Birthday</label>
+            <label className="block mb-1.5 sm:mb-2 text-sm sm:text-base font-medium text-gray-700">Birthday</label>
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <input 
                 name="birthday" 
                 type="date" 
                 value={form.birthday} 
                 onChange={handleChange} 
-                className={`w-full border rounded-lg px-10 py-3 ${
+                className={`w-full border rounded-lg px-9 sm:px-10 py-2.5 sm:py-3 text-sm sm:text-base ${
                   fieldError.birthday ? 'border-red-400' : 'border-gray-200'
                 } focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all text-gray-900`} 
               />
@@ -295,20 +295,20 @@ export default function SignUpPage() {
                 ⚠️ {fieldError.birthday}
               </div>
             )}
-            <div className="flex justify-between mt-6">
+            <div className="flex justify-between gap-2 sm:gap-3 mt-4 sm:mt-6">
               <button 
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors" 
+                className="bg-gray-200 text-gray-700 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-medium transition-colors hover:bg-gray-300" 
                 onClick={prevStep} 
                 disabled={loading}
               >
                 Back
               </button>
               <button 
-                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-lg flex items-center justify-center font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed" 
+                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base flex items-center justify-center font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg" 
                 onClick={nextStep} 
                 disabled={!form.birthday || loading}
               >
-                {loading ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : null}
+                {loading ? <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-spin" /> : null}
                 {loading ? 'Loading...' : 'Next'}
               </button>
             </div>
@@ -318,14 +318,14 @@ export default function SignUpPage() {
         {/* Step 2: Gender */}
         {step === 2 && (
           <div>
-            <label className="block mb-2 font-medium text-gray-700">Gender</label>
+            <label className="block mb-1.5 sm:mb-2 text-sm sm:text-base font-medium text-gray-700">Gender</label>
             <div className="relative">
-              <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <select 
                 name="gender" 
                 value={form.gender} 
                 onChange={handleChange} 
-                className={`w-full border rounded-lg px-10 py-3 ${
+                className={`w-full border rounded-lg px-9 sm:px-10 py-2.5 sm:py-3 text-sm sm:text-base ${
                   fieldError.gender ? 'border-red-400' : 'border-gray-200'
                 } focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all text-gray-900`}
               >
@@ -340,20 +340,20 @@ export default function SignUpPage() {
                 ⚠️ {fieldError.gender}
               </div>
             )}
-            <div className="flex justify-between mt-6">
+            <div className="flex justify-between gap-2 sm:gap-3 mt-4 sm:mt-6">
               <button 
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors" 
+                className="bg-gray-200 text-gray-700 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-medium transition-colors hover:bg-gray-300" 
                 onClick={prevStep} 
                 disabled={loading}
               >
                 Back
               </button>
               <button 
-                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-lg flex items-center justify-center font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed" 
+                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base flex items-center justify-center font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg" 
                 onClick={nextStep} 
                 disabled={!form.gender || loading}
               >
-                {loading ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : null}
+                {loading ? <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-spin" /> : null}
                 {loading ? 'Loading...' : 'Next'}
               </button>
             </div>
@@ -363,15 +363,15 @@ export default function SignUpPage() {
         {/* Step 3: Email */}
         {step === 3 && (
           <div>
-            <label className="block mb-2 font-medium text-gray-700">Email</label>
+            <label className="block mb-1.5 sm:mb-2 text-sm sm:text-base font-medium text-gray-700">Email</label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <input 
                 name="email" 
                 type="email" 
                 value={form.email} 
                 onChange={handleChange} 
-                className={`w-full border rounded-lg px-10 py-3 ${
+                className={`w-full border rounded-lg px-9 sm:px-10 py-2.5 sm:py-3 text-sm sm:text-base ${
                   fieldError.email ? 'border-red-400' : 'border-gray-200'
                 } focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all text-gray-900 placeholder:text-gray-400`} 
                 placeholder="Enter your email" 
@@ -383,21 +383,21 @@ export default function SignUpPage() {
                 ⚠️ {fieldError.email}
               </div>
             )}
-            <div className="flex justify-between mt-6">
+            <div className="flex justify-between gap-2 sm:gap-3 mt-4 sm:mt-6">
               <button 
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors" 
+                className="bg-gray-200 text-gray-700 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-medium transition-colors hover:bg-gray-300" 
                 onClick={prevStep} 
                 disabled={loading}
               >
                 Back
               </button>
               <button 
-                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-lg flex items-center justify-center font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed" 
+                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base flex items-center justify-center font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg" 
                 onClick={nextStep} 
                 disabled={!form.email || loading}
               >
-                {loading ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : null}
-                {loading ? 'Sending Code...' : 'Send Code'}
+                {loading ? <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-spin" /> : null}
+                {loading ? 'Sending...' : 'Send Code'}
               </button>
             </div>
           </div>
@@ -406,22 +406,22 @@ export default function SignUpPage() {
         {/* Step 4: Verification */}
         {step === 4 && !emailVerified && (
           <form onSubmit={handleVerify}>
-            <label className="block mb-2 font-medium text-gray-700">Verification Code</label>
+            <label className="block mb-1.5 sm:mb-2 text-sm sm:text-base font-medium text-gray-700">Verification Code</label>
             <input
               name="verificationCode"
               value={form.verificationCode}
               onChange={handleChange}
-              className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all text-gray-900 text-center text-lg tracking-wider"
+              className="w-full border border-gray-200 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all text-gray-900 text-center text-base sm:text-lg tracking-wider"
               placeholder="Enter 6-digit code"
               maxLength="6"
             />
-            <p className="text-sm text-gray-600 mt-2 text-center">
-              We sent a verification code to <strong>{form.email}</strong>
+            <p className="text-xs sm:text-sm text-gray-600 mt-2 text-center">
+              We sent a verification code to <strong className="break-all">{form.email}</strong>
             </p>
-            <div className="flex justify-between mt-6">
+            <div className="flex justify-between gap-2 sm:gap-3 mt-4 sm:mt-6">
               <button 
                 type="button" 
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors" 
+                className="bg-gray-200 text-gray-700 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-medium transition-colors hover:bg-gray-300" 
                 onClick={prevStep} 
                 disabled={loading}
               >
@@ -429,10 +429,10 @@ export default function SignUpPage() {
               </button>
               <button 
                 type="submit" 
-                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-lg flex items-center justify-center font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed" 
+                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base flex items-center justify-center font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg" 
                 disabled={!form.verificationCode || loading}
               >
-                {loading ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : null}
+                {loading ? <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-spin" /> : null}
                 {loading ? 'Verifying...' : 'Verify Email'}
               </button>
             </div>
@@ -442,31 +442,31 @@ export default function SignUpPage() {
         {/* Step 5: Password */}
         {step === 5 && (
           <form onSubmit={handleSetPassword}>
-            <label className="block mb-2 font-medium text-gray-700">Create Password</label>
+            <label className="block mb-1.5 sm:mb-2 text-sm sm:text-base font-medium text-gray-700">Create Password</label>
             <div className="relative">
               <input
                 name="password"
                 type={showPassword ? 'text' : 'password'}
                 value={form.password}
                 onChange={handleChange}
-                className={`w-full border rounded-lg px-4 py-3 pr-12 ${
+                className={`w-full border rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 text-sm sm:text-base ${
                   fieldError.password ? 'border-red-400' : 'border-gray-200'
                 } focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all text-gray-900`}
                 placeholder="Create a strong password"
               />
               <button
                 type="button"
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 transition-colors"
                 onClick={() => setShowPassword((v) => !v)}
                 tabIndex={-1}
               >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                {showPassword ? <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" /> : <Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
               </button>
             </div>
             
             {/* Password strength indicator */}
             {form.password && (
-              <div className={`mt-2 text-xs font-semibold ${
+              <div className={`mt-2 text-xs sm:text-sm font-semibold ${
                 getPasswordStrength(form.password) === 'Weak' ? 'text-red-500' : 
                 getPasswordStrength(form.password) === 'Medium' ? 'text-yellow-500' : 'text-green-600'
               }`}>
@@ -480,14 +480,14 @@ export default function SignUpPage() {
               </div>
             )}
             
-            <div className="mt-6">
+            <div className="mt-4 sm:mt-6">
               <button 
                 type="submit" 
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-lg flex items-center justify-center font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed" 
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2.5 sm:py-3 rounded-lg text-sm sm:text-base flex items-center justify-center font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg" 
                 disabled={!form.password || loading}
               >
-                {loading ? <Loader2 className="h-5 w-5 mr-2 animate-spin" /> : null}
-                {loading ? 'Creating Account...' : 'Complete Registration'}
+                {loading ? <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-spin" /> : null}
+                {loading ? 'Creating...' : 'Complete Registration'}
               </button>
             </div>
           </form>

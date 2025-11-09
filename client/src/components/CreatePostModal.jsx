@@ -144,43 +144,43 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isPosting) {
           onClose();
         }
       }}
     >
-      <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl">
+      <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden shadow-2xl flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <h2 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             Create Post
           </h2>
           <button
             onClick={onClose}
             disabled={isPosting}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-50"
+            className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-50"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto max-h-[calc(90vh-180px)] p-4">
+        <div className="overflow-y-auto flex-1 p-3 sm:p-4">
           {/* User Info */}
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
             <img
               src={user?.avatar || '/avatar-placeholder.png'}
               alt={user?.username}
-              className="w-10 h-10 rounded-full object-cover"
+              className="w-10 h-10 rounded-full object-cover flex-shrink-0"
             />
-            <div>
-              <p className="font-semibold text-gray-900 dark:text-gray-100">{user?.username}</p>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-sm sm:text-base text-gray-900 dark:text-gray-100 truncate">{user?.username}</p>
               <select
                 value={privacy}
                 onChange={(e) => setPrivacy(e.target.value)}
-                className="text-xs bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded-full px-3 py-1 border-none focus:ring-2 focus:ring-blue-500"
+                className="text-xs bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded-full px-2 sm:px-3 py-1 border-none focus:ring-2 focus:ring-blue-500"
                 disabled={isPosting}
               >
                 {privacyOptions.map(option => (
@@ -198,7 +198,7 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder={`What's on your mind, ${user?.username}?`}
-            className="w-full min-h-[120px] max-h-[300px] text-lg text-gray-900 dark:text-white resize-none focus:outline-none placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-800"
+            className="w-full min-h-[100px] sm:min-h-[120px] max-h-[200px] sm:max-h-[300px] text-base sm:text-lg text-gray-900 dark:text-white resize-none focus:outline-none placeholder-gray-400 dark:placeholder-gray-500 dark:bg-gray-800"
             maxLength={maxCharacters}
             disabled={isPosting}
           />

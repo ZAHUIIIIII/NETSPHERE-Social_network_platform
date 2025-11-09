@@ -158,224 +158,214 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 animate-fadeIn"
       onClick={onCollapse}
     >
       <div 
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-scaleIn"
+        className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col animate-scaleIn"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onCollapse}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
-              disabled={isPosting}
-            >
-              <X size={20} />
-            </button>
-            <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Create Post</h2>
-          </div>
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <h2 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            Create Post
+          </h2>
           <button
-            onClick={handleSubmit}
-            disabled={isPosting || (!content.trim() && images.length === 0)}
-            className="px-6 py-2.5 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md"
+            onClick={onCollapse}
+            disabled={isPosting}
+            className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors disabled:opacity-50"
           >
-            {isPosting ? 'Posting...' : 'Post'}
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Upload Progress */}
-        {isPosting && uploadProgress > 0 && (
-          <div className="px-6 py-2 bg-blue-50 border-b border-blue-100">
-            <div className="flex items-center justify-between text-sm mb-2">
-              <span className="text-blue-700 font-medium">Uploading images...</span>
-              <span className="text-blue-600">{uploadProgress}%</span>
-            </div>
-            <div className="w-full bg-blue-200 rounded-full h-2">
-              <div 
-                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {/* User Info & Privacy */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px]">
-                <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-                  {user?.avatar ? (
-                    <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
-                  ) : (
-                    <span className="text-gray-700 font-bold">{user?.username?.charAt(0) || 'U'}</span>
-                  )}
-                </div>
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900 dark:text-gray-100">{user?.username || 'User'}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <select
-                    value={privacy}
-                    onChange={(e) => setPrivacy(e.target.value)}
-                    className="text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full border-none outline-none cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    {privacyOptions.map(opt => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  {feeling && (
-                    <span key="feeling-header" className="text-sm text-gray-600 dark:text-gray-400">
-                      — feeling {feeling}
-                    </span>
-                  )}
-                  {location && (
-                    <span key="location-header" className="text-sm text-gray-600 dark:text-gray-400">
-                      at {location}
-                    </span>
-                  )}
-                </div>
-              </div>
+        <div className="overflow-y-auto flex-1 p-3 sm:p-4">
+          {/* User Info */}
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+            <img
+              src={user?.avatar || '/avatar-placeholder.png'}
+              alt={user?.username}
+              className="w-10 h-10 rounded-full object-cover flex-shrink-0"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold text-sm sm:text-base text-gray-900 dark:text-gray-100 truncate">{user?.username}</p>
+              <select
+                value={privacy}
+                onChange={(e) => setPrivacy(e.target.value)}
+                className="text-xs bg-gray-100 dark:bg-gray-700 dark:text-gray-200 rounded-full px-2 sm:px-3 py-1 border-none focus:ring-2 focus:ring-blue-500"
+                disabled={isPosting}
+              >
+                {privacyOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
-          {/* Content Input */}
+          {/* Textarea */}
           <textarea
             ref={textareaRef}
-            placeholder={`What's on your mind, ${user?.username?.split(' ')[0] || 'there'}?`}
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            placeholder={`What's on your mind, ${user?.username}?`}
+            className="w-full min-h-[100px] sm:min-h-[120px] max-h-[200px] sm:max-h-[300px] text-base sm:text-lg text-gray-900 dark:text-white bg-transparent resize-none focus:outline-none placeholder-gray-400 dark:placeholder-gray-500"
             maxLength={maxCharacters}
-            className="w-full min-h-32 max-h-64 text-lg text-gray-900 dark:text-white border-0 resize-none focus:outline-none placeholder:text-gray-400 dark:placeholder:text-gray-500"
             disabled={isPosting}
           />
 
-          {/* Character Counter */}
-          <div className="flex justify-between items-center text-sm">
-            <div className="flex gap-2">
+          {/* Character count */}
+          <div className="text-right text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {content.length}/{maxCharacters}
+          </div>
+
+          {/* Feeling/Location tags */}
+          {(feeling || location) && (
+            <div className="flex flex-wrap gap-2 mt-3">
               {feeling && (
-                <span key="feeling" className="px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full flex items-center gap-1">
-                  {feelings.find(f => f.label === feeling)?.emoji}
-                  <span>{feeling}</span>
-                  <button onClick={() => setFeeling('')} className="hover:text-yellow-900">
-                    <X size={14} />
+                <span key="feeling" className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-sm">
+                  <Smile className="w-4 h-4" />
+                  feeling {feeling}
+                  <button
+                    onClick={() => setFeeling('')}
+                    className="ml-1 hover:bg-blue-100 dark:hover:bg-blue-800/30 rounded-full p-0.5"
+                    disabled={isPosting}
+                  >
+                    <X className="w-3 h-3" />
                   </button>
                 </span>
               )}
               {location && (
-                <span key="location" className="px-3 py-1 bg-green-50 text-green-700 rounded-full flex items-center gap-1">
-                  <MapPin size={14} />
-                  <span>{location}</span>
-                  <button onClick={() => setLocation('')} className="hover:text-green-900">
-                    <X size={14} />
+                <span key="location" className="inline-flex items-center gap-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-sm">
+                  <MapPin className="w-4 h-4" />
+                  at {location}
+                  <button
+                    onClick={() => setLocation('')}
+                    className="ml-1 hover:bg-green-100 dark:hover:bg-green-800/30 rounded-full p-0.5"
+                    disabled={isPosting}
+                  >
+                    <X className="w-3 h-3" />
                   </button>
                 </span>
               )}
             </div>
-            <span className={`${
-              content.length > maxCharacters * 0.9 ? 'text-red-500 font-semibold' : 'text-gray-500'
-            }`}>
-              {content.length} / {maxCharacters}
-            </span>
-          </div>
+          )}
 
           {/* Image Preview */}
           {images.length > 0 && (
-            <div className={`grid gap-2 ${
-              images.length === 1 ? 'grid-cols-1' : 
-              images.length === 2 ? 'grid-cols-2' : 
-              'grid-cols-3'
-            }`}>
-              {images.map((img, index) => (
-                <div 
-                  key={img.id} 
-                  className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 group"
-                >
-                  <img src={img.url} alt="" className="w-full h-full object-cover" />
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {images.map((img) => (
+                <div key={img.id} className="relative group">
+                  <img
+                    src={img.url}
+                    alt="Preview"
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
                   <button
                     onClick={() => removeImage(img.id)}
-                    className="absolute top-2 right-2 p-2 bg-black/60 hover:bg-black/80 rounded-full text-white transition-colors opacity-0 group-hover:opacity-100"
                     disabled={isPosting}
+                    className="absolute top-2 right-2 bg-gray-900 bg-opacity-75 text-white p-1.5 rounded-full hover:bg-opacity-100 transition-all opacity-0 group-hover:opacity-100"
                   >
-                    <X size={16} />
+                    <X className="w-4 h-4" />
                   </button>
-                  {index === 0 && images.length > 1 && (
-                    <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 rounded text-white text-xs font-medium">
-                      Cover
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
           )}
 
-          {/* Feeling Picker */}
-          {showEmojiPicker && (
-            <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
-              <p className="text-sm font-semibold text-gray-700 mb-3">How are you feeling?</p>
-              <div className="grid grid-cols-4 gap-2">
-                {feelings.map((f) => (
-                  <button
-                    key={f.label}
-                    onClick={() => {
-                      setFeeling(f.label);
-                      setShowEmojiPicker(false);
-                    }}
-                    className="flex flex-col items-center gap-1 p-3 hover:bg-white rounded-lg transition-colors"
-                  >
-                    <span className="text-2xl">{f.emoji}</span>
-                    <span className="text-xs text-gray-600 capitalize">{f.label}</span>
-                  </button>
-                ))}
+          {/* Upload Progress */}
+          {isPosting && uploadProgress > 0 && (
+            <div className="mt-4">
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
               </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
+                Uploading... {uploadProgress}%
+              </p>
             </div>
           )}
 
-          {/* Actions */}
-          <div className="border border-gray-200 rounded-xl p-4">
-            <p className="text-sm font-semibold text-gray-700 mb-3">Add to your post</p>
-            <div className="flex items-center justify-between gap-2">
-              <label className="flex items-center gap-2 px-4 py-2.5 text-green-600 hover:bg-green-50 rounded-lg cursor-pointer transition-colors flex-1 justify-center">
-                <ImageIcon size={20} />
-                <span className="text-sm font-medium">Photo/Video</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageChange}
-                  className="hidden"
-                  disabled={isPosting || images.length >= maxImages}
-                />
-              </label>
-              
-              <button
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="flex items-center gap-2 px-4 py-2.5 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors flex-1 justify-center"
-                disabled={isPosting}
-              >
-                <Smile size={20} />
-                <span className="text-sm font-medium">Feeling</span>
-              </button>
-              
-              <button
-                onClick={() => {
-                  const loc = prompt('Where are you?');
-                  if (loc) setLocation(loc);
-                }}
-                className="flex items-center gap-2 px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-1 justify-center"
-                disabled={isPosting}
-              >
-                <MapPin size={20} />
-                <span className="text-sm font-medium">Location</span>
-              </button>
+          {/* Add to Post Options */}
+          <div className="mt-4 border border-gray-300 dark:border-gray-600 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Add to your post</span>
+              <div className="flex items-center gap-2">
+                {/* Image Upload */}
+                <label className="cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+                  <ImageIcon className="w-5 h-5 text-green-600 dark:text-green-500" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageChange}
+                    className="hidden"
+                    disabled={isPosting || images.length >= maxImages}
+                  />
+                </label>
+
+                {/* Feeling */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                    disabled={isPosting}
+                  >
+                    <Smile className="w-5 h-5 text-yellow-600 dark:text-yellow-500" />
+                  </button>
+                  {showEmojiPicker && (
+                    <div className="absolute right-0 top-12 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 z-10 w-64">
+                      <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">How are you feeling?</p>
+                      <div className="grid grid-cols-4 gap-2">
+                        {feelings.map((f) => (
+                          <button
+                            key={f.label}
+                            onClick={() => {
+                              setFeeling(f.label);
+                              setShowEmojiPicker(false);
+                            }}
+                            className="flex flex-col items-center gap-1 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                          >
+                            <span className="text-2xl">{f.emoji}</span>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">{f.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Location */}
+                <div className="relative group">
+                  <button
+                    onClick={() => {
+                      const loc = prompt('Enter location:', location);
+                      if (loc !== null) setLocation(loc.trim());
+                    }}
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                    disabled={isPosting}
+                  >
+                    <MapPin className="w-5 h-5 text-red-600 dark:text-red-500" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="border-t border-gray-200 dark:border-gray-700 p-3 sm:p-4 flex-shrink-0">
+          <button
+            onClick={handleSubmit}
+            disabled={isPosting || (!content.trim() && images.length === 0)}
+            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isPosting ? 'Posting...' : 'Post'}
+          </button>
         </div>
       </div>
     </div>
@@ -387,46 +377,48 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
 // Quick Create Post Component
 const CreatePostQuick = ({ onExpand, user }) => {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-4 animate-fadeIn hover:shadow-md transition-all">
-      <div className="flex items-center gap-3">
-        <div className="h-11 w-11 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-3 sm:p-4 animate-fadeIn hover:shadow-md transition-all">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
           <div className="h-full w-full rounded-full bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden">
             {user?.avatar ? (
               <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
             ) : (
-              <span className="text-gray-700 dark:text-gray-300 font-medium">{user?.username?.charAt(0) || 'U'}</span>
+              <span className="text-gray-700 dark:text-gray-300 font-medium text-sm">{user?.username?.charAt(0) || 'U'}</span>
             )}
           </div>
         </div>
         <button
-          className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full px-5 py-3 text-left cursor-pointer transition-all"
+          className="flex-1 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full px-4 sm:px-5 py-2 sm:py-3 text-left cursor-pointer transition-all"
           onClick={onExpand}
         >
-          <p className="text-gray-600 dark:text-gray-300">What's on your mind, {user?.username?.split(' ')[0] || 'there'}?</p>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 truncate">What's on your mind, {user?.username?.split(' ')[0] || 'there'}?</p>
         </button>
       </div>
       
-      <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex items-center gap-1 sm:gap-2 mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-200 dark:border-gray-700">
         <button 
           onClick={onExpand}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-xl transition-all font-medium"
+          className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30 rounded-xl transition-all font-medium"
         >
-          <ImageIcon className="h-5 w-5" />
-          <span className="text-sm">Photo/Video</span>
+          <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="text-xs sm:text-sm">Photo</span>
         </button>
         <button 
           onClick={onExpand}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-xl transition-all font-medium"
+          className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/30 rounded-xl transition-all font-medium"
         >
-          <Smile className="h-5 w-5" />
-          <span className="text-sm">Feeling</span>
+          <Smile className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="text-xs sm:text-sm hidden xs:inline">Feeling</span>
+          <span className="text-xs sm:text-sm xs:hidden">😊</span>
         </button>
         <button 
           onClick={onExpand}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all font-medium"
+          className="flex-1 flex items-center justify-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-all font-medium"
         >
-          <MapPin className="h-5 w-5" />
-          <span className="text-sm">Check in</span>
+          <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
+          <span className="text-xs sm:text-sm hidden xs:inline">Check in</span>
+          <span className="text-xs sm:text-sm xs:hidden">📍</span>
         </button>
       </div>
     </div>
@@ -726,19 +718,19 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
     : post.content;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300 animate-slideUp">
+    <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300 animate-slideUp">
       {/* Post Header */}
-      <div className="p-4 flex items-start justify-between">
-        <div className="flex items-start gap-3 flex-1">
+      <div className="p-3 sm:p-4 flex items-start justify-between">
+        <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
           <div 
-            className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] cursor-pointer flex-shrink-0"
+            className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] cursor-pointer flex-shrink-0"
             onClick={() => navigate(`/profile/${author?.username}`)}
           >
             <div className="h-full w-full rounded-full bg-white dark:bg-gray-800 flex items-center justify-center overflow-hidden">
               {avatarUrl ? (
                 <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
               ) : (
-                <span className="text-gray-700 dark:text-gray-300 font-bold">{userName.charAt(0)}</span>
+                <span className="text-gray-700 dark:text-gray-300 font-bold text-sm sm:text-base">{userName.charAt(0)}</span>
               )}
             </div>
           </div>
@@ -746,18 +738,18 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <h3 
-                className="font-semibold text-gray-900 dark:text-gray-100 hover:underline cursor-pointer"
+                className="font-semibold text-sm sm:text-base text-gray-900 dark:text-gray-100 hover:underline cursor-pointer truncate"
                 onClick={() => navigate(`/profile/${author?.username}`)}
               >
                 {userName}
               </h3>
               {post.feeling && (
-                <span className="text-sm text-gray-600 dark:text-gray-400">
+                <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
                   is feeling {post.feeling}
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex-wrap">
               <span>{formatTime(post.createdAt)}</span>
               <span>•</span>
               {post.privacy === 'public' && <Globe size={12} />}
@@ -767,7 +759,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                 <>
                   <span>•</span>
                   <MapPin size={12} />
-                  <span>{post.location}</span>
+                  <span className="truncate max-w-[100px] sm:max-w-none">{post.location}</span>
                 </>
               )}
             </div>
@@ -781,9 +773,9 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
           trigger={
             <button 
               onClick={() => setShowOptions(!showOptions)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+              className="p-1.5 sm:p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors flex-shrink-0"
             >
-              <MoreHorizontal size={20} className="text-gray-500 dark:text-gray-400" />
+              <MoreHorizontal size={18} className="sm:w-5 sm:h-5 text-gray-500 dark:text-gray-400" />
             </button>
           }
           className="py-2"
@@ -843,14 +835,14 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
 
       {/* Post Content */}
       {post.content && (
-        <div className="px-4 pb-3">
-          <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words">
+        <div className="px-3 sm:px-4 pb-2 sm:pb-3">
+          <p className="text-sm sm:text-base text-gray-800 dark:text-gray-200 whitespace-pre-wrap break-words">
             {contentPreview}
           </p>
           {post.content.length > 300 && (
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-sm font-medium mt-1"
+              className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 text-xs sm:text-sm font-medium mt-1"
             >
               {isExpanded ? 'Show less' : 'Read more'}
             </button>
@@ -873,9 +865,10 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
             />
             
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all flex items-center justify-center">
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2">
-                <Eye size={16} />
-                Click to view full size
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium flex items-center gap-2">
+                <Eye size={14} className="sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Click to view full size</span>
+                <span className="sm:hidden">Tap to view</span>
               </div>
             </div>
 
@@ -885,9 +878,9 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                   e.stopPropagation();
                   prevImage();
                 }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 p-2.5 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 rounded-full shadow-lg transition-all hover:scale-110 z-10"
+                className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 p-1.5 sm:p-2.5 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 rounded-full shadow-lg transition-all hover:scale-110 z-10"
               >
-                <ChevronLeft size={24} className="text-gray-800 dark:text-gray-200" />
+                <ChevronLeft size={20} className="sm:w-6 sm:h-6 text-gray-800 dark:text-gray-200" />
               </button>
             )}
             
@@ -897,20 +890,20 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                   e.stopPropagation();
                   nextImage();
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-2.5 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 rounded-full shadow-lg transition-all hover:scale-110 z-10"
+                className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 p-1.5 sm:p-2.5 bg-white/90 dark:bg-gray-800/90 hover:bg-white dark:hover:bg-gray-800 rounded-full shadow-lg transition-all hover:scale-110 z-10"
               >
-                <ChevronRight size={24} className="text-gray-800 dark:text-gray-200" />
+                <ChevronRight size={20} className="sm:w-6 sm:h-6 text-gray-800 dark:text-gray-200" />
               </button>
             )}
 
             {post.images.length > 1 && (
-              <div className="absolute top-4 right-4 px-3 py-1.5 bg-black/70 text-white rounded-full text-sm font-medium backdrop-blur-sm">
+              <div className="absolute top-2 sm:top-4 right-2 sm:right-4 px-2 sm:px-3 py-1 sm:py-1.5 bg-black/70 text-white rounded-full text-xs sm:text-sm font-medium backdrop-blur-sm">
                 {currentImageIndex + 1} / {post.images.length}
               </div>
             )}
 
             {post.images.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+              <div className="absolute bottom-2 sm:bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-2">
                 {post.images.map((_, index) => (
                   <button
                     key={index}
@@ -920,8 +913,8 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                     }}
                     className={`transition-all ${
                       index === currentImageIndex 
-                        ? 'w-8 h-2 bg-white' 
-                        : 'w-2 h-2 bg-white/60 hover:bg-white/80'
+                        ? 'w-6 sm:w-8 h-1.5 sm:h-2 bg-white' 
+                        : 'w-1.5 sm:w-2 h-1.5 sm:h-2 bg-white/60 hover:bg-white/80'
                     } rounded-full`}
                     aria-label={`Go to image ${index + 1}`}
                   />
@@ -940,9 +933,9 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
         >
           <button
             onClick={closeLightbox}
-            className="absolute top-4 right-4 p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-10"
+            className="absolute top-2 sm:top-4 right-2 sm:right-4 p-2 sm:p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all z-10"
           >
-            <X size={24} />
+            <X size={20} className="sm:w-6 sm:h-6" />
           </button>
 
           <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/60 text-white rounded-full text-sm font-medium">
@@ -1012,8 +1005,8 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
       )}
 
       {/* Reactions Summary */}
-      <div className="px-3 pt-3 pb-2 flex items-center justify-between text-sm">
-        <div className="flex items-center gap-2">
+      <div className="px-3 sm:px-4 pt-2 sm:pt-3 pb-2 flex items-center justify-between text-xs sm:text-sm min-h-[40px]">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-visible min-w-0">
           {(() => {
             const totalReactions = Object.values(reactions).reduce((sum, count) => sum + count, 0);
             if (totalReactions > 0) {
@@ -1041,42 +1034,41 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
               return (
                 <button 
                   onClick={handleShowLikes}
-                  className={`flex items-center gap-1.5 ${
+                  className={`flex items-center gap-1.5 sm:gap-2 ${
                     post.author?._id === currentUser?._id 
                       ? 'hover:underline cursor-pointer' 
                       : 'cursor-default'
                   }`}
                 >
-                  <div className="flex items-center -space-x-1">
+                  <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-700 rounded-full px-1.5 py-0.5 shadow-sm min-h-[24px]">
                     {topReactions.map((reaction, index) => (
-                      <span key={index} className="text-base">{reaction.emoji}</span>
+                      <span key={index} className="leading-none flex-shrink-0" style={{ fontSize: '14px', lineHeight: '1' }}>{reaction.emoji}</span>
                     ))}
                   </div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">{totalReactions} Reaction</span>
+                  <span className="text-xs text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap">{totalReactions}</span>
                 </button>
               );
             }
             return null;
           })()}
         </div>
-        <div className="flex items-center gap-4 text-gray-700 dark:text-gray-300 font-medium">
+        <div className="flex items-center gap-2 sm:gap-4 text-gray-700 dark:text-gray-300 font-medium flex-shrink-0">
           <button 
             onClick={() => setShowComments(!showComments)}
-            className="hover:underline"
+            className="hover:underline text-xs sm:text-sm whitespace-nowrap"
           >
             {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
           </button>
-          <span>{repostCount} {repostCount === 1 ? 'repost' : 'reposts'}</span>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="px-10 pb-2 pt-1 border-t border-gray-100 dark:border-gray-700">
-        <div className="flex items-center gap-1">
+      <div className="px-2 sm:px-4 pb-2 pt-1 border-t border-gray-100 dark:border-gray-700">
+        <div className="flex items-center gap-1 sm:gap-2">
           <div className="flex-1 relative">
             <button
               onClick={() => setShowReactionPicker(!showReactionPicker)}
-              className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg transition-all text-sm ${
+              className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-lg transition-all text-sm font-medium ${
                 userReaction === 'like' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-800/30' :
                 userReaction === 'love' ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-800/30' :
                 userReaction === 'haha' ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-800/30' :
@@ -1086,13 +1078,13 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             >
-              {userReaction === 'like' && <span>👍</span>}
-              {userReaction === 'love' && <span>❤️</span>}
-              {userReaction === 'haha' && <span>😂</span>}
-              {userReaction === 'wow' && <span>😮</span>}
-              {userReaction === 'sad' && <span>😢</span>}
-              {userReaction === 'angry' && <span>😠</span>}
-              {!userReaction && <Heart size={18} />}
+              {userReaction === 'like' && <span className="text-base">👍</span>}
+              {userReaction === 'love' && <span className="text-base">❤️</span>}
+              {userReaction === 'haha' && <span className="text-base">😂</span>}
+              {userReaction === 'wow' && <span className="text-base">😮</span>}
+              {userReaction === 'sad' && <span className="text-base">😢</span>}
+              {userReaction === 'angry' && <span className="text-base">😠</span>}
+              {!userReaction && <Heart size={16} />}
               <span className="font-medium">
                 {userReaction === 'like' ? 'Like' :
                  userReaction === 'love' ? 'Love' :
@@ -1112,47 +1104,54 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                   onClick={() => setShowReactionPicker(false)}
                 />
                 <div 
-                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white dark:bg-gray-800 rounded-full shadow-2xl border border-gray-200 dark:border-gray-700 px-3 py-2 flex space-x-2 z-30"
+                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white dark:bg-gray-800 rounded-full shadow-2xl border border-gray-200 dark:border-gray-700 px-2 py-1.5 flex items-center gap-1 z-30"
+                  style={{ minHeight: '44px' }}
                 >
                   <button
                     onClick={() => { handleReact('like'); setShowReactionPicker(false); }}
-                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="hover:scale-125 transition-transform p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                     title="Like"
+                    style={{ fontSize: '24px', lineHeight: '1' }}
                   >
                     👍
                   </button>
                   <button
                     onClick={() => { handleReact('love'); setShowReactionPicker(false); }}
-                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="hover:scale-125 transition-transform p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                     title="Love"
+                    style={{ fontSize: '24px', lineHeight: '1' }}
                   >
                     ❤️
                   </button>
                   <button
                     onClick={() => { handleReact('haha'); setShowReactionPicker(false); }}
-                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="hover:scale-125 transition-transform p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                     title="Haha"
+                    style={{ fontSize: '24px', lineHeight: '1' }}
                   >
                     😂
                   </button>
                   <button
                     onClick={() => { handleReact('wow'); setShowReactionPicker(false); }}
-                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="hover:scale-125 transition-transform p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                     title="Wow"
+                    style={{ fontSize: '24px', lineHeight: '1' }}
                   >
                     😮
                   </button>
                   <button
                     onClick={() => { handleReact('sad'); setShowReactionPicker(false); }}
-                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="hover:scale-125 transition-transform p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                     title="Sad"
+                    style={{ fontSize: '24px', lineHeight: '1' }}
                   >
                     😢
                   </button>
                   <button
                     onClick={() => { handleReact('angry'); setShowReactionPicker(false); }}
-                    className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="hover:scale-125 transition-transform p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                     title="Angry"
+                    style={{ fontSize: '24px', lineHeight: '1' }}
                   >
                     😠
                   </button>
@@ -1163,22 +1162,22 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
 
           <button
             onClick={() => setShowComments(!showComments)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+            className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium"
           >
-            <MessageCircle size={18} />
-            <span className="font-medium">Comment</span>
+            <MessageCircle size={16} />
+            <span>Comment</span>
           </button>
 
           <button
             onClick={handleRepost}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm transition-all ${
+            className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-sm font-medium transition-all ${
               hasReposted 
                 ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-800/30' 
                 : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
-            <Repeat size={18} />
-            <span className="font-medium">Repost</span>
+            <Repeat size={16} />
+            <span>Repost</span>
           </button>
 
           <button
@@ -1528,15 +1527,15 @@ export default function HomePage() {
       `}</style>
 
 
-      <div className="max-w-7xl mx-auto flex gap-6 p-4">
+      <div className="max-w-7xl mx-auto flex gap-6 p-2 sm:p-4">
         {/* Main Feed */}
-        <div className="flex-1 max-w-2xl mx-auto space-y-6">
+        <div className="flex-1 max-w-full lg:max-w-2xl mx-auto space-y-4 sm:space-y-6 w-full">
           {/* Header */}
-          <div className="text-center py-6 animate-fadeIn">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+          <div className="text-center py-4 sm:py-6 animate-fadeIn">
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
               NETSPHERE
             </h1>
-            <p className="text-gray-600 dark:text-gray-300 mt-2">Share your moments</p>
+            <p className="text-gray-600 dark:text-gray-300 mt-2 text-sm sm:text-base">Share your moments</p>
           </div>
 
           {/* Create Post */}
@@ -1552,7 +1551,7 @@ export default function HomePage() {
               <p className="text-gray-600 dark:text-gray-300">Loading posts...</p>
             </div>
           ) : posts.length > 0 ? (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {posts.map((post) => (
                 <PostCard 
                   key={post._id} 
@@ -1574,11 +1573,11 @@ export default function HomePage() {
               {/* End of Feed */}
               {!hasMore && posts.length > 0 && (
                 <div className="text-center py-8 animate-fadeIn">
-                  <div className="inline-block p-4 bg-white rounded-full shadow-sm border border-gray-200 mb-3">
+                  <div className="inline-block p-4 bg-white dark:bg-gray-800 rounded-full shadow-sm border border-gray-200 dark:border-gray-700 mb-3">
                     <span className="text-3xl">🎉</span>
                   </div>
-                  <p className="text-gray-600 font-medium">You're all caught up!</p>
-                  <p className="text-sm text-gray-500 mt-1">Check back later for more posts</p>
+                  <p className="text-gray-600 dark:text-gray-300 font-medium">You're all caught up!</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Check back later for more posts</p>
                 </div>
               )}
             </div>

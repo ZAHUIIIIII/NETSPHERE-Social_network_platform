@@ -397,10 +397,32 @@ export const softDeleteComment = async (req, res) => {
     comment.content = '(comment deleted)';
     await comment.save();
 
+    // If this is a reply, update parent comment's counts
+    let rootId = null;
+    if (comment.immediateParent) {
+      // Decrement directReplies on immediate parent
+      await Comment.updateOne(
+        { _id: comment.immediateParent },
+        { $inc: { directReplies: -1 } }
+      );
+
+      // Decrement totalDescendants on all ancestors
+      if (comment.ancestors && comment.ancestors.length > 0) {
+        await Comment.updateMany(
+          { _id: { $in: comment.ancestors } },
+          { $inc: { totalDescendants: -1 } }
+        );
+      }
+
+      // Set rootId for socket event
+      rootId = comment.rootId;
+    }
+
     // Real-time update
     io.to(`post:${comment.postId}`).emit('comment:deleted', { 
       commentId: id,
-      postId: comment.postId 
+      postId: comment.postId,
+      rootId: rootId // Include rootId so clients know which parent to update
     });
 
     res.json({ ok: true, id });

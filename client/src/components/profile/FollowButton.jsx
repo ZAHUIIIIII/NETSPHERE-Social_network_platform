@@ -75,22 +75,22 @@ const FollowButton = ({ userId, initialIsFollowing, onFollowChange, isFollowBack
       onMouseLeave={() => setIsHovered(false)}
       disabled={isLoading}
       className={`
-        relative overflow-hidden px-4 py-1.5 rounded-lg font-semibold text-sm 
+        relative overflow-hidden px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm 
         transition-all duration-200
-        flex items-center justify-center gap-2 
+        flex items-center justify-center gap-1.5 sm:gap-2 
         disabled:opacity-50 disabled:cursor-not-allowed
-        ${isFollowBack ? 'min-w-[110px]' : 'min-w-[100px]'}
+        ${isFollowBack ? 'min-w-[90px] sm:min-w-[110px]' : 'min-w-[80px] sm:min-w-[100px]'}
         ${isFollowing
-          ? 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+          ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600'
           : 'bg-blue-500 text-white hover:bg-blue-600'
         }
       `}
     >
       {/* Button content */}
-      <div className="relative flex items-center gap-2 whitespace-nowrap">
+      <div className="relative flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
         {isLoading ? (
           <>
-            <Loader className="w-4 h-4 animate-spin" />
+            <Loader className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
             <span>{isFollowing ? 'Unfollowing' : 'Following'}...</span>
           </>
         ) : isFollowing ? (

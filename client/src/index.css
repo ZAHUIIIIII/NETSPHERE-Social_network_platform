@@ -4,6 +4,9 @@
 @theme {
   --color-background: #ffffff;
   --color-foreground: #111827;
+  
+  /* Custom breakpoint for extra small screens */
+  --breakpoint-xs: 475px;
 }
 
 @variant dark (&:where(.dark, .dark *));

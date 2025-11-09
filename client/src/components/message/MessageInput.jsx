@@ -54,7 +54,7 @@ const MessageInput = () => {
   };
 
   return (
-    <div className="p-3 lg:p-4 border-t border-gray-200/50 dark:border-gray-700/50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
+    <div className="flex-shrink-0 p-3 lg:p-4 border-t border-gray-200/50 dark:border-gray-700/50 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-lg">
       {/* Image Preview */}
       {imagePreview && (
         <div className="mb-3">

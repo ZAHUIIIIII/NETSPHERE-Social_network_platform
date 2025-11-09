@@ -108,11 +108,6 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
       // Optimistically add to root comments
       setRootComments(prev => [newComment, ...prev]);
       setCommentText('');
-      
-      // Update count
-      if (onCommentCountChange) {
-        onCommentCountChange(countTotalComments([newComment, ...rootComments]));
-      }
 
       toast.success('Comment added!');
     } catch (error) {
@@ -157,20 +152,13 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
       }));
 
       // Update root comment's reply count
-      setRootComments(prev => {
-        const updated = prev.map(c =>
+      setRootComments(prev =>
+        prev.map(c =>
           c._id === rootId
             ? { ...c, directReplies: c.directReplies + 1, totalDescendants: c.totalDescendants + 1 }
             : c
-        );
-        
-        // Update total count when reply is added
-        if (onCommentCountChange) {
-          onCommentCountChange(countTotalComments(updated));
-        }
-        
-        return updated;
-      });
+        )
+      );
 
       toast.success('Reply added!');
       return newReply;
@@ -205,14 +193,7 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
           setRootComments(prev => {
             // Avoid duplicates
             if (prev.some(c => c._id === comment._id)) return prev;
-            const updated = [comment, ...prev];
-            
-            // Update count for new root comment
-            if (onCommentCountChange) {
-              onCommentCountChange(countTotalComments(updated));
-            }
-            
-            return updated;
+            return [comment, ...prev];
           });
         } else {
           // If reply, add to thread
@@ -233,11 +214,6 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
                 ? { ...c, directReplies: c.directReplies + 1, totalDescendants: c.totalDescendants + 1 }
                 : c
             );
-            
-            // Update count for new reply
-            if (onCommentCountChange) {
-              onCommentCountChange(countTotalComments(updated));
-            }
             
             return updated;
           });
@@ -263,16 +239,20 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
         }
       },
 
-      onCommentDeleted: ({ commentId, postId }) => {
-        console.log('🗑️ Comment deleted:', commentId);
+      onCommentDeleted: ({ commentId, postId, rootId }) => {
+        console.log('🗑️ Comment deleted:', commentId, 'rootId:', rootId);
         
         // Remove from root comments
         setRootComments(prev => {
-          const updated = prev.filter(c => c._id !== commentId);
+          let updated = prev.filter(c => c._id !== commentId);
           
-          // Update count after deletion
-          if (onCommentCountChange) {
-            onCommentCountChange(countTotalComments(updated));
+          // If this was a reply (has rootId), decrement parent's counts
+          if (rootId) {
+            updated = updated.map(c =>
+              c._id === rootId
+                ? { ...c, directReplies: Math.max(0, c.directReplies - 1), totalDescendants: Math.max(0, c.totalDescendants - 1) }
+                : c
+            );
           }
           
           return updated;
@@ -327,6 +307,13 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
   useEffect(() => {
     loadRootComments(true);
   }, [post._id]);
+
+  // Update comment count whenever rootComments changes
+  useEffect(() => {
+    if (onCommentCountChange && rootComments.length >= 0) {
+      onCommentCountChange(countTotalComments(rootComments));
+    }
+  }, [rootComments, onCommentCountChange]);
 
   // ==================== RENDER ====================
 
@@ -388,14 +375,7 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
               }}
               onDelete={async (commentId) => {
                 await deleteComment(commentId);
-                setRootComments(prev => {
-                  const updated = prev.filter(c => c._id !== commentId);
-                  // Update count after deleting root comment
-                  if (onCommentCountChange) {
-                    onCommentCountChange(countTotalComments(updated));
-                  }
-                  return updated;
-                });
+                setRootComments(prev => prev.filter(c => c._id !== commentId));
               }}
               onReact={async (commentId, type) => {
                 const { reactions, userReaction } = await reactToComment(commentId, type);
@@ -409,10 +389,10 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
             />
 
             {/* Show Replies Button */}
-            {comment.directReplies > 0 && (
+            {comment.totalDescendants > 0 && (
               <button
                 onClick={() => toggleThread(comment._id, comment.directReplies)}
-                className="ml-14 text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1"
+                className="ml-10 sm:ml-14 mt-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 font-medium transition-colors"
               >
                 {expandedThreads[comment._id] ? (
                   <>
@@ -430,7 +410,7 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
 
             {/* Thread Replies */}
             {expandedThreads[comment._id] && threadReplies[comment._id] && (
-              <div className="ml-12 space-y-2 border-l-2 border-gray-300 pl-6">
+              <div className="ml-8 sm:ml-12 mt-2 space-y-2 border-l-2 border-gray-300 dark:border-gray-600 pl-4 sm:pl-6">
                 {threadReplies[comment._id].map((reply) => (
                   <Comment
                     key={reply._id}
@@ -458,20 +438,13 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
                       }));
                       
                       // Update root comment's descendant count
-                      setRootComments(prev => {
-                        const updated = prev.map(c =>
+                      setRootComments(prev =>
+                        prev.map(c =>
                           c._id === comment._id
                             ? { ...c, totalDescendants: Math.max(0, c.totalDescendants - 1) }
                             : c
-                        );
-                        
-                        // Update total count
-                        if (onCommentCountChange) {
-                          onCommentCountChange(countTotalComments(updated));
-                        }
-                        
-                        return updated;
-                      });
+                        )
+                      );
                     }}
                     onReact={async (commentId, type) => {
                       const { reactions, userReaction } = await reactToComment(commentId, type);

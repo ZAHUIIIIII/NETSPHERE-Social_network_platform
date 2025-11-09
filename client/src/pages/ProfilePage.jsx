@@ -207,8 +207,8 @@ const ProfilePage = () => {
       />
 
       {/* Tab Content */}
-      <div className="max-w-5xl mx-auto p-4 pb-8">
-        <div className="mt-6">
+      <div className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-4 pb-6 sm:pb-8">
+        <div className="mt-3 sm:mt-4 lg:mt-6">
           {activeTab === 'posts' && (
             <ProfilePosts 
               posts={posts}

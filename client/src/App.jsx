@@ -15,6 +15,7 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
 import { useNotificationStore } from './store/useNotificationStore';
 import { useThemeStore } from './store/useThemeStore';
+import { useChatStore } from './store/useChatStore';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { UserProvider } from './UserContext';
@@ -26,8 +27,22 @@ const App = () => {
   const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore();
   const { addNotification, setUnreadCount } = useNotificationStore();
   const { initializeTheme } = useThemeStore();
+  const { selectedUser } = useChatStore();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     checkAuth();
@@ -104,7 +119,8 @@ const App = () => {
       } else if (error === 'oauth_not_configured') {
         toast.error('Google OAuth is not configured on this server.');
       } else {
-        toast.error('An error occurred during sign-in.');
+        // Display custom error message (e.g., password account message)
+        toast.error(decodeURIComponent(error));
       }
       // Clear the URL parameters
       window.history.replaceState({}, document.title, location.pathname);
@@ -119,14 +135,23 @@ const App = () => {
     );
   }
 
+  const isChatPage = location.pathname === '/messages' || location.pathname === '/chat';
+  const isChatConversationOpen = isChatPage && selectedUser !== null;
+
   return (
     <UserProvider>
       <div className="flex">
-        {/* Sidebar - only shows when authenticated */}
-        {authUser && <Navbar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />}
+        {/* Navbar - hides top bar on mobile chat page, hides bottom nav only in active conversation */}
+        {authUser && <Navbar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} hideBottomNav={isMobile && isChatConversationOpen} hideTopBar={isMobile && isChatPage} />}
 
         {/* Main content */}
-        <div className={`flex-1 transition-all duration-300 ${authUser ? (isCollapsed ? 'ml-20' : 'ml-64') : ''}`}>
+        <div className={`flex-1 transition-all duration-300 ${
+          authUser 
+            ? isMobile 
+              ? (isChatConversationOpen ? '' : isChatPage ? 'pb-16' : 'pt-14 pb-16') // Active chat: no spacing, chat list: bottom nav, other pages: top + bottom nav
+              : (isCollapsed ? 'ml-20' : 'ml-64') // Desktop: sidebar spacing
+            : ''
+        }`}>
           <Routes>
             <Route path='/' element={authUser ? <HomePage /> : <Navigate to="/login" />} />
             <Route path='/login' element={!authUser ? <LoginPage /> : <Navigate to="/" />} />

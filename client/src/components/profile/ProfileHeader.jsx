@@ -211,12 +211,12 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
 
   return (
     <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-      <div className="max-w-5xl mx-auto px-8 py-8">
+      <div className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Main Profile Info */}
-        <div className="flex items-start gap-8 mb-6">
+        <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 lg:gap-8 mb-4 sm:mb-6">
           {/* Avatar */}
-          <div className="flex-shrink-0">
-            <div className="relative w-36 h-36">
+          <div className="flex-shrink-0 mx-auto sm:mx-0">
+            <div className="relative w-20 h-20 sm:w-28 sm:h-28 lg:w-36 lg:h-36">
               <div className="w-full h-full rounded-full overflow-hidden ring-1 ring-gray-300 dark:ring-gray-600">
                 {(selectedImg || user?.avatar) ? (
                   <img
@@ -236,7 +236,7 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                   className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-600 flex items-center justify-center"
                   style={{ display: (selectedImg || user?.avatar) ? 'none' : 'flex' }}
                 >
-                  <span className="text-gray-600 dark:text-gray-300 font-semibold text-5xl">
+                  <span className="text-gray-600 dark:text-gray-300 font-semibold text-2xl sm:text-4xl lg:text-5xl">
                     {user?.username?.charAt(0).toUpperCase()}
                   </span>
                 </div>
@@ -253,10 +253,10 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                     disabled={isUpdatingProfile}
                   />
                   <label htmlFor="avatar-upload" className="cursor-pointer">
-                    <div className={`w-9 h-9 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 rounded-full flex items-center justify-center shadow-md transition-all border border-gray-300 dark:border-gray-600 ${
+                    <div className={`w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 rounded-full flex items-center justify-center shadow-md transition-all border border-gray-300 dark:border-gray-600 ${
                       isUpdatingProfile ? 'animate-pulse' : ''
                     }`}>
-                      <Camera className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+                      <Camera className="h-3 w-3 sm:h-3.5 sm:w-3.5 lg:h-4 lg:w-4 text-gray-700 dark:text-gray-300" />
                     </div>
                   </label>
                 </div>
@@ -265,26 +265,27 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
           </div>
 
           {/* User Info */}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 w-full">
             {/* Name and Action Buttons */}
-            <div className="flex items-center justify-between mb-1">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-2 sm:mb-1">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 text-center sm:text-left">
                 {user?.name || user?.username || 'User'}
               </h1>
 
               {/* Action Buttons */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3">
                 {isOwnProfile ? (
                   <>
                     <button
                       onClick={onEditClick}
-                      className="inline-flex items-center gap-2 px-6 py-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg transition-colors font-semibold text-sm"
+                      className="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 lg:px-6 py-1.5 sm:py-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg transition-colors font-semibold text-xs sm:text-sm"
                     >
-                      <Edit size={16} />
-                      Edit Profile
+                      <Edit size={14} className="sm:w-4 sm:h-4" />
+                      <span className="hidden xs:inline">Edit Profile</span>
+                      <span className="xs:hidden">Edit</span>
                     </button>
-                    <button className="p-2 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors">
-                      <MoreHorizontal size={20} className="text-gray-900 dark:text-gray-100" />
+                    <button className="p-1.5 sm:p-2 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors">
+                      <MoreHorizontal size={18} className="sm:w-5 sm:h-5 text-gray-900 dark:text-gray-100" />
                     </button>
                   </>
                 ) : (
@@ -296,7 +297,7 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                     />
                     <button 
                       onClick={handleMessage}
-                      className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 rounded-lg transition-colors font-semibold text-sm"
+                      className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 rounded-lg transition-colors font-semibold text-xs sm:text-sm"
                     >
                       Message
                     </button>
@@ -307,9 +308,9 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                       trigger={
                         <button 
                           onClick={() => setShowMoreMenu(!showMoreMenu)}
-                          className="p-2 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors"
+                          className="p-1.5 sm:p-2 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors"
                         >
-                          <MoreHorizontal size={20} className="text-gray-900 dark:text-gray-100" />
+                          <MoreHorizontal size={18} className="sm:w-5 sm:h-5 text-gray-900 dark:text-gray-100" />
                         </button>
                       }
                     >
@@ -338,53 +339,53 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
 
             {/* Email - Show if user enabled showEmail OR if viewing own profile */}
             {(user?.showEmail || isOwnProfile) && (
-              <p className="text-gray-600 dark:text-gray-300 mb-5 text-base">
+              <p className="text-gray-600 dark:text-gray-300 mb-3 sm:mb-4 lg:mb-5 text-xs sm:text-sm lg:text-base text-center sm:text-left">
                 {user?.email || 'user@example.com'}
               </p>
             )}
 
             {/* Stats Row */}
-            <div className="flex items-center gap-8 mb-5">
-              <div className="flex items-center gap-1.5">
-                <span className="font-bold text-gray-900 dark:text-gray-100 text-lg">
+            <div className="flex items-center justify-center sm:justify-start gap-4 sm:gap-6 lg:gap-8 mb-3 sm:mb-4 lg:mb-5">
+              <div className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5">
+                <span className="font-bold text-gray-900 dark:text-gray-100 text-base sm:text-lg">
                   {user?.postCount || posts?.length || 0}
                 </span>
-                <span className="text-gray-600 dark:text-gray-400 text-base">Posts</span>
+                <span className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm lg:text-base">Posts</span>
               </div>
               <button
-                className="flex items-center gap-1.5 hover:opacity-70 transition-opacity"
+                className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 hover:opacity-70 transition-opacity"
                 onClick={() => setShowFollowersModal(true)}
               >
-                <span className="font-bold text-gray-900 dark:text-gray-100 text-lg">
+                <span className="font-bold text-gray-900 dark:text-gray-100 text-base sm:text-lg">
                   {followersCount >= 1000 ? `${(followersCount / 1000).toFixed(1)}k` : followersCount}
                 </span>
-                <span className="text-gray-600 dark:text-gray-400 text-base">Followers</span>
+                <span className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm lg:text-base">Followers</span>
               </button>
               <button
-                className="flex items-center gap-1.5 hover:opacity-70 transition-opacity"
+                className="flex flex-col sm:flex-row items-center gap-0.5 sm:gap-1.5 hover:opacity-70 transition-opacity"
                 onClick={() => setShowFollowingModal(true)}
               >
-                <span className="font-bold text-gray-900 dark:text-gray-100 text-lg">
+                <span className="font-bold text-gray-900 dark:text-gray-100 text-base sm:text-lg">
                   {followingCount}
                 </span>
-                <span className="text-gray-600 dark:text-gray-400 text-base">Following</span>
+                <span className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm lg:text-base">Following</span>
               </button>
             </div>
 
             {/* Bio */}
             {user?.bio && (
-              <div className="mb-4">
-                <p className="text-gray-900 dark:text-gray-100 leading-relaxed whitespace-pre-wrap">
+              <div className="mb-3 sm:mb-4">
+                <p className="text-gray-900 dark:text-gray-100 leading-relaxed whitespace-pre-wrap text-sm sm:text-base text-center sm:text-left">
                   {user.bio}
                 </p>
               </div>
             )}
 
             {/* Additional Info - All in one line */}
-            <div className="flex flex-wrap items-center gap-4 text-gray-600 dark:text-gray-400 mb-4">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 sm:gap-4 text-gray-600 dark:text-gray-400 mb-3 sm:mb-4 text-xs sm:text-sm lg:text-base">
               {user?.location && (
-                <div className="flex items-center gap-1.5">
-                  <MapPin size={18} className="text-gray-500 dark:text-gray-400" />
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <MapPin size={16} className="sm:w-[18px] sm:h-[18px] text-gray-500 dark:text-gray-400" />
                   <span>{user.location}</span>
                 </div>
               )}
@@ -394,16 +395,16 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                   href={user.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium flex items-center gap-1.5"
+                  className="text-blue-600 dark:text-blue-400 hover:underline font-medium flex items-center gap-1 sm:gap-1.5"
                 >
-                  <LinkIcon size={18} />
-                  <span>{user.website.replace(/^https?:\/\//, '')}</span>
+                  <LinkIcon size={16} className="sm:w-[18px] sm:h-[18px]" />
+                  <span className="truncate max-w-[150px] sm:max-w-none">{user.website.replace(/^https?:\/\//, '')}</span>
                 </a>
               )}
 
               {user?.createdAt && (
-                <div className="flex items-center gap-1.5">
-                  <Calendar size={18} className="text-gray-500 dark:text-gray-400" />
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <Calendar size={16} className="sm:w-[18px] sm:h-[18px] text-gray-500 dark:text-gray-400" />
                   <span>
                     Joined {new Date(user.createdAt).toLocaleDateString('en-US', {
                       month: 'long',

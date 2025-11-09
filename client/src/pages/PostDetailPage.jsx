@@ -709,8 +709,8 @@ const PostDetailPage = () => {
           )}
 
           {/* Reactions Summary */}
-          <div className="px-3 pt-3 pb-2 flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
+          <div className="px-3 sm:px-4 pt-2 sm:pt-3 pb-2 flex items-center justify-between text-xs sm:text-sm min-h-[40px]">
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-visible min-w-0">
               {(() => {
                 const totalReactions = Object.values(reactions).reduce((sum, count) => sum + count, 0);
                 if (totalReactions > 0) {
@@ -738,53 +738,53 @@ const PostDetailPage = () => {
                   return (
                     <button 
                       onClick={handleShowLikes}
-                      className={`flex items-center gap-1.5 ${
+                      className={`flex items-center gap-1.5 sm:gap-2 ${
                         post.author?._id === authUser?._id 
                           ? 'hover:underline cursor-pointer' 
                           : 'cursor-default'
                       }`}
                     >
-                      <div className="flex items-center -space-x-1">
+                      <div className="flex items-center gap-0.5 bg-gray-100 dark:bg-gray-700 rounded-full px-1.5 py-0.5 shadow-sm min-h-[24px]">
                         {topReactions.map((reaction, index) => (
-                          <span key={index} className="text-base">{reaction.emoji}</span>
+                          <span key={index} className="leading-none flex-shrink-0" style={{ fontSize: '14px', lineHeight: '1' }}>{reaction.emoji}</span>
                         ))}
                       </div>
-                      <span className="text-sm text-gray-700 dark:text-gray-300 font-medium">{totalReactions} Reaction</span>
+                      <span className="text-xs text-gray-700 dark:text-gray-300 font-medium whitespace-nowrap">{totalReactions} Reaction</span>
                     </button>
                   );
                 }
                 return null;
               })()}
             </div>
-            <div className="flex items-center gap-4 text-gray-700 dark:text-gray-300 font-medium">
-              <span>{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</span>
+            <div className="flex items-center gap-2 sm:gap-4 text-gray-700 dark:text-gray-300 font-medium flex-shrink-0">
+              <span className="text-xs sm:text-sm whitespace-nowrap">{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</span>
               <span>{repostCount} {repostCount === 1 ? 'repost' : 'reposts'}</span>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="px-10 pb-2 pt-1 border-t border-gray-100 dark:border-gray-700">
-            <div className="flex items-center gap-1">
+          <div className="px-2 sm:px-4 pb-2 pt-1 border-t border-gray-100 dark:border-gray-700">
+            <div className="flex items-center gap-1 sm:gap-2">
               <div className="flex-1 relative">
                 <button
                   onClick={() => setShowReactionPicker(!showReactionPicker)}
-                  className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg transition-all text-sm ${
-                    userReaction === 'like' ? 'text-blue-600 bg-blue-50 hover:bg-blue-100' :
-                    userReaction === 'love' ? 'text-red-600 bg-red-50 hover:bg-red-100' :
-                    userReaction === 'haha' ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100' :
-                    userReaction === 'wow' ? 'text-orange-600 bg-orange-50 hover:bg-orange-100' :
-                    userReaction === 'sad' ? 'text-blue-500 bg-blue-50 hover:bg-blue-100' :
-                    userReaction === 'angry' ? 'text-red-700 bg-red-50 hover:bg-red-100' :
-                    'text-gray-600 hover:bg-gray-50'
+                  className={`w-full flex items-center justify-center gap-1 py-1.5 rounded-lg transition-all text-sm font-medium ${
+                    userReaction === 'like' ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-800/30' :
+                    userReaction === 'love' ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-800/30' :
+                    userReaction === 'haha' ? 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/30 hover:bg-yellow-100 dark:hover:bg-yellow-800/30' :
+                    userReaction === 'wow' ? 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 hover:bg-orange-100 dark:hover:bg-orange-800/30' :
+                    userReaction === 'sad' ? 'text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 hover:bg-blue-100 dark:hover:bg-blue-800/30' :
+                    userReaction === 'angry' ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30 hover:bg-red-100 dark:hover:bg-red-800/30' :
+                    'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
-                  {userReaction === 'like' && <span>👍</span>}
-                  {userReaction === 'love' && <span>❤️</span>}
-                  {userReaction === 'haha' && <span>😂</span>}
-                  {userReaction === 'wow' && <span>😮</span>}
-                  {userReaction === 'sad' && <span>😢</span>}
-                  {userReaction === 'angry' && <span>😠</span>}
-                  {!userReaction && <Heart size={18} />}
+                  {userReaction === 'like' && <span className="text-base">👍</span>}
+                  {userReaction === 'love' && <span className="text-base">❤️</span>}
+                  {userReaction === 'haha' && <span className="text-base">😂</span>}
+                  {userReaction === 'wow' && <span className="text-base">😮</span>}
+                  {userReaction === 'sad' && <span className="text-base">😢</span>}
+                  {userReaction === 'angry' && <span className="text-base">😠</span>}
+                  {!userReaction && <Heart size={16} />}
                   <span className="font-medium">
                     {userReaction === 'like' ? 'Like' :
                      userReaction === 'love' ? 'Love' :
@@ -804,47 +804,54 @@ const PostDetailPage = () => {
                       onClick={() => setShowReactionPicker(false)}
                     />
                     <div 
-                      className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white dark:bg-gray-800 rounded-full shadow-2xl border border-gray-200 dark:border-gray-700 px-3 py-2 flex space-x-2 z-30"
+                      className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-white dark:bg-gray-800 rounded-full shadow-2xl border border-gray-200 dark:border-gray-700 px-2 py-1.5 flex items-center gap-1 z-30"
+                      style={{ minHeight: '44px' }}
                     >
                       <button
                         onClick={() => { handleReact('like'); setShowReactionPicker(false); }}
-                        className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="hover:scale-125 transition-transform p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                         title="Like"
+                        style={{ fontSize: '24px', lineHeight: '1' }}
                       >
                         👍
                       </button>
                       <button
                         onClick={() => { handleReact('love'); setShowReactionPicker(false); }}
-                        className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="hover:scale-125 transition-transform p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                         title="Love"
+                        style={{ fontSize: '24px', lineHeight: '1' }}
                       >
                         ❤️
                       </button>
                       <button
                         onClick={() => { handleReact('haha'); setShowReactionPicker(false); }}
-                        className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="hover:scale-125 transition-transform p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                         title="Haha"
+                        style={{ fontSize: '24px', lineHeight: '1' }}
                       >
                         😂
                       </button>
                       <button
                         onClick={() => { handleReact('wow'); setShowReactionPicker(false); }}
-                        className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="hover:scale-125 transition-transform p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                         title="Wow"
+                        style={{ fontSize: '24px', lineHeight: '1' }}
                       >
                         😮
                       </button>
                       <button
                         onClick={() => { handleReact('sad'); setShowReactionPicker(false); }}
-                        className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="hover:scale-125 transition-transform p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                         title="Sad"
+                        style={{ fontSize: '24px', lineHeight: '1' }}
                       >
                         😢
                       </button>
                       <button
                         onClick={() => { handleReact('angry'); setShowReactionPicker(false); }}
-                        className="hover:scale-125 transition-transform text-2xl p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="hover:scale-125 transition-transform p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                         title="Angry"
+                        style={{ fontSize: '24px', lineHeight: '1' }}
                       >
                         😠
                       </button>
@@ -853,32 +860,32 @@ const PostDetailPage = () => {
                 )}
               </div>
 
-              <button className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all">
-                <MessageCircle size={18} />
-                <span className="font-medium">Comment</span>
+              <button className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all font-medium">
+                <MessageCircle size={16} />
+                <span>Comment</span>
               </button>
 
               <button
                 onClick={handleRepost}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-sm transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-sm font-medium transition-all ${
                   hasReposted
                     ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30'
                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
-                <Repeat size={18} />
-                <span className="font-medium">Repost</span>
+                <Repeat size={16} />
+                <span>Repost</span>
               </button>
 
               <button
                 onClick={handleSave}
-                className={`p-2 rounded-lg transition-all ${
+                className={`p-1.5 rounded-lg transition-all ${
                   isSaved
                     ? 'text-yellow-500 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30'
                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                 }`}
               >
-                <Bookmark className={isSaved ? 'fill-current' : ''} size={18} />
+                <Bookmark className={isSaved ? 'fill-current' : ''} size={16} />
               </button>
             </div>
           </div>

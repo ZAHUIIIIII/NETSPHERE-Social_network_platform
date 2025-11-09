@@ -1,4 +1,4 @@
-import { X, Phone, Video, MoreVertical, Search, BellOff, Bell, Trash2, UserX } from "lucide-react";
+import { X, Phone, Video, MoreVertical, Search, BellOff, Bell, Trash2, UserX, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useChatStore } from "../../store/useChatStore";
@@ -107,12 +107,20 @@ const ChatHeader = () => {
   }
 
   return (
-    <div className="p-3 lg:p-4 border-b border-gray-200/50 dark:border-gray-700/50 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <div className="flex-shrink-0 p-3 lg:p-4 border-b border-gray-200/50 dark:border-gray-700/50 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md shadow-sm">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+          {/* Back button (mobile only) */}
+          <button 
+            onClick={() => setSelectedUser(null)}
+            className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors flex-shrink-0"
+          >
+            <ArrowLeft className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+          </button>
+
           {/* Avatar */}
-          <div className="relative">
-            <div className="size-10 lg:size-11 rounded-full relative overflow-hidden border-2 border-white dark:border-gray-700 shadow-md">
+          <div className="relative flex-shrink-0">
+            <div className="w-10 h-10 lg:w-11 lg:h-11 rounded-full relative overflow-hidden border-2 border-white dark:border-gray-700 shadow-md">
               <img 
                 src={selectedUser?.avatar || "/avatar.png"} 
                 alt={selectedUser?.username || "User"}
@@ -123,7 +131,7 @@ const ChatHeader = () => {
               />
             </div>
             {onlineUsers.includes(selectedUser._id) && (
-              <span className="absolute -bottom-0.5 -right-0.5 size-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800 shadow-sm animate-pulse" />
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-gray-800 shadow-sm animate-pulse" />
             )}
           </div>
 
@@ -131,28 +139,23 @@ const ChatHeader = () => {
           <div className="flex-1 min-w-0">
             <h3 
               onClick={() => navigate(`/profile/${selectedUser?.username}`)}
-              className="font-semibold text-base lg:text-lg text-gray-800 dark:text-gray-100 truncate hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
+              className="font-semibold text-sm sm:text-base lg:text-lg text-gray-800 dark:text-gray-100 truncate hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer transition-colors"
             >
               {selectedUser?.username || "User"}
             </h3>
-            <div className="flex items-center gap-2 mt-1">
-              {/* <div className={`w-2 h-2 rounded-full ${
-                onlineUsers.includes(selectedUser._id) ? 'bg-green-500' : 'bg-gray-400'
-              }`} /> */}
-              <p className="text-xs lg:text-sm font-medium text-gray-600 dark:text-gray-400">
-                {onlineUsers.includes(selectedUser?._id) ? "Online" : "Offline"}
-              </p>
-            </div>
+            <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
+              {onlineUsers.includes(selectedUser?._id) ? "Online" : "Offline"}
+            </p>
           </div>
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-1">
-          <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200 group">
-            <Phone className="size-4 lg:size-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+        <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
+          <button className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200 group">
+            <Phone className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
           </button>
-          <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200 group">
-            <Video className="size-4 lg:size-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+          <button className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200 group">
+            <Video className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
           </button>
           
           {/* Options Dropdown */}
@@ -166,7 +169,7 @@ const ChatHeader = () => {
                 onClick={() => setShowOptionsMenu(!showOptionsMenu)}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200 group"
               >
-                <MoreVertical className="size-4 lg:size-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
+                <MoreVertical className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
               </button>
             }
           >
@@ -217,11 +220,12 @@ const ChatHeader = () => {
             </div>
           </PortalDropdown>
           
+          {/* Close button (desktop only, mobile uses back button) */}
           <button 
             onClick={() => setSelectedUser(null)}
-            className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors duration-200 group ml-1"
+            className="hidden lg:flex p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors duration-200 group ml-1"
           >
-            <X className="size-4 lg:size-5 text-gray-600 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors" />
+            <X className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600 dark:text-gray-400 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors" />
           </button>
         </div>
       </div>

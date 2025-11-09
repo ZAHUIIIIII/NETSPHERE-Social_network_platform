@@ -192,6 +192,8 @@ export const registerVerify = async (req, res) => {
                 birthday: newUser.birthday,
                 gender: newUser.gender,
                 avatar: newUser.avatar,
+                role: newUser.role,
+                isGoogleUser: newUser.isGoogleUser || false,
                 createdAt: newUser.createdAt
             });
         } else {
@@ -272,6 +274,8 @@ export const login = async (req, res) => {
             birthday: user.birthday,
             gender: user.gender,
             avatar: user.avatar,
+            role: user.role,
+            isGoogleUser: user.isGoogleUser || false,
             createdAt: user.createdAt
         });
     } catch (error) {
@@ -383,6 +387,8 @@ export const checkAuth = async (req, res) => {
             birthday: req.user.birthday,
             gender: req.user.gender,
             avatar: req.user.avatar,
+            role: req.user.role,
+            isGoogleUser: req.user.isGoogleUser || false,
             following: req.user.following || [],
             followers: req.user.followers || [],
             createdAt: req.user.createdAt
@@ -613,7 +619,7 @@ export const googleCallback = (req, res, next) => {
             return res.redirect(`${frontendUrl}/login?error=oauth_error`);
         }
         
-        // Check if user is banned or suspended (data will be false in this case)
+        // Check if user is banned, suspended, or using wrong login method (data will be false in this case)
         if (!data && info) {
             if (info.status === 'suspended') {
                 return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(info.message)}`);
@@ -621,6 +627,9 @@ export const googleCallback = (req, res, next) => {
             if (info.status === 'banned') {
                 const message = info.reason ? `${info.message} Reason: ${info.reason}` : info.message;
                 return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(message)}`);
+            }
+            if (info.status === 'password_account') {
+                return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(info.message)}`);
             }
         }
         

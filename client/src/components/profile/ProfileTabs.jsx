@@ -23,14 +23,14 @@ const ProfileTabs = ({ activeTab, onTabChange, isOwnProfile }) => {
               <button
                 key={tab.key}
                 onClick={() => onTabChange(tab.key)}
-                className={`flex items-center justify-center gap-1.5 px-16 py-3 text-xs font-semibold tracking-wide transition-all relative ${
+                className={`flex items-center justify-center gap-1 sm:gap-1.5 px-6 sm:px-10 lg:px-16 py-2.5 sm:py-3 text-xs font-semibold tracking-wide transition-all relative ${
                   activeTab === tab.key
                     ? 'text-gray-900 dark:text-gray-100 border-t border-t-gray-900 dark:border-t-gray-100'
                     : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
                 }`}
               >
-                <Icon className="h-3 w-3" />
-                <span>{tab.label}</span>
+                <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span className="text-[10px] xs:text-xs">{tab.label}</span>
               </button>
             );
           })}

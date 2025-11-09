@@ -41,20 +41,23 @@ const ChatContainer = () => {
 
   if (isMessagesLoading) {
     return (
-      <div className="flex-1 flex flex-col overflow-auto bg-gradient-to-b from-gray-50/50 to-white/50 dark:from-gray-800/50 dark:to-gray-900/50">
+      <div className="flex-1 flex flex-col h-full bg-gradient-to-b from-gray-50/50 to-white/50 dark:from-gray-800/50 dark:to-gray-900/50">
         <ChatHeader />
-        <MessageSkeleton />
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6">
+          <MessageSkeleton />
+        </div>
         <MessageInput />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-auto bg-gradient-to-b from-gray-50/30 to-white/30 dark:from-gray-800/30 dark:to-gray-900/30">
+    <div className="flex-1 flex flex-col h-full bg-gradient-to-b from-gray-50/30 to-white/30 dark:from-gray-800/30 dark:to-gray-900/30">
+      {/* Fixed Header at Top */}
       <ChatHeader />
 
-      {/* Messages Container */}
-      <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 bg-gradient-to-b from-blue-50/10 via-white/30 to-gray-50/10 dark:from-blue-900/10 dark:via-gray-800/30 dark:to-gray-900/10">
+      {/* Scrollable Messages Container */}
+      <div className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-6 space-y-4 bg-gradient-to-b from-blue-50/10 via-white/30 to-gray-50/10 dark:from-blue-900/10 dark:via-gray-800/30 dark:to-gray-900/10">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500 dark:text-gray-400">
             <div className="text-6xl mb-4">💬</div>
@@ -183,6 +186,7 @@ const ChatContainer = () => {
         <div ref={messageEndRef} />
       </div>
 
+      {/* Fixed Input - Always visible at bottom */}
       <MessageInput />
     </div>
   );

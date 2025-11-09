@@ -46,32 +46,32 @@ const Sidebar = () => {
   if (isUsersLoading) return <SidebarSkeleton />;
 
   return (
-    <aside className="h-full w-20 lg:w-80 border-r border-gray-200/50 dark:border-gray-700/50 flex flex-col transition-all duration-200 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+    <aside className="h-full w-full lg:w-80 border-r border-gray-200/50 dark:border-gray-700/50 flex flex-col transition-all duration-200 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
       {/* Header */}
-      <div className="border-b border-gray-200/50 dark:border-gray-700/50 w-full p-3 bg-gradient-to-r from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10">
+      <div className="border-b border-gray-200/50 dark:border-gray-700/50 w-full p-3 lg:p-3 bg-gradient-to-r from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10">
         <div className="flex items-center gap-2">
           <div className="p-2 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg">
-            <Users className="size-4 text-blue-600 dark:text-blue-400" />
+            <Users className="size-5 lg:size-4 text-blue-600 dark:text-blue-400" />
           </div>
-          <span className="font-semibold text-gray-800 dark:text-gray-100 hidden lg:block text-sm">Messages</span>
+          <span className="font-semibold text-gray-800 dark:text-gray-100 text-base lg:text-sm">Messages</span>
         </div>
         
         {/* Search Bar */}
-        <div className="mt-3 hidden lg:block">
+        <div className="mt-3">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 size-3" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 size-4" />
             <input
               type="text"
               placeholder="Search conversations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-white/80 dark:bg-gray-700/80 border border-gray-200/50 dark:border-gray-600/50 rounded-lg text-xs text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/30 focus:border-blue-500/30 dark:focus:border-blue-400/40 transition-all"
+              className="w-full pl-9 pr-3 py-2.5 lg:py-2 bg-white/80 dark:bg-gray-700/80 border border-gray-200/50 dark:border-gray-600/50 rounded-lg text-sm lg:text-xs text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/30 focus:border-blue-500/30 dark:focus:border-blue-400/40 transition-all"
             />
           </div>
         </div>
 
         {/* Online filter toggle */}
-        <div className="mt-3 hidden lg:flex items-center justify-between">
+        <div className="mt-3 flex items-center justify-between">
           <label className="cursor-pointer flex items-center gap-2">
             <input
               type="checkbox"
@@ -101,25 +101,19 @@ const Sidebar = () => {
                 : "border-l-transparent hover:border-l-blue-200 dark:hover:border-l-blue-600"}
             `}
           >
-            <div className="relative mx-auto lg:mx-0 flex-shrink-0">
+            <div className="relative flex-shrink-0">
               <img
                 src={user.avatar || "/avatar.png"}
                 alt={user.username || "User"}
-                className="size-10 lg:size-11 object-cover rounded-full border-2 border-white shadow-sm"
+                className="size-12 lg:size-11 object-cover rounded-full border-2 border-white shadow-sm"
               />
               {onlineUsers.includes(user._id) && (
                 <span className="absolute -bottom-1 -right-1 size-3 bg-green-500 rounded-full border-2 border-white shadow-sm animate-pulse" />
               )}
-              {/* Unread badge for mobile */}
-              {user.unreadCount > 0 && (
-                <span className="lg:hidden absolute -top-1 -right-1 bg-blue-500 dark:bg-blue-600 text-white text-[9px] font-bold rounded-full min-w-[16px] h-[16px] flex items-center justify-center px-1 border-2 border-white dark:border-gray-800">
-                  {user.unreadCount > 9 ? '9+' : user.unreadCount}
-                </span>
-              )}
             </div>
 
-            {/* User info - only visible on larger screens */}
-            <div className="hidden lg:block text-left min-w-0 flex-1">
+            {/* User info - visible on all screens */}
+            <div className="text-left min-w-0 flex-1">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5 min-w-0 flex-1">
                   <div className="font-semibold text-gray-800 dark:text-gray-100 truncate text-sm">{user.username || "Unknown User"}</div>
