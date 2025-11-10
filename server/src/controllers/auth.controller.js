@@ -666,3 +666,209 @@ export const getGoogleUser = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+// Delete own account
+export const deleteOwnAccount = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { password } = req.body;
+        
+        console.log('User requesting account deletion:', userId);
+        
+        // Get user with password
+        const user = await User.findById(userId).select('+password');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+        
+        // Verify password for security (unless Google user)
+        if (!user.isGoogleUser) {
+            if (!password) {
+                return res.status(400).json({ message: 'Password is required to delete account' });
+            }
+            
+            const isPasswordCorrect = await bcrypt.compare(password, user.password);
+            if (!isPasswordCorrect) {
+                return res.status(400).json({ message: 'Incorrect password' });
+            }
+        }
+        
+        // Import required models
+        const Post = (await import('../models/post.model.js')).default;
+        const Comment = (await import('../models/comment.model.js')).default;
+        const Notification = (await import('../models/notification.model.js')).default;
+        const Message = (await import('../models/message.model.js')).default;
+        const Report = (await import('../models/report.model.js')).default;
+        const cloudinary = (await import('../lib/cloudinary.js')).default;
+        
+        console.log('Starting account deletion process for:', user.username);
+        
+        // Delete all user-related data
+        try {
+            // 1. Get all user's posts for image cleanup
+            const userPosts = await Post.find({ author: userId });
+            
+            // Delete images from Cloudinary for user's posts
+            for (const post of userPosts) {
+                if (post.images && post.images.length > 0) {
+                    await Promise.all(post.images.map(async (imageUrl) => {
+                        try {
+                            const publicId = imageUrl.split('/').slice(-2).join('/').split('.')[0];
+                            await cloudinary.uploader.destroy(publicId);
+                        } catch (err) {
+                            console.error('Error deleting post image from cloudinary:', err);
+                        }
+                    }));
+                }
+            }
+            
+            // Delete all posts
+            const deletedPosts = await Post.deleteMany({ author: userId });
+            console.log(`Deleted ${deletedPosts.deletedCount} posts`);
+            
+            // 2. Soft delete user's comments (preserve thread structure and username only)
+            // Save username snapshot so others know who they replied to
+            const softDeletedComments = await Comment.updateMany(
+                { authorId: userId },
+                { 
+                    $set: { 
+                        isDeleted: true,
+                        content: '(comment deleted)',
+                        authorSnapshot: {
+                            username: user.username
+                        }
+                    }
+                }
+            );
+            console.log(`Soft deleted ${softDeletedComments.modifiedCount} comments`);
+            
+            // 3. Delete notifications
+            const deletedNotifications = await Notification.deleteMany({
+                $or: [
+                    { sender: userId },
+                    { recipient: userId }
+                ]
+            });
+            console.log(`Deleted ${deletedNotifications.deletedCount} notifications`);
+            
+            // 4. Delete messages
+            const deletedMessages = await Message.deleteMany({
+                $or: [
+                    { senderId: userId },
+                    { receiverId: userId }
+                ]
+            });
+            console.log(`Deleted ${deletedMessages.deletedCount} messages`);
+            
+            // 5. Delete reports
+            const deletedReports = await Report.deleteMany({ reportedBy: userId });
+            await Report.deleteMany({ postId: { $in: userPosts.map(p => p._id) } });
+            console.log(`Deleted ${deletedReports.deletedCount} reports`);
+            
+            // 6. Remove from followers/following
+            await User.updateMany(
+                { followers: userId },
+                { $pull: { followers: userId } }
+            );
+            await User.updateMany(
+                { following: userId },
+                { $pull: { following: userId } }
+            );
+            
+            // 7. Remove from blocked lists
+            await User.updateMany(
+                { blockedUsers: userId },
+                { $pull: { blockedUsers: userId } }
+            );
+            await User.updateMany(
+                { blockedBy: userId },
+                { $pull: { blockedBy: userId } }
+            );
+            
+            // 8. Remove from notification settings
+            await User.updateMany(
+                { savedPosts: { $in: userPosts.map(p => p._id) } },
+                { $pull: { savedPosts: { $in: userPosts.map(p => p._id) } } }
+            );
+            await User.updateMany(
+                { 'notificationSettings.mutedUsers': userId },
+                { $pull: { 'notificationSettings.mutedUsers': userId } }
+            );
+            await User.updateMany(
+                { 'notificationSettings.mutedConversations': userId },
+                { $pull: { 'notificationSettings.mutedConversations': userId } }
+            );
+            await User.updateMany(
+                { 'notificationSettings.mutedPosts': { $in: userPosts.map(p => p._id) } },
+                { $pull: { 'notificationSettings.mutedPosts': { $in: userPosts.map(p => p._id) } } }
+            );
+            
+            // 9. Remove reactions and reposts
+            await Post.updateMany(
+                { 'reactions.like': userId },
+                { $pull: { 'reactions.like': userId } }
+            );
+            await Post.updateMany(
+                { 'reactions.love': userId },
+                { $pull: { 'reactions.love': userId } }
+            );
+            await Post.updateMany(
+                { 'reactions.haha': userId },
+                { $pull: { 'reactions.haha': userId } }
+            );
+            await Post.updateMany(
+                { 'reactions.wow': userId },
+                { $pull: { 'reactions.wow': userId } }
+            );
+            await Post.updateMany(
+                { 'reactions.sad': userId },
+                { $pull: { 'reactions.sad': userId } }
+            );
+            await Post.updateMany(
+                { 'reactions.angry': userId },
+                { $pull: { 'reactions.angry': userId } }
+            );
+            await Post.updateMany(
+                { reposts: userId },
+                { $pull: { reposts: userId }, $inc: { repostCount: -1 } }
+            );
+            
+            // 10. Delete avatar from Cloudinary
+            if (user.avatar && !user.avatar.includes('default-avatar')) {
+                try {
+                    const publicId = user.avatar.split('/').slice(-2).join('/').split('.')[0];
+                    await cloudinary.uploader.destroy(publicId);
+                    console.log('Deleted user avatar from Cloudinary');
+                } catch (err) {
+                    console.error('Error deleting avatar from cloudinary:', err);
+                }
+            }
+            
+            // 11. Finally, delete the user
+            await User.findByIdAndDelete(userId);
+            console.log('User account deleted:', user.username);
+            
+            // Clear the auth cookie
+            res.cookie("token", "", { 
+                maxAge: 0,
+                httpOnly: true,
+                sameSite: 'strict',
+                secure: process.env.NODE_ENV === 'production',
+            });
+            
+            res.json({ 
+                message: 'Your account and all related data have been permanently deleted',
+                success: true
+            });
+        } catch (cleanupError) {
+            console.error('Error during account deletion cleanup:', cleanupError);
+            throw cleanupError;
+        }
+    } catch (error) {
+        console.error('Error in deleteOwnAccount:', error);
+        res.status(500).json({ 
+            message: 'Error deleting account',
+            error: error.message
+        });
+    }
+};

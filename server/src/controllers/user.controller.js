@@ -38,8 +38,12 @@ export const getUserProfile = async (req, res) => {
       }
     }
 
-    // Get post count
-    const postCount = await Post.countDocuments({ author: user._id });
+    // Get post count (exclude reposts and removed posts to match displayed posts)
+    const postCount = await Post.countDocuments({ 
+      author: user._id,
+      status: { $in: ['published', 'flagged', null, undefined] },
+      isRepost: { $ne: true }
+    });
 
     // Ensure followers and following are arrays
     const followers = user.followers || [];

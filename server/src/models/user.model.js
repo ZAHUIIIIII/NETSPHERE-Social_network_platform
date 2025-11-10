@@ -127,7 +127,7 @@ const userSchema = new mongoose.Schema({
     },
     likes: {
       type: Boolean,
-      default: false
+      default: true
     },
     comments: {
       type: Boolean,

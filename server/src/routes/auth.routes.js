@@ -13,7 +13,8 @@ import {
     getGoogleUser,
     checkUsername,
     changePassword,
-    updatePrivacySettings
+    updatePrivacySettings,
+    deleteOwnAccount
 } from '../controllers/auth.controller.js';
 import { protectRoute } from '../middleware/auth.middleware.js';
 
@@ -44,6 +45,7 @@ router.get("/check", protectRoute, checkAuth);
 router.put("/update-profile", protectRoute, updateProfile);
 router.post("/change-password", protectRoute, changePassword);
 router.put("/update-privacy", protectRoute, updatePrivacySettings);
+router.delete("/delete-account", protectRoute, deleteOwnAccount);
 
 
 export default router;

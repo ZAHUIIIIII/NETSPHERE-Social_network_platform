@@ -144,6 +144,11 @@ export const useAuthStore = create((set, get) => ({
         }
     },
 
+    // Update local auth user data without API call or toast (for syncing)
+    setAuthUser: (userData) => {
+        set({authUser: userData});
+    },
+
     connectSocket: () => {
         const { authUser } = get();
         if (!authUser || get().socket?.connected) return;

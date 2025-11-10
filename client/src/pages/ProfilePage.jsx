@@ -15,7 +15,7 @@ import { Loader, ArrowLeft } from 'lucide-react';
 
 const ProfilePage = () => {
   const { username } = useParams();
-  const { authUser, updateProfile: updateAuthUserProfile } = useAuthStore();
+  const { authUser, setAuthUser } = useAuthStore();
   const navigate = useNavigate();
   const [profileUser, setProfileUser] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -67,9 +67,9 @@ const ProfilePage = () => {
         const userPosts = await getUserPosts(userData._id);
         setPosts(userPosts || []);
         
-        // Only update auth user data if it's actually different
+        // Only update auth user data if it's actually different (sync without toast)
         if (isOwnProfile && JSON.stringify(authUser) !== JSON.stringify(userData)) {
-          updateAuthUserProfile(userData);
+          setAuthUser(userData);
         }
       }
     } catch (error) {

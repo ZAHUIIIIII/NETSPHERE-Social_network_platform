@@ -51,6 +51,12 @@ const CommentSchema = new mongoose.Schema({
     required: true 
   },
   
+  // Author snapshot (preserved when user is deleted)
+  authorSnapshot: {
+    username: String,
+    avatar: String
+  },
+  
   // Reply snapshot (for display)
   replyToSnapshot: {
     userId: mongoose.Schema.Types.ObjectId,

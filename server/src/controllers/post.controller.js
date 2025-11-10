@@ -710,6 +710,12 @@ export const repostPost = async (req, res) => {
 export const getUserReposts = async (req, res) => {
   try {
     const { userId } = req.params;
+    const currentUserId = req.user._id;
+
+    // Get current user's blocked users
+    const currentUser = await User.findById(currentUserId).select('blockedUsers blockedBy');
+    const blockedUserIds = currentUser.blockedUsers.map(id => id.toString());
+    const blockedByUserIds = currentUser.blockedBy.map(id => id.toString());
 
     const reposts = await Post.find({
       author: userId,
@@ -727,8 +733,27 @@ export const getUserReposts = async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    // Filter out reposts where original post was deleted or doesn't exist
-    const validReposts = reposts.filter(repost => repost.originalPost && repost.originalPost.status !== 'removed');
+    // Filter out reposts where:
+    // 1. Original post was deleted or doesn't exist
+    // 2. Original post author is blocked by current user
+    // 3. Original post author has blocked current user
+    const validReposts = reposts.filter(repost => {
+      if (!repost.originalPost || repost.originalPost.status === 'removed') {
+        return false;
+      }
+      
+      const originalAuthorId = repost.originalPost.author?._id?.toString();
+      if (!originalAuthorId) {
+        return false;
+      }
+      
+      // Filter out if original author is blocked or has blocked current user
+      if (blockedUserIds.includes(originalAuthorId) || blockedByUserIds.includes(originalAuthorId)) {
+        return false;
+      }
+      
+      return true;
+    });
 
     // For each repost's original post, fetch only root comments with totalDescendants
     const repostsWithComments = await Promise.all(

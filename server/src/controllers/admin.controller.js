@@ -3,6 +3,7 @@ import Post from '../models/post.model.js';
 import Comment from '../models/comment.model.js';
 import Notification from '../models/notification.model.js';
 import Report from '../models/report.model.js';
+import cloudinary from '../lib/cloudinary.js';
 import mongoose from 'mongoose';
 
 // Get admin dashboard statistics
@@ -486,13 +487,44 @@ export const deleteUser = async (req, res) => {
     
     // Delete all user-related data
     try {
-      // 1. Delete user's posts
+      const Message = (await import('../models/message.model.js')).default;
+      const Report = (await import('../models/report.model.js')).default;
+      
+      // 1. Delete user's posts and all posts where user is mentioned
+      const userPosts = await Post.find({ author: userId });
+      
+      // Delete images from Cloudinary for user's posts
+      for (const post of userPosts) {
+        if (post.images && post.images.length > 0) {
+          await Promise.all(post.images.map(async (imageUrl) => {
+            try {
+              const publicId = imageUrl.split('/').slice(-2).join('/').split('.')[0];
+              await cloudinary.uploader.destroy(publicId);
+            } catch (err) {
+              console.error('Error deleting post image from cloudinary:', err);
+            }
+          }));
+        }
+      }
+      
       const deletedPosts = await Post.deleteMany({ author: userId });
       console.log(`Deleted ${deletedPosts.deletedCount} posts`);
       
-      // 2. Delete user's comments (using authorId field)
-      const deletedComments = await Comment.deleteMany({ authorId: userId });
-      console.log(`Deleted ${deletedComments.deletedCount} comments`);
+      // 2. Soft delete user's comments (preserve thread structure and username only)
+      // Save username snapshot so others know who they replied to
+      const softDeletedComments = await Comment.updateMany(
+        { authorId: userId },
+        { 
+          $set: { 
+            isDeleted: true,
+            content: '(comment deleted)',
+            authorSnapshot: {
+              username: userToDelete.username
+            }
+          }
+        }
+      );
+      console.log(`Soft deleted ${softDeletedComments.modifiedCount} comments`);
       
       // 3. Delete notifications related to this user (using recipient and sender fields)
       const deletedNotifications = await Notification.deleteMany({
@@ -503,7 +535,26 @@ export const deleteUser = async (req, res) => {
       });
       console.log(`Deleted ${deletedNotifications.deletedCount} notifications`);
       
-      // 4. Remove user from followers/following arrays of other users
+      // 4. Delete all messages sent or received by this user
+      const deletedMessages = await Message.deleteMany({
+        $or: [
+          { senderId: userId },
+          { receiverId: userId }
+        ]
+      });
+      console.log(`Deleted ${deletedMessages.deletedCount} messages`);
+      
+      // 5. Delete all reports made by this user
+      const deletedReports = await Report.deleteMany({ reportedBy: userId });
+      console.log(`Deleted ${deletedReports.deletedCount} reports`);
+      
+      // 6. Delete reports on posts that belong to this user (already deleted with posts)
+      // Reports on deleted posts will be orphaned, let's clean them up
+      await Report.deleteMany({ 
+        postId: { $in: userPosts.map(p => p._id) }
+      });
+      
+      // 7. Remove user from followers/following arrays of other users
       await User.updateMany(
         { followers: userId },
         { $pull: { followers: userId } }
@@ -514,7 +565,79 @@ export const deleteUser = async (req, res) => {
       );
       console.log('Removed user from all followers/following lists');
       
-      // 5. Finally, delete the user
+      // 8. Remove user from blocked users and blocked by lists
+      await User.updateMany(
+        { blockedUsers: userId },
+        { $pull: { blockedUsers: userId } }
+      );
+      await User.updateMany(
+        { blockedBy: userId },
+        { $pull: { blockedBy: userId } }
+      );
+      console.log('Removed user from all blocked users lists');
+      
+      // 9. Remove user from saved posts, muted users, and muted conversations in other users
+      await User.updateMany(
+        { savedPosts: { $in: userPosts.map(p => p._id) } },
+        { $pull: { savedPosts: { $in: userPosts.map(p => p._id) } } }
+      );
+      await User.updateMany(
+        { 'notificationSettings.mutedUsers': userId },
+        { $pull: { 'notificationSettings.mutedUsers': userId } }
+      );
+      await User.updateMany(
+        { 'notificationSettings.mutedConversations': userId },
+        { $pull: { 'notificationSettings.mutedConversations': userId } }
+      );
+      await User.updateMany(
+        { 'notificationSettings.mutedPosts': { $in: userPosts.map(p => p._id) } },
+        { $pull: { 'notificationSettings.mutedPosts': { $in: userPosts.map(p => p._id) } } }
+      );
+      console.log('Removed user from all notification settings');
+      
+      // 10. Remove user reactions and reposts from other users' posts
+      await Post.updateMany(
+        { 'reactions.like': userId },
+        { $pull: { 'reactions.like': userId } }
+      );
+      await Post.updateMany(
+        { 'reactions.love': userId },
+        { $pull: { 'reactions.love': userId } }
+      );
+      await Post.updateMany(
+        { 'reactions.haha': userId },
+        { $pull: { 'reactions.haha': userId } }
+      );
+      await Post.updateMany(
+        { 'reactions.wow': userId },
+        { $pull: { 'reactions.wow': userId } }
+      );
+      await Post.updateMany(
+        { 'reactions.sad': userId },
+        { $pull: { 'reactions.sad': userId } }
+      );
+      await Post.updateMany(
+        { 'reactions.angry': userId },
+        { $pull: { 'reactions.angry': userId } }
+      );
+      await Post.updateMany(
+        { reposts: userId },
+        { $pull: { reposts: userId }, $inc: { repostCount: -1 } }
+      );
+      console.log('Removed user reactions and reposts from posts');
+      
+      // 11. Delete user's avatar from Cloudinary (if not default)
+      if (userToDelete.avatar && !userToDelete.avatar.includes('default-avatar')) {
+        try {
+          const publicId = userToDelete.avatar.split('/').slice(-2).join('/').split('.')[0];
+          await cloudinary.uploader.destroy(publicId);
+          console.log('Deleted user avatar from Cloudinary');
+        } catch (err) {
+          console.error('Error deleting avatar from cloudinary:', err);
+        }
+      }
+      
+      // 12. Finally, delete the user
       const deletedUser = await User.findByIdAndDelete(userId);
       console.log('User deleted:', deletedUser.username);
       
@@ -522,8 +645,10 @@ export const deleteUser = async (req, res) => {
         message: 'User and all related data deleted successfully',
         deletedData: {
           posts: deletedPosts.deletedCount,
-          comments: deletedComments.deletedCount,
-          notifications: deletedNotifications.deletedCount
+          comments: softDeletedComments.modifiedCount,
+          notifications: deletedNotifications.deletedCount,
+          messages: deletedMessages.deletedCount,
+          reports: deletedReports.deletedCount
         }
       });
     } catch (cleanupError) {

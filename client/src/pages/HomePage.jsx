@@ -1059,6 +1059,11 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
           >
             {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
           </button>
+          {repostCount > 0 && (
+            <span className="text-xs sm:text-sm whitespace-nowrap">
+              {repostCount} {repostCount === 1 ? 'repost' : 'reposts'}
+            </span>
+          )}
         </div>
       </div>
 

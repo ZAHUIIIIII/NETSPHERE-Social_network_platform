@@ -51,6 +51,9 @@ const SettingPage = () => {
   // Delete Account State
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
+  const [showDeletePassword, setShowDeletePassword] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   // Help/Info Dialog State
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
@@ -261,18 +264,35 @@ const SettingPage = () => {
       return;
     }
     
+    // Check password requirement for non-Google users
+    if (!authUser?.isGoogleUser && !deletePassword) {
+      toast.error('Please enter your password to confirm deletion');
+      return;
+    }
+    
+    setIsDeletingAccount(true);
+    
     try {
-      // In a real app, this would delete the account from backend
-      // For now, we'll just logout
-      toast.success('Account deletion initiated. Logging out...');
-      setTimeout(() => {
-        logout();
-      }, 1000);
+      const response = await axios.delete('/auth/delete-account', {
+        data: { password: deletePassword }
+      });
+      
+      if (response.data.success) {
+        toast.success('Your account has been permanently deleted');
+        // Close modal and clear fields on success
+        setDeleteAccountOpen(false);
+        setDeleteConfirmText('');
+        setDeletePassword('');
+        setTimeout(() => {
+          logout();
+        }, 1500);
+      }
     } catch (error) {
-      toast.error('Failed to delete account');
+      console.error('Error deleting account:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete account');
+      // Keep modal open on error so user can see the error and retry
     } finally {
-      setDeleteAccountOpen(false);
-      setDeleteConfirmText('');
+      setIsDeletingAccount(false);
     }
   };
 
@@ -1185,14 +1205,41 @@ const SettingPage = () => {
                   <div>
                     <p className="text-sm font-medium text-red-900 dark:text-red-100 mb-1">Warning: This action is permanent</p>
                     <ul className="text-xs text-red-800 dark:text-red-300 space-y-1 list-disc list-inside">
-                      <li>All your posts will be deleted</li>
-                      <li>Your messages will be removed</li>
-                      <li>Your profile will be permanently deleted</li>
+                      <li>All your posts and images will be deleted</li>
+                      <li>All your comments will be removed</li>
+                      <li>Your messages and conversations will be deleted</li>
+                      <li>Your profile and avatar will be permanently deleted</li>
+                      <li>All notifications involving you will be removed</li>
                       <li>This action cannot be undone</li>
                     </ul>
                   </div>
                 </div>
               </div>
+              
+              {!authUser?.isGoogleUser && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+                    Enter your password to confirm
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showDeletePassword ? 'text' : 'password'}
+                      value={deletePassword}
+                      onChange={(e) => setDeletePassword(e.target.value)}
+                      placeholder="Your password"
+                      className="w-full px-3 py-2 pr-10 border border-red-300 dark:border-red-800 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowDeletePassword(!showDeletePassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      {showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+              )}
+              
               <div>
                 <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
                   Type <span className="font-mono bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 px-2 py-0.5 rounded">DELETE</span> to confirm
@@ -1211,17 +1258,27 @@ const SettingPage = () => {
                 onClick={() => {
                   setDeleteAccountOpen(false);
                   setDeleteConfirmText('');
+                  setDeletePassword('');
+                  setShowDeletePassword(false);
                 }} 
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100"
+                disabled={isDeletingAccount}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button 
                 onClick={handleDeleteAccount} 
-                disabled={deleteConfirmText !== 'DELETE'} 
-                className="flex-1 px-4 py-2 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                disabled={deleteConfirmText !== 'DELETE' || isDeletingAccount || (!authUser?.isGoogleUser && !deletePassword)} 
+                className="flex-1 px-4 py-2 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
-                Delete Forever
+                {isDeletingAccount ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Deleting...
+                  </>
+                ) : (
+                  'Delete Forever'
+                )}
               </button>
             </div>
           </div>

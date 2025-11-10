@@ -35,6 +35,18 @@ async function resolveUsername(userId) {
 async function populateAuthor(comment) {
   if (!comment.authorId) return comment;
   
+  // If comment has authorSnapshot (user was deleted), use that
+  if (comment.isDeleted && comment.authorSnapshot) {
+    return {
+      ...comment,
+      author: {
+        _id: comment.authorId,
+        username: comment.authorSnapshot.username,
+        avatar: null  // Don't show avatar for deleted users
+      }
+    };
+  }
+  
   const user = await User.findById(comment.authorId)
     .select('_id username avatar')
     .lean();
