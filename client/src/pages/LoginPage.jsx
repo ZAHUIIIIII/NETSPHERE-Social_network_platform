@@ -80,7 +80,8 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:5001/api/auth/google?prompt=select_account';
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+    window.location.href = `${API_URL}/auth/google?prompt=select_account`;
   };
 
   return (
