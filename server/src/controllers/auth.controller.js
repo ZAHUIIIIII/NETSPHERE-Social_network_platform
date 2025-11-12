@@ -657,8 +657,8 @@ export const googleCallback = (req, res, next) => {
             path: '/',
         });
 
-        // Redirect to frontend with success and user info
-        const redirectUrl = `${frontendUrl}/?login=success&user=${encodeURIComponent(user.username)}`;
+        // Redirect to frontend with success, user info, and token for mobile browsers
+        const redirectUrl = `${frontendUrl}/?login=success&user=${encodeURIComponent(user.username)}&token=${encodeURIComponent(token)}`;
         console.log('🟢 Final redirect URL:', redirectUrl);
         console.log('🟢 frontendUrl value:', frontendUrl);
         res.redirect(redirectUrl);

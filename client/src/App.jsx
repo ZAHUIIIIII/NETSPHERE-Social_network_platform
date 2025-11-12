@@ -103,8 +103,14 @@ const App = () => {
     const loginStatus = urlParams.get('login');
     const error = urlParams.get('error');
     const user = urlParams.get('user');
+    const token = urlParams.get('token');
 
     if (loginStatus === 'success') {
+      // Store token in localStorage for mobile browsers where cookies may not work
+      if (token) {
+        localStorage.setItem('token', token);
+      }
+      
       const welcomeMessage = user 
         ? `Welcome ${decodeURIComponent(user)}! Successfully signed in with Google.`
         : 'Successfully signed in with Google!';
