@@ -21,7 +21,7 @@ function ensureGoogleStrategy() {
                 {
                     clientID: process.env.GOOGLE_CLIENT_ID,
                     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-                    callbackURL: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5001/api/auth/google/callback',
+                    callbackURL: process.env.GOOGLE_REDIRECT_URI || 'https://netsphere-901z.onrender.com/api/auth/google/callback',
                     scope: ['profile', 'email']
                 },
                 async (accessToken, refreshToken, profile, done) => {

@@ -80,7 +80,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = () => {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+    const API_URL = import.meta.env.VITE_API_URL || 'https://netsphere-901z.onrender.com/api';
     window.location.href = `${API_URL}/auth/google?prompt=select_account`;
   };
 

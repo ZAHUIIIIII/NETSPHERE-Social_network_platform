@@ -27,13 +27,13 @@ import usageRoutes from './routes/usage.routes.js';
 
 
 const PORT = process.env.PORT || 5001;
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const CLIENT_URL = process.env.CLIENT_URL || 'https://netsphere-nine.vercel.app';
 
 app.use(express.json({ limit: '50mb' })); // Increased for multiple image uploads
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increased for multiple image uploads
 app.use(cookieParser());
 app.use(cors({
-  origin: [CLIENT_URL, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: [CLIENT_URL, 'https://netsphere-nine.vercel.app'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

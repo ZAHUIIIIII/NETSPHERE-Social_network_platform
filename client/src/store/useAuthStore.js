@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { io } from 'socket.io-client';
 // import { disconnect } from 'mongoose';
 
-const BASE_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
+const BASE_URL = import.meta.env.VITE_SOCKET_URL || 'https://netsphere-901z.onrender.com';
 
 
 export const useAuthStore = create((set, get) => ({
