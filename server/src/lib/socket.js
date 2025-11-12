@@ -17,7 +17,7 @@ const io = new Server(server, {
       const allowedOrigins = [
         CLIENT_URL,
         "https://netsphere-nine.vercel.app",
-        /https:\/\/netsphere-.*\.vercel\.app$/, // Allow all Vercel preview deployments
+        /^https:\/\/netsphere-[a-zA-Z0-9-]+\.vercel\.app$/, // Allow all Vercel preview deployments
       ];
       
       // Check if origin matches any allowed pattern
