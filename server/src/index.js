@@ -33,7 +33,31 @@ app.use(express.json({ limit: '50mb' })); // Increased for multiple image upload
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increased for multiple image uploads
 app.use(cookieParser());
 app.use(cors({
-  origin: [CLIENT_URL, 'https://netsphere-nine.vercel.app'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // List of allowed origins
+    const allowedOrigins = [
+      CLIENT_URL,
+      'https://netsphere-nine.vercel.app',
+      /https:\/\/netsphere-.*\.vercel\.app$/, // Allow all Vercel preview deployments
+    ];
+    
+    // Check if origin matches any allowed pattern
+    const isAllowed = allowedOrigins.some(pattern => {
+      if (pattern instanceof RegExp) {
+        return pattern.test(origin);
+      }
+      return pattern === origin;
+    });
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],

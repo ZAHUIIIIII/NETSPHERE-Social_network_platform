@@ -9,7 +9,31 @@ const CLIENT_URL = process.env.CLIENT_URL || 'https://netsphere-nine.vercel.app'
 
 const io = new Server(server, {
   cors: {
-    origin: [CLIENT_URL, "https://netsphere-nine.vercel.app"],
+    origin: function (origin, callback) {
+      // Allow requests with no origin
+      if (!origin) return callback(null, true);
+      
+      // List of allowed origins
+      const allowedOrigins = [
+        CLIENT_URL,
+        "https://netsphere-nine.vercel.app",
+        /https:\/\/netsphere-.*\.vercel\.app$/, // Allow all Vercel preview deployments
+      ];
+      
+      // Check if origin matches any allowed pattern
+      const isAllowed = allowedOrigins.some(pattern => {
+        if (pattern instanceof RegExp) {
+          return pattern.test(origin);
+        }
+        return pattern === origin;
+      });
+      
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST"]
   },
