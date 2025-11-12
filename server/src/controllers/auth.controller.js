@@ -603,6 +603,10 @@ export const googleAuth = (req, res, next) => {
 };
 
 export const googleCallback = (req, res, next) => {
+    console.log('🔵 Google callback URL:', req.originalUrl);
+    console.log('🔵 Google callback host:', req.get('host'));
+    console.log('🔵 CLIENT_URL env:', process.env.CLIENT_URL);
+    
     // Ensure Google strategy is configured
     const isConfigured = ensureGoogleStrategy();
     
@@ -614,6 +618,7 @@ export const googleCallback = (req, res, next) => {
     
     passport.authenticate('google', { session: false }, (err, data, info) => {
         const frontendUrl = process.env.CLIENT_URL || 'https://netsphere-nine.vercel.app';
+        console.log('🔵 Redirecting to frontend:', frontendUrl);
         
         if (err) {
             console.error('[Google OAuth] Authentication error:', err);
@@ -651,7 +656,10 @@ export const googleCallback = (req, res, next) => {
         });
 
         // Redirect to frontend with success and user info
-        res.redirect(`${frontendUrl}/?login=success&user=${encodeURIComponent(user.username)}`);
+        const redirectUrl = `${frontendUrl}/?login=success&user=${encodeURIComponent(user.username)}`;
+        console.log('🟢 Final redirect URL:', redirectUrl);
+        console.log('🟢 frontendUrl value:', frontendUrl);
+        res.redirect(redirectUrl);
     })(req, res, next);
 };
 
