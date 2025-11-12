@@ -29,6 +29,11 @@ import usageRoutes from './routes/usage.routes.js';
 const PORT = process.env.PORT || 5001;
 const CLIENT_URL = process.env.CLIENT_URL || 'https://netsphere-nine.vercel.app';
 
+// Trust proxy - Required for cookies to work behind Render's proxy
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
 app.use(express.json({ limit: '50mb' })); // Increased for multiple image uploads
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increased for multiple image uploads
 app.use(cookieParser());
