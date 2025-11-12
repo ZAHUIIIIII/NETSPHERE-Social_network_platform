@@ -36,8 +36,14 @@ router.post("/login", login);
 router.post("/logout", logout);
 
 // Google OAuth routes
-router.get("/google", googleAuth);
-router.get("/google/callback", googleCallback);
+router.get("/google", (req, res, next) => {
+    console.log('🔵 Google OAuth initiated:', req.query);
+    googleAuth(req, res, next);
+});
+router.get("/google/callback", (req, res, next) => {
+    console.log('🔵 Google OAuth callback received:', req.query);
+    googleCallback(req, res, next);
+});
 router.get("/google/user", protectRoute, getGoogleUser);
 
 // Protected routes
