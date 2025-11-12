@@ -183,7 +183,7 @@ export const registerVerify = async (req, res) => {
             await TempRegistration.deleteOne({ _id: tempReg._id });
 
             // Generate token and set cookie
-            generateToken(newUser._id, res);
+            const token = generateToken(newUser._id, res);
 
             res.status(201).json({
                 _id: newUser._id,
@@ -194,7 +194,8 @@ export const registerVerify = async (req, res) => {
                 avatar: newUser.avatar,
                 role: newUser.role,
                 isGoogleUser: newUser.isGoogleUser || false,
-                createdAt: newUser.createdAt
+                createdAt: newUser.createdAt,
+                token // Send token in response for mobile browsers
             });
         } else {
             // Just verify email, don't complete registration yet
@@ -265,7 +266,7 @@ export const login = async (req, res) => {
         user.lastActive = new Date();
         await user.save();
 
-        generateToken(user._id, res);
+        const token = generateToken(user._id, res);
 
         res.status(200).json({
             _id: user._id,
@@ -276,7 +277,8 @@ export const login = async (req, res) => {
             avatar: user.avatar,
             role: user.role,
             isGoogleUser: user.isGoogleUser || false,
-            createdAt: user.createdAt
+            createdAt: user.createdAt,
+            token // Send token in response for mobile browsers
         });
     } catch (error) {
         console.error("Error in login:", error);
