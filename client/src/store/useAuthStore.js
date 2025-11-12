@@ -21,21 +21,40 @@ export const useAuthStore = create((set, get) => ({
     try {
         const res = await axiosInstance.get('/auth/check');
         set({authUser: res.data});
+        // Store in localStorage as fallback
+        localStorage.setItem('authUser', JSON.stringify(res.data));
         get().connectSocket();
     } catch (error) {
         // For 403 (banned/suspended), let the axios interceptor handle it (will redirect to login)
         if (error.response?.status === 403) {
             set({authUser: null});
+            localStorage.removeItem('authUser');
             // Don't log error, interceptor will handle redirect
             return; // Exit early, let interceptor handle
         }
         
         // Silently handle 401 errors - user is just not authenticated
         if (error.response?.status === 401) {
+            // Try to restore from localStorage as fallback for mobile browsers
+            const storedUser = localStorage.getItem('authUser');
+            if (storedUser) {
+                try {
+                    const userData = JSON.parse(storedUser);
+                    set({authUser: userData});
+                    get().connectSocket();
+                    console.log('Restored auth from localStorage');
+                    set({isCheckingAuth: false});
+                    return;
+                } catch (e) {
+                    console.error('Failed to parse stored user:', e);
+                    localStorage.removeItem('authUser');
+                }
+            }
             set({authUser: null});
         } else {
             console.error('Auth check error:', error);
             set({authUser: null});
+            localStorage.removeItem('authUser');
         }
     } finally {
         set({isCheckingAuth: false});
@@ -70,6 +89,8 @@ export const useAuthStore = create((set, get) => ({
             // If the response contains user data (when password is provided), set the auth user
             if (res.data._id) {
                 set({authUser: res.data});
+                // Store in localStorage as fallback
+                localStorage.setItem('authUser', JSON.stringify(res.data));
                 toast.success('Registered and logged in successfully');
                 get().connectSocket();
             }
@@ -86,6 +107,8 @@ export const useAuthStore = create((set, get) => ({
         try {
             const res = await axiosInstance.post('/auth/login', data);
             set({authUser: res.data});
+            // Store user in localStorage as fallback for mobile browsers that block third-party cookies
+            localStorage.setItem('authUser', JSON.stringify(res.data));
             toast.success('Logged in successfully');
             get().connectSocket(); 
         } catch (error) {
@@ -99,6 +122,8 @@ export const useAuthStore = create((set, get) => ({
         try {
             await axiosInstance.post('/auth/logout');
             set({authUser: null});
+            // Clear localStorage
+            localStorage.removeItem('authUser');
             toast.success('Logged out successfully');
             get().disconnectSocket();
         } catch (error) {
@@ -135,6 +160,8 @@ export const useAuthStore = create((set, get) => ({
         try {
             const res = await axiosInstance.put('/auth/update-profile', data);
             set({authUser: res.data});
+            // Update localStorage
+            localStorage.setItem('authUser', JSON.stringify(res.data));
             toast.success('Profile updated successfully');
             return res.data;
         } catch (error) {
@@ -147,6 +174,12 @@ export const useAuthStore = create((set, get) => ({
     // Update local auth user data without API call or toast (for syncing)
     setAuthUser: (userData) => {
         set({authUser: userData});
+        // Update localStorage
+        if (userData) {
+            localStorage.setItem('authUser', JSON.stringify(userData));
+        } else {
+            localStorage.removeItem('authUser');
+        }
     },
 
     connectSocket: () => {

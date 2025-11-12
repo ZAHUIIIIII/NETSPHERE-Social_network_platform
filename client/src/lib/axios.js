@@ -41,6 +41,7 @@ axiosInstance.interceptors.response.use(
       try {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('authUser');
       } catch {}
       
       if (typeof window !== 'undefined') {
@@ -63,6 +64,7 @@ axiosInstance.interceptors.response.use(
       try {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('authUser');
       } catch {}
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
         window.location.replace('/login');
