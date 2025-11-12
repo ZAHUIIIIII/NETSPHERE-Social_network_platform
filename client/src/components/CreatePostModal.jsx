@@ -13,6 +13,7 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const textareaRef = useRef(null);
+  const emojiPickerRef = useRef(null);
   
   const maxImages = 10;
   const maxCharacters = 5000;
@@ -29,6 +30,23 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
       setTimeout(() => textareaRef.current.focus(), 100);
     }
   }, [isOpen]);
+
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    if (showEmojiPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showEmojiPicker]);
 
   const feelings = [
     { emoji: '😊', label: 'happy' },
@@ -296,17 +314,17 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
                 </label>
 
                 {/* Feeling */}
-                <div className="relative">
+                <div className="relative" ref={emojiPickerRef}>
                   <button
                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
                     disabled={isPosting}
                   >
                     <Smile className="w-5 h-5 text-yellow-600" />
                   </button>
                   {showEmojiPicker && (
-                    <div className="absolute right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-lg p-3 z-10 w-64">
-                      <p className="text-xs font-semibold text-gray-700 mb-2">How are you feeling?</p>
+                    <div className="absolute right-0 bottom-full mb-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl p-3 z-50 w-64">
+                      <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-2">How are you feeling?</p>
                       <div className="grid grid-cols-4 gap-2">
                         {feelings.map((f) => (
                           <button
@@ -315,10 +333,10 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
                               setFeeling(f.label);
                               setShowEmojiPicker(false);
                             }}
-                            className="flex flex-col items-center gap-1 p-2 hover:bg-gray-100 rounded-lg"
+                            className="flex flex-col items-center gap-1 p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                           >
                             <span className="text-2xl">{f.emoji}</span>
-                            <span className="text-xs text-gray-600">{f.label}</span>
+                            <span className="text-xs text-gray-600 dark:text-gray-300">{f.label}</span>
                           </button>
                         ))}
                       </div>
