@@ -289,8 +289,9 @@ export const logout = (req, res) => {
         res.cookie("token", "", { 
             maxAge: 0,
             httpOnly: true,
-            sameSite: 'strict',
-            secure: process.env.NODE_ENV === 'development',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            secure: process.env.NODE_ENV === 'production', // Fixed: was 'development', should be 'production'
+            path: '/',
         });
         res.status(200).json({ message: "Logged out successfully" });
     } catch (error) {
