@@ -117,13 +117,17 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/admin', usageRoutes);
 
 // Catch-all for unmatched API routes (debugging)
-app.use('/api/*', (req, res) => {
-  console.warn(`⚠️  Unmatched API route: ${req.method} ${req.originalUrl}`);
-  res.status(404).json({ 
-    error: 'Route not found',
-    path: req.originalUrl,
-    method: req.method
-  });
+app.use('/api', (req, res, next) => {
+  // Only handle if no route matched
+  if (!req.route) {
+    console.warn(`⚠️  Unmatched API route: ${req.method} ${req.originalUrl}`);
+    return res.status(404).json({ 
+      error: 'Route not found',
+      path: req.originalUrl,
+      method: req.method
+    });
+  }
+  next();
 });
 
 (async () => {
