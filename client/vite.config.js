@@ -28,12 +28,7 @@ export default defineConfig({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['framer-motion', 'lucide-react'],
-          'state-vendor': ['zustand', 'axios'],
-          'socket-vendor': ['socket.io-client'],
-        },
+        // Simplified for rolldown-vite compatibility
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
         assetFileNames: 'assets/[name]-[hash].[ext]',
