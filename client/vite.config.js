@@ -19,13 +19,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
+    minify: true, // Use default minifier (esbuild) which is faster and built-in
     rollupOptions: {
       output: {
         // Simplified for rolldown-vite compatibility
