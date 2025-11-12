@@ -7,20 +7,21 @@ const server = http.createServer(app);
 
 const CLIENT_URL = process.env.CLIENT_URL || 'https://netsphere-nine.vercel.app';
 
+// Optimized Socket.io configuration
 const io = new Server(server, {
   cors: {
     origin: function (origin, callback) {
-      // Allow requests with no origin
+      // Allow requests with no origin (mobile apps)
       if (!origin) return callback(null, true);
       
-      // List of allowed origins
+      // Define allowed origins
       const allowedOrigins = [
         CLIENT_URL,
         "https://netsphere-nine.vercel.app",
-        /^https:\/\/netsphere-[a-zA-Z0-9-]+\.vercel\.app$/, // Allow all Vercel preview deployments
+        /^https:\/\/netsphere-[a-zA-Z0-9-]+\.vercel\.app$/, // All Vercel preview deployments
       ];
       
-      // Check if origin matches any allowed pattern
+      // Check if origin is allowed
       const isAllowed = allowedOrigins.some(pattern => {
         if (pattern instanceof RegExp) {
           return pattern.test(origin);
@@ -31,12 +32,20 @@ const io = new Server(server, {
       if (isAllowed) {
         callback(null, true);
       } else {
+        console.warn(`⚠️  Socket.io CORS blocked: ${origin}`);
         callback(new Error('Not allowed by CORS'));
       }
     },
     credentials: true,
     methods: ["GET", "POST"]
   },
+  // Performance optimizations
+  pingTimeout: 60000,
+  pingInterval: 25000,
+  upgradeTimeout: 10000,
+  maxHttpBufferSize: 1e6, // 1MB
+  transports: ['websocket', 'polling'],
+  allowUpgrades: true,
 });
 
 export function getReceiverSocketId(userId) {

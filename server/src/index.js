@@ -32,19 +32,21 @@ const CLIENT_URL = process.env.CLIENT_URL || 'https://netsphere-nine.vercel.app'
 app.use(express.json({ limit: '50mb' })); // Increased for multiple image uploads
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increased for multiple image uploads
 app.use(cookieParser());
-app.use(cors({
+
+// Optimized CORS configuration
+const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl)
+    // Allow requests with no origin (mobile apps, Postman, curl)
     if (!origin) return callback(null, true);
     
-    // List of allowed origins
+    // Define allowed origins
     const allowedOrigins = [
       CLIENT_URL,
       'https://netsphere-nine.vercel.app',
-      /^https:\/\/netsphere-[a-zA-Z0-9-]+\.vercel\.app$/, // Allow all Vercel preview deployments
+      /^https:\/\/netsphere-[a-zA-Z0-9-]+\.vercel\.app$/, // All Vercel preview deployments
     ];
     
-    // Check if origin matches any allowed pattern
+    // Check if origin is allowed
     const isAllowed = allowedOrigins.some(pattern => {
       if (pattern instanceof RegExp) {
         return pattern.test(origin);
@@ -55,14 +57,23 @@ app.use(cors({
     if (isAllowed) {
       callback(null, true);
     } else {
+      console.warn(`⚠️  CORS blocked request from: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['set-cookie']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['set-cookie'],
+  maxAge: 86400, // 24 hours - cache preflight requests
+  preflightContinue: false,
+  optionsSuccessStatus: 204
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
 
 app.use((req, res, next) => {
   res.setHeader(
@@ -108,11 +119,14 @@ app.use('/api/admin', usageRoutes);
   try {
     await connectDB(); // kết nối DB trước khi accept request
     server.listen(PORT, '0.0.0.0', () => {
-      console.log(`API listening on http://0.0.0.0:${PORT}`);
-      console.log(`Client URL set to: ${CLIENT_URL}`);
+      console.log(`\n🚀 Server started successfully!`);
+      console.log(`📡 API listening on http://0.0.0.0:${PORT}`);
+      console.log(`🌐 Client URL: ${CLIENT_URL}`);
+      console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`⏰ Started at: ${new Date().toISOString()}\n`);
     });
   } catch (err) {
-    console.error('Failed to start server:', err);
+    console.error('❌ Failed to start server:', err);
     process.exit(1);
   }
 })();
