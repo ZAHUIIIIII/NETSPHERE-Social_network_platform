@@ -645,8 +645,9 @@ export const googleCallback = (req, res, next) => {
         res.cookie('token', token, {
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
             httpOnly: true,
-            sameSite: 'strict',
-            secure: process.env.NODE_ENV === 'production'
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
         });
 
         // Redirect to frontend with success and user info
@@ -853,8 +854,9 @@ export const deleteOwnAccount = async (req, res) => {
             res.cookie("token", "", { 
                 maxAge: 0,
                 httpOnly: true,
-                sameSite: 'strict',
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
                 secure: process.env.NODE_ENV === 'production',
+                path: '/',
             });
             
             res.json({ 
