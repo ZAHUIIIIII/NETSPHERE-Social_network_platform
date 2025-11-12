@@ -24,7 +24,11 @@ function getTransporter() {
             },
             tls: {
                 rejectUnauthorized: false
-            }
+            },
+            // Reduced timeouts for faster error responses
+            connectionTimeout: 10000, // 10 seconds (default is 2 minutes)
+            greetingTimeout: 10000,   // 10 seconds (default is 30 seconds)
+            socketTimeout: 15000      // 15 seconds (default is 10 minutes)
         });
     }
     return transporter;
