@@ -81,6 +81,8 @@ export default function LoginPage() {
 
   const handleGoogleLogin = () => {
     const API_URL = import.meta.env.VITE_API_URL || 'https://netsphere-901z.onrender.com/api';
+    console.log('🚀 Google Login - API URL:', API_URL);
+    console.log('🔑 Environment variable:', import.meta.env.VITE_API_URL);
     window.location.href = `${API_URL}/auth/google?prompt=select_account`;
   };
 
