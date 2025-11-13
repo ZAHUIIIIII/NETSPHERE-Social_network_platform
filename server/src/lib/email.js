@@ -10,8 +10,8 @@ async function sendBrevoEmail({ to, subject, htmlContent, textContent }) {
 
     const payload = {
         sender: {
-            name: 'NETSPHERE',
-            email: process.env.EMAIL_FROM || 'noreply@netsphere.com'
+            name: 'NETSPHERE Verification',
+            email: process.env.EMAIL_FROM || 'leeminhuy47@gmail.com'
         },
         to: Array.isArray(to) ? to.map(email => ({ email })) : [{ email: to }],
         subject: subject,
