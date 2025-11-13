@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Bell, Lock, User, Palette, Globe, Shield, HelpCircle, LogOut, 
   UserX, Trash2, Camera, Eye, EyeOff, AlertTriangle, Check, X, 
-  Mail, Phone, Key, Settings, BellOff
+  Mail, Phone, Key, Settings, BellOff, MessageCircle
 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import { useNotificationStore } from '../store/useNotificationStore';
@@ -10,10 +10,12 @@ import { useThemeStore } from '../store/useThemeStore';
 import { getBlockedUsers, unblockUser, updateNotificationPreference } from '../services/api';
 import axios from '../lib/axios';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 const SettingPage = () => {
   const { authUser, logout, updateProfile } = useAuthStore();
   const { theme, setTheme } = useThemeStore();
+  const navigate = useNavigate();
   
   // Edit Profile State
   const [editProfileOpen, setEditProfileOpen] = useState(false);
@@ -256,6 +258,36 @@ const SettingPage = () => {
   const handleLogout = () => {
     logout();
     toast.success('Logged out successfully!');
+  };
+
+  const handleContactAdmin = async () => {
+    try {
+      // Fetch admin user details
+      const response = await axios.get('/users/admin');
+      const adminUser = response.data;
+      
+      if (!adminUser) {
+        toast.error('Admin account not available');
+        return;
+      }
+
+      // Navigate to messages page with admin pre-selected
+      navigate('/messages', {
+        state: {
+          selectedUser: {
+            _id: adminUser._id,
+            username: adminUser.username,
+            name: adminUser.name || adminUser.username,
+            avatar: adminUser.avatar
+          }
+        }
+      });
+      
+      toast.success('Opening chat with admin...');
+    } catch (error) {
+      console.error('Failed to contact admin:', error);
+      toast.error('Failed to open chat with admin');
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -715,6 +747,22 @@ const SettingPage = () => {
             <p className="text-sm text-gray-600 dark:text-gray-400">Get help and policies</p>
           </div>
           <div className="p-6 space-y-3">
+            {/* Contact Admin - Featured Button */}
+            <button
+              onClick={handleContactAdmin}
+              className="w-full flex items-center gap-3 px-4 py-4 text-left bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:from-blue-600 hover:to-purple-600 transition-all shadow-md hover:shadow-lg transform hover:scale-[1.02]"
+            >
+              <div className="p-2 bg-white/20 rounded-lg">
+                <MessageCircle className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <div className="font-semibold">Contact Admin</div>
+                <div className="text-xs text-white/80">Get help or ask questions</div>
+              </div>
+            </button>
+
+            <div className="border-t border-gray-200 dark:border-gray-700 my-4"></div>
+
             {[
               { icon: HelpCircle, label: 'Help Center', onClick: () => setHelpDialogOpen(true) },
               { icon: Globe, label: 'Terms of Service', onClick: () => setTermsDialogOpen(true) },

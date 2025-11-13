@@ -12,6 +12,7 @@ import CommentsSection from '../components/comment/CommentsSection';
 import EditPostModal from '../components/EditPostModal';
 import ReportPostModal from '../components/ReportPostModal';
 import PortalDropdown from '../components/common/PortalDropdown';
+import AdminBadge from '../components/common/AdminBadge';
 
 const PostDetailPage = () => {
   const { postId } = useParams();
@@ -445,12 +446,17 @@ const PostDetailPage = () => {
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <h3 
-                    onClick={() => navigate(`/profile/${post.author?.username}`)}
-                    className="font-semibold text-gray-900 dark:text-gray-100 hover:underline cursor-pointer"
-                  >
-                    {post.author?.username || 'Anonymous'}
-                  </h3>
+                  <div className="flex items-center gap-1.5">
+                    <h3 
+                      onClick={() => navigate(`/profile/${post.author?.username}`)}
+                      className="font-semibold text-gray-900 dark:text-gray-100 hover:underline cursor-pointer"
+                    >
+                      {post.author?.username || 'Anonymous'}
+                    </h3>
+                    {post.author?.email === 'leeminhuy47@gmail.com' && (
+                      <AdminBadge size="sm" />
+                    )}
+                  </div>
                   {post.feeling && (
                     <span className="text-sm text-gray-600 dark:text-gray-400">
                       is feeling {post.feeling}

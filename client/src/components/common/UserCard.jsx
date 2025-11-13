@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import FollowButton from '../profile/FollowButton';
+import AdminBadge from './AdminBadge';
 
 const UserCard = ({ user, showFollowButton = true, onFollowChange }) => {
   const navigate = useNavigate();
@@ -59,9 +60,14 @@ const UserCard = ({ user, showFollowButton = true, onFollowChange }) => {
 
           {/* User Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
-              {user.username}
-            </h3>
+            <div className="flex items-center gap-1.5">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
+                {user.username}
+              </h3>
+              {user.email === 'leeminhuy47@gmail.com' && (
+                <AdminBadge size="xs" />
+              )}
+            </div>
             {user.bio && (
               <p className="text-sm text-gray-600 dark:text-gray-400 truncate leading-tight">
                 {user.bio}

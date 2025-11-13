@@ -200,25 +200,10 @@ const FollowersModal = ({ userId, type, onClose, userName, onCountChange }) => {
                         <h3 className="font-bold text-gray-900 dark:text-gray-100 truncate text-base group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors">
                           {user.username}
                         </h3>
-                        {user.bio ? (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 truncate mt-0.5">
-                            {user.bio}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">No bio yet</p>
-                        )}
                       </div>
                     </div>
 
-                    {/* Action Buttons Logic:
-                        Followers Tab (viewing your own profile):
-                        - If you're NOT following them back: Show "Follow Back" button
-                        - If you ARE following them back: Show "Message" button
-                        - Show "Remove Follower" (X) button for own profile
-                        
-                        Following Tab or other profiles:
-                        - Show regular Follow/Unfollow button
-                    */}
+
                     {authUser?._id !== user._id && (
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {type === 'followers' && authUser?._id === userId ? (

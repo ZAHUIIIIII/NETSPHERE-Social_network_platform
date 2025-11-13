@@ -30,6 +30,9 @@ router.get('/saved-posts', protectRoute, userController.getSavedPosts);
 
 router.get('/suggestions', protectRoute, userController.getSuggestedUsers);
 
+// Admin route
+router.get('/admin', protectRoute, userController.getAdminUser);
+
 // Block routes
 router.post('/:userId/block', protectRoute, userController.blockUser);
 router.post('/:userId/unblock', protectRoute, userController.unblockUser);

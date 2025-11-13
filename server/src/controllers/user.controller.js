@@ -521,6 +521,11 @@ export const blockUser = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Cannot block admin
+    if (userToBlock.email === 'leeminhuy47@gmail.com') {
+      return res.status(403).json({ message: 'You cannot block the admin account' });
+    }
+
     const currentUser = await User.findById(currentUserId);
 
     // Check if already blocked
@@ -635,5 +640,22 @@ export const checkBlockStatus = async (req, res) => {
   } catch (error) {
     console.error('Error checking block status:', error);
     res.status(500).json({ message: 'Error checking block status' });
+  }
+};
+
+// Get admin user for contact/support
+export const getAdminUser = async (req, res) => {
+  try {
+    const adminUser = await User.findOne({ email: 'leeminhuy47@gmail.com' })
+      .select('_id username name avatar email bio');
+
+    if (!adminUser) {
+      return res.status(404).json({ message: 'Admin user not found' });
+    }
+
+    res.json(adminUser);
+  } catch (error) {
+    console.error('Error fetching admin user:', error);
+    res.status(500).json({ message: 'Error fetching admin user' });
   }
 };

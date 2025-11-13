@@ -5,6 +5,7 @@ import { searchAll, getTrending, getSearchSuggestions, getPopularSearches } from
 import { formatTime } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import AdminBadge from '../components/common/AdminBadge';
 
 const SearchPage = () => {
   const { authUser } = useAuthStore();
@@ -326,9 +327,14 @@ const SearchPage = () => {
         </div>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-          {user.username}
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p className="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+            {user.username}
+          </p>
+          {user.email === 'leeminhuy47@gmail.com' && (
+            <AdminBadge size="xs" showLabel={false} />
+          )}
+        </div>
         {user.bio && <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user.bio}</p>}
         {user.email && !user.bio && <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{user.email}</p>}
       </div>

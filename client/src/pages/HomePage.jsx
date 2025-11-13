@@ -26,6 +26,7 @@ import EditPostModal from '../components/EditPostModal';
 import ReportPostModal from '../components/ReportPostModal';
 import { countTotalComments, listRootComments } from "../services/commentApi";
 import PortalDropdown from '../components/common/PortalDropdown';
+import AdminBadge from '../components/common/AdminBadge';
 // import { 
 //   likePost as likePostAPI
 // } from "../services/api";
@@ -755,12 +756,17 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 
-                className="font-semibold text-sm sm:text-base text-gray-900 dark:text-gray-100 hover:underline cursor-pointer truncate"
-                onClick={() => navigate(`/profile/${author?.username}`)}
-              >
-                {userName}
-              </h3>
+              <div className="flex items-center gap-1.5">
+                <h3 
+                  className="font-semibold text-sm sm:text-base text-gray-900 dark:text-gray-100 hover:underline cursor-pointer truncate"
+                  onClick={() => navigate(`/profile/${author?.username}`)}
+                >
+                  {userName}
+                </h3>
+                {author?.email === 'leeminhuy47@gmail.com' && (
+                  <AdminBadge size="xs" />
+                )}
+              </div>
               {post.feeling && (
                 <span className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 truncate">
                   is feeling {post.feeling}
@@ -1623,7 +1629,7 @@ export default function HomePage() {
         <div className="hidden lg:block w-80 flex-shrink-0">
           <div className="sticky top-4 space-y-4">
             {/* Suggested Users - FIRST */}
-            <SuggestedUsers limit={5} />
+            <SuggestedUsers limit={3} />
 
             {/* Trending Now - SECOND */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-fadeIn">

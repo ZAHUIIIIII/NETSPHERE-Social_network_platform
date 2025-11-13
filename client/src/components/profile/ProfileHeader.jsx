@@ -8,6 +8,7 @@ import FollowButton from './FollowButton';
 import FollowersModal from './FollowersModal';
 import { blockUser, unblockUser, checkBlockStatus } from '../../services/api';
 import PortalDropdown from '../common/PortalDropdown';
+import AdminBadge from '../common/AdminBadge';
 
 const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowChange }) => {
   const { updateProfile, isUpdatingProfile } = useAuthStore();
@@ -153,6 +154,13 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
   const handleBlock = async () => {
     if (!user?._id) return;
     
+    // Prevent blocking admin
+    if (user.email === 'leeminhuy47@gmail.com') {
+      toast.error('You cannot block the admin account');
+      setShowMoreMenu(false);
+      return;
+    }
+    
     setBlockLoading(true);
     try {
       if (isBlocked) {
@@ -268,9 +276,14 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
           <div className="flex-1 min-w-0 w-full">
             {/* Name and Action Buttons */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-2 sm:mb-1">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 text-center sm:text-left">
-                {user?.name || user?.username || 'User'}
-              </h1>
+              <div className="flex items-center gap-2 justify-center sm:justify-start">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 text-center sm:text-left">
+                  {user?.name || user?.username || 'User'}
+                </h1>
+                {user?.email === 'leeminhuy47@gmail.com' && (
+                  <AdminBadge size="md" />
+                )}
+              </div>
 
               {/* Action Buttons */}
               <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3">
@@ -301,37 +314,40 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                     >
                       Message
                     </button>
-                    <PortalDropdown
-                      isOpen={showMoreMenu}
-                      onClose={() => setShowMoreMenu(false)}
-                      width="w-48"
-                      trigger={
-                        <button 
-                          onClick={() => setShowMoreMenu(!showMoreMenu)}
-                          className="p-1.5 sm:p-2 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors"
-                        >
-                          <MoreHorizontal size={18} className="sm:w-5 sm:h-5 text-gray-900 dark:text-gray-100" />
-                        </button>
-                      }
-                    >
-                      <button
-                        onClick={handleBlock}
-                        disabled={blockLoading}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-sm disabled:opacity-50 transition-colors"
+                    {/* Only show more options (block) if not admin */}
+                    {user?.email !== 'leeminhuy47@gmail.com' && (
+                      <PortalDropdown
+                        isOpen={showMoreMenu}
+                        onClose={() => setShowMoreMenu(false)}
+                        width="w-48"
+                        trigger={
+                          <button 
+                            onClick={() => setShowMoreMenu(!showMoreMenu)}
+                            className="p-1.5 sm:p-2 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors"
+                          >
+                            <MoreHorizontal size={18} className="sm:w-5 sm:h-5 text-gray-900 dark:text-gray-100" />
+                          </button>
+                        }
                       >
-                        {isBlocked ? (
-                          <>
-                            <UserCheck size={18} className="text-green-600 dark:text-green-400" />
-                            <span className="text-gray-700 dark:text-gray-300">Unblock {user?.username}</span>
-                          </>
-                        ) : (
-                          <>
-                            <UserX size={18} className="text-red-600 dark:text-red-400" />
-                            <span className="text-gray-700 dark:text-gray-300">Block {user?.username}</span>
-                          </>
-                        )}
-                      </button>
-                    </PortalDropdown>
+                        <button
+                          onClick={handleBlock}
+                          disabled={blockLoading}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 text-sm disabled:opacity-50 transition-colors"
+                        >
+                          {isBlocked ? (
+                            <>
+                              <UserCheck size={18} className="text-green-600 dark:text-green-400" />
+                              <span className="text-gray-700 dark:text-gray-300">Unblock {user?.username}</span>
+                            </>
+                          ) : (
+                            <>
+                              <UserX size={18} className="text-red-600 dark:text-red-400" />
+                              <span className="text-gray-700 dark:text-gray-300">Block {user?.username}</span>
+                            </>
+                          )}
+                        </button>
+                      </PortalDropdown>
+                    )}
                   </div>
                 )}
               </div>

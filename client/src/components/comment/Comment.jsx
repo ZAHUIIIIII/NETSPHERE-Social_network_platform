@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { shortTimeLabel } from '../../lib/utils';
 import PortalDropdown from '../common/PortalDropdown';
+import AdminBadge from '../common/AdminBadge';
 
 const REACTION_EMOJIS = {
   like: '👍',
@@ -204,12 +205,17 @@ const Comment = ({
                 <div>
                   {/* Username and Three Dots Menu Row */}
                   <div className="flex items-center justify-between mb-0.5">
-                    <Link 
-                      to={`/profile/${comment.author?.username}`}
-                      className="font-semibold text-sm hover:underline text-gray-900 dark:text-gray-100"
-                    >
-                      {comment.author?.username || 'Unknown'}
-                    </Link>
+                    <div className="flex items-center gap-1.5">
+                      <Link 
+                        to={`/profile/${comment.author?.username}`}
+                        className="font-semibold text-sm hover:underline text-gray-900 dark:text-gray-100"
+                      >
+                        {comment.author?.username || 'Unknown'}
+                      </Link>
+                      {comment.author?.email === 'leeminhuy47@gmail.com' && (
+                        <AdminBadge size="xs" showLabel={false} />
+                      )}
+                    </div>
                     
                     {/* Three dots menu - aligned with username */}
                     {isOwnComment && !comment.isDeleted && (

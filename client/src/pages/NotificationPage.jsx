@@ -32,6 +32,7 @@ import { formatTime } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { useFollow } from '../hooks/useFollow';
 import PortalDropdown from '../components/common/PortalDropdown';
+import AdminBadge from '../components/common/AdminBadge';
 
 const NotificationPage = () => {
   const { authUser } = useAuthStore();
@@ -610,8 +611,23 @@ const NotificationPage = () => {
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="flex-1">
                       <p className="text-sm leading-relaxed">
-                        <span className="font-bold text-gray-900 dark:text-gray-100 hover:underline cursor-pointer">
-                          {notification.sender?.username || 'Someone'}
+                        <span className="inline-flex items-center gap-1.5">
+                          <span 
+                            className="font-bold text-gray-900 dark:text-gray-100 hover:underline cursor-pointer"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              // Mark notification as read before navigating
+                              if (!notification.read) {
+                                await markAsRead(notification._id);
+                              }
+                              navigate(`/profile/${notification.sender?.username}`);
+                            }}
+                          >
+                            {notification.sender?.username || 'Someone'}
+                          </span>
+                          {notification.sender?.email === 'leeminhuy47@gmail.com' && (
+                            <AdminBadge size="xs" showLabel={false} />
+                          )}
                         </span>
                         <span className="text-gray-600 dark:text-gray-400 ml-1.5">
                           {getNotificationMessage(notification)}
@@ -657,8 +673,12 @@ const NotificationPage = () => {
                           
                           {/* View Profile Button */}
                           <button
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
+                              // Mark notification as read before navigating
+                              if (!notification.read) {
+                                await markAsRead(notification._id);
+                              }
                               navigate(`/profile/${notification.sender.username}`);
                             }}
                             className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-gradient-to-r from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 hover:from-gray-200 hover:to-gray-300 dark:hover:from-gray-600 dark:hover:to-gray-700 text-gray-700 dark:text-gray-300 rounded-lg transition-all hover:shadow-md hover:scale-105 whitespace-nowrap shadow-sm"
@@ -836,8 +856,12 @@ const NotificationPage = () => {
                       notification.type === 'reaction') && 
                       (notification.post?._id || notification.post) && (
                       <button
-                        onClick={(e) => {
+                        onClick={async (e) => {
                           e.stopPropagation();
+                          // Mark notification as read before navigating
+                          if (!notification.read) {
+                            await markAsRead(notification._id);
+                          }
                           navigate(`/post/${notification.post._id || notification.post}`);
                         }}
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg transition-all hover:shadow-md hover:scale-105 whitespace-nowrap shadow-sm"
