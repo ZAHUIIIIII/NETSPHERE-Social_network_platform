@@ -1629,7 +1629,7 @@ export default function HomePage() {
 
         {/* Right Sidebar - Suggested Users + News */}
         <div className="hidden lg:block w-80 flex-shrink-0">
-          <div className="sticky top-4 space-y-4">
+          <div className="sticky top-4 space-y-4 max-h-[calc(100vh-2rem)] overflow-y-auto pr-2 scrollbar-hide">
             {/* Suggested Users - FIRST */}
             <SuggestedUsers limit={3} />
 
