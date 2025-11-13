@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import FollowButton from '../profile/FollowButton';
 import AdminBadge from './AdminBadge';
+import { isAdmin } from '../../lib/isAdmin';
 
 const UserCard = ({ user, showFollowButton = true, onFollowChange }) => {
   const navigate = useNavigate();
@@ -64,7 +65,7 @@ const UserCard = ({ user, showFollowButton = true, onFollowChange }) => {
               <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors duration-200">
                 {user.username}
               </h3>
-              {user.email === 'leeminhuy47@gmail.com' && (
+              {isAdmin(user) && (
                 <AdminBadge size="xs" />
               )}
             </div>

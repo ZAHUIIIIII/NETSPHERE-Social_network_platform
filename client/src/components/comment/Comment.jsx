@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { shortTimeLabel } from '../../lib/utils';
 import PortalDropdown from '../common/PortalDropdown';
 import AdminBadge from '../common/AdminBadge';
+import { isAdmin } from '../../lib/isAdmin';
 
 const REACTION_EMOJIS = {
   like: '👍',
@@ -212,7 +213,7 @@ const Comment = ({
                       >
                         {comment.author?.username || 'Unknown'}
                       </Link>
-                      {comment.author?.email === 'leeminhuy47@gmail.com' && (
+                      {isAdmin(comment.author) && (
                         <AdminBadge size="xs" showLabel={false} />
                       )}
                     </div>

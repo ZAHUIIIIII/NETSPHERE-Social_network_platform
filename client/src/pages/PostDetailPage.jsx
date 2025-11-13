@@ -13,6 +13,7 @@ import EditPostModal from '../components/EditPostModal';
 import ReportPostModal from '../components/ReportPostModal';
 import PortalDropdown from '../components/common/PortalDropdown';
 import AdminBadge from '../components/common/AdminBadge';
+import { isAdmin } from '../lib/isAdmin';
 
 const PostDetailPage = () => {
   const { postId } = useParams();
@@ -453,7 +454,7 @@ const PostDetailPage = () => {
                     >
                       {post.author?.username || 'Anonymous'}
                     </h3>
-                    {post.author?.email === 'leeminhuy47@gmail.com' && (
+                    {isAdmin(post.author) && (
                       <AdminBadge size="sm" />
                     )}
                   </div>

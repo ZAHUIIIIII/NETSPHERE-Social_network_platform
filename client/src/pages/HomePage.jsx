@@ -27,6 +27,7 @@ import ReportPostModal from '../components/ReportPostModal';
 import { countTotalComments, listRootComments } from "../services/commentApi";
 import PortalDropdown from '../components/common/PortalDropdown';
 import AdminBadge from '../components/common/AdminBadge';
+import { isAdmin } from '../lib/isAdmin';
 // import { 
 //   likePost as likePostAPI
 // } from "../services/api";
@@ -763,7 +764,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
                 >
                   {userName}
                 </h3>
-                {author?.email === 'leeminhuy47@gmail.com' && (
+                {isAdmin(author) && (
                   <AdminBadge size="xs" />
                 )}
               </div>

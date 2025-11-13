@@ -9,6 +9,7 @@ import FollowersModal from './FollowersModal';
 import { blockUser, unblockUser, checkBlockStatus } from '../../services/api';
 import PortalDropdown from '../common/PortalDropdown';
 import AdminBadge from '../common/AdminBadge';
+import { isAdmin } from '../../lib/isAdmin';
 
 const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowChange }) => {
   const { updateProfile, isUpdatingProfile } = useAuthStore();
@@ -155,7 +156,7 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
     if (!user?._id) return;
     
     // Prevent blocking admin
-    if (user.email === 'leeminhuy47@gmail.com') {
+    if (isAdmin(user)) {
       toast.error('You cannot block the admin account');
       setShowMoreMenu(false);
       return;
@@ -280,7 +281,7 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-gray-100 text-center sm:text-left">
                   {user?.name || user?.username || 'User'}
                 </h1>
-                {user?.email === 'leeminhuy47@gmail.com' && (
+                {isAdmin(user) && (
                   <AdminBadge size="md" />
                 )}
               </div>
@@ -315,7 +316,7 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                       Message
                     </button>
                     {/* Only show more options (block) if not admin */}
-                    {user?.email !== 'leeminhuy47@gmail.com' && (
+                    {!isAdmin(user) && (
                       <PortalDropdown
                         isOpen={showMoreMenu}
                         onClose={() => setShowMoreMenu(false)}

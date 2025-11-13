@@ -33,6 +33,7 @@ import toast from 'react-hot-toast';
 import { useFollow } from '../hooks/useFollow';
 import PortalDropdown from '../components/common/PortalDropdown';
 import AdminBadge from '../components/common/AdminBadge';
+import { isAdmin } from '../lib/isAdmin';
 
 const NotificationPage = () => {
   const { authUser } = useAuthStore();
@@ -625,7 +626,7 @@ const NotificationPage = () => {
                           >
                             {notification.sender?.username || 'Someone'}
                           </span>
-                          {notification.sender?.email === 'leeminhuy47@gmail.com' && (
+                          {isAdmin(notification.sender) && (
                             <AdminBadge size="xs" showLabel={false} />
                           )}
                         </span>

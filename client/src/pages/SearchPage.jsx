@@ -6,6 +6,7 @@ import { formatTime } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AdminBadge from '../components/common/AdminBadge';
+import { isAdmin } from '../lib/isAdmin';
 
 const SearchPage = () => {
   const { authUser } = useAuthStore();
@@ -67,8 +68,13 @@ const SearchPage = () => {
     };
   }, []); // Only run once on mount
 
-  // Handle URL query changes
+  // Handle URL query changes (but skip initial mount to avoid duplicate search)
   useEffect(() => {
+    // Skip if this is the initial mount and urlQuery was already handled above
+    if (!hasSearched && urlQuery) {
+      return;
+    }
+    
     const newUrlQuery = searchParams.get('q') || '';
     if (newUrlQuery && newUrlQuery !== searchQuery) {
       setSearchQuery(newUrlQuery);
@@ -331,7 +337,7 @@ const SearchPage = () => {
           <p className="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
             {user.username}
           </p>
-          {user.email === 'leeminhuy47@gmail.com' && (
+          {isAdmin(user) && (
             <AdminBadge size="xs" showLabel={false} />
           )}
         </div>
