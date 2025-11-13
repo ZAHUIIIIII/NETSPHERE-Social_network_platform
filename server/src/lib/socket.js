@@ -5,7 +5,7 @@ import express from "express";
 const app = express();
 const server = http.createServer(app);
 
-const CLIENT_URL = process.env.CLIENT_URL || 'https://netsphere-nine.vercel.app';
+const CLIENT_URL = process.env.CLIENT_URL || 'https://netsphere-one.vercel.app';
 
 // Optimized Socket.io configuration
 const io = new Server(server, {
@@ -17,7 +17,7 @@ const io = new Server(server, {
       // Define allowed origins
       const allowedOrigins = [
         CLIENT_URL,
-        "https://netsphere-nine.vercel.app",
+        "https://netsphere-one.vercel.app",
         /^https:\/\/netsphere-[a-zA-Z0-9-]+\.vercel\.app$/, // All Vercel preview deployments
       ];
       
