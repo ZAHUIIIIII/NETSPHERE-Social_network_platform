@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Megaphone, ArrowLeft, ExternalLink, Loader, Calendar, TrendingUp, MessageCircle } from 'lucide-react';
 import axiosInstance from '../lib/axios';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const AnnouncementsPage = () => {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingAdmin, setLoadingAdmin] = useState(false);
   const [platformStats, setPlatformStats] = useState(null);
   const navigate = useNavigate();
 
@@ -22,6 +24,25 @@ const AnnouncementsPage = () => {
       console.error('Error fetching platform news:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleContactAdmin = async () => {
+    try {
+      setLoadingAdmin(true);
+      const response = await axiosInstance.get('/users/admin');
+      const adminUser = response.data;
+      
+      if (adminUser) {
+        // Navigate to messages with admin user
+        navigate('/messages', { state: { selectedUser: adminUser } });
+        toast.success('Opening chat with admin...');
+      }
+    } catch (error) {
+      console.error('Error fetching admin:', error);
+      toast.error('Unable to contact admin. Please try again.');
+    } finally {
+      setLoadingAdmin(false);
     }
   };
 
@@ -137,11 +158,21 @@ const AnnouncementsPage = () => {
           {/* Contact Admin Button */}
           <div className="mt-4">
             <button
-              onClick={() => navigate('/messages?contact=admin')}
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2"
+              onClick={handleContactAdmin}
+              disabled={loadingAdmin}
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <MessageCircle className="h-5 w-5" />
-              <span>Contact Admin</span>
+              {loadingAdmin ? (
+                <>
+                  <Loader className="h-5 w-5 animate-spin" />
+                  <span>Connecting...</span>
+                </>
+              ) : (
+                <>
+                  <MessageCircle className="h-5 w-5" />
+                  <span>Contact Admin</span>
+                </>
+              )}
             </button>
           </div>
         </div>
