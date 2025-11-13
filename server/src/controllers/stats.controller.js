@@ -43,21 +43,72 @@ export const getPlatformNews = async (req, res) => {
       },
       {
         id: 4,
-        icon: '🔔',
-        title: 'Improved notifications',
-        description: 'Real-time updates and better filtering',
-        type: 'improvement',
-        date: new Date('2024-11-05'),
-        priority: 'low'
+        icon: '�',
+        title: 'New Messages features!',
+        description: 'Mute conversations, delete chats, and better chat organization',
+        type: 'feature',
+        date: new Date('2024-11-13'),
+        priority: 'high',
+        link: '/messages'
       },
       {
         id: 5,
+        icon: '✉️',
+        title: 'Real-time messaging',
+        description: 'Instant message delivery with typing indicators and online status',
+        type: 'feature',
+        date: new Date('2024-11-11'),
+        priority: 'medium',
+        link: '/messages'
+      },
+      {
+        id: 6,
+        icon: '🔕',
+        title: 'Mute conversations',
+        description: 'Silence notifications for specific chats without leaving them',
+        type: 'feature',
+        date: new Date('2024-11-09'),
+        priority: 'low',
+        link: '/messages'
+      },
+      {
+        id: 7,
+        icon: '🗑️',
+        title: 'Delete chat history',
+        description: 'Remove conversation history while keeping the connection',
+        type: 'feature',
+        date: new Date('2024-11-07'),
+        priority: 'low',
+        link: '/messages'
+      },
+      {
+        id: 8,
+        icon: '�🔔',
+        title: 'Improved notifications',
+        description: 'Real-time updates and better filtering options',
+        type: 'improvement',
+        date: new Date('2024-11-05'),
+        priority: 'low',
+        link: '/notifications'
+      },
+      {
+        id: 9,
         icon: '🚀',
         title: 'Performance boost',
-        description: 'Faster load times and smoother experience',
+        description: 'Faster load times and smoother experience across the platform',
         type: 'improvement',
         date: new Date('2024-11-01'),
         priority: 'low'
+      },
+      {
+        id: 10,
+        icon: '🔒',
+        title: 'Enhanced privacy controls',
+        description: 'Block users, manage followers, and control who can message you',
+        type: 'feature',
+        date: new Date('2024-11-03'),
+        priority: 'medium',
+        link: '/settings'
       }
     ];
     
@@ -70,9 +121,9 @@ export const getPlatformNews = async (req, res) => {
       return b.date - a.date;
     });
     
-    // Return top 5 news items
+    // Return all news items (no limit for announcements page)
     res.status(200).json({
-      news: sortedNews.slice(0, 5),
+      news: sortedNews,
       platformStats: {
         totalUsers,
         totalPosts

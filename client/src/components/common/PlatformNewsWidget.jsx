@@ -72,9 +72,11 @@ const PlatformNewsWidget = () => {
     );
   }
 
-  if (!news.length || !visibleNews.length) {
-    return null; // Don't show widget if no news or all dismissed
+  if (!news.length) {
+    return null; // Don't show widget if no news from server
   }
+
+  // Always show widget if we have news (even if all dismissed) to keep Contact Admin visible
 
   const getTypeColor = (type) => {
     switch (type) {
@@ -112,48 +114,56 @@ const PlatformNewsWidget = () => {
       </div>
 
       {/* News Items */}
-      <div className="space-y-3">
-        {visibleNews.slice(0, 3).map((item) => (
-          <div
-            key={item.id}
-            className={`${getTypeColor(item.type)} rounded-xl p-4 border transition-all hover:scale-[1.02] cursor-pointer group relative`}
-            onClick={() => handleNewsClick(item)}
-          >
-            {/* Dismiss Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDismiss(item.id);
-              }}
-              className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors opacity-0 group-hover:opacity-100"
-              title="Dismiss"
+      {visibleNews.length > 0 ? (
+        <div className="space-y-3">
+          {visibleNews.slice(0, 3).map((item) => (
+            <div
+              key={item.id}
+              className={`${getTypeColor(item.type)} rounded-xl p-4 border transition-all hover:scale-[1.02] cursor-pointer group relative`}
+              onClick={() => handleNewsClick(item)}
             >
-              <X className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-            </button>
+              {/* Dismiss Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDismiss(item.id);
+                }}
+                className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors opacity-0 group-hover:opacity-100"
+                title="Dismiss"
+              >
+                <X className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+              </button>
 
-            <div className="flex items-start gap-3 pr-6">
-              <span className="text-2xl flex-shrink-0">{item.icon}</span>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
-                    {item.title}
-                  </p>
-                  {getPriorityBadge(item.priority)}
-                </div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
-                  {item.description}
-                </p>
-                {item.link && (
-                  <div className="flex items-center gap-1 mt-2 text-blue-600 dark:text-blue-400">
-                    <span className="text-xs font-medium">Learn more</span>
-                    <ExternalLink className="h-3 w-3" />
+              <div className="flex items-start gap-3 pr-6">
+                <span className="text-2xl flex-shrink-0">{item.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">
+                      {item.title}
+                    </p>
+                    {getPriorityBadge(item.priority)}
                   </div>
-                )}
+                  <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                    {item.description}
+                  </p>
+                  {item.link && (
+                    <div className="flex items-center gap-1 mt-2 text-blue-600 dark:text-blue-400">
+                      <span className="text-xs font-medium">Learn more</span>
+                      <ExternalLink className="h-3 w-3" />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          <Sparkles className="h-12 w-12 mx-auto mb-2 opacity-30" />
+          <p className="text-sm">You've seen all updates</p>
+          <p className="text-xs mt-1">Refresh page to see them again</p>
+        </div>
+      )}
 
       {/* View All Updates Link - Always show */}
       <button
