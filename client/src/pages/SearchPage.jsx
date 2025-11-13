@@ -68,20 +68,6 @@ const SearchPage = () => {
     };
   }, []); // Only run once on mount
 
-  // Handle URL query changes (but skip initial mount to avoid duplicate search)
-  useEffect(() => {
-    // Skip if this is the initial mount and urlQuery was already handled above
-    if (!hasSearched && urlQuery) {
-      return;
-    }
-    
-    const newUrlQuery = searchParams.get('q') || '';
-    if (newUrlQuery && newUrlQuery !== searchQuery) {
-      setSearchQuery(newUrlQuery);
-      handleSearch(newUrlQuery);
-    }
-  }, [searchParams.get('q')]);
-
   const loadTrending = async () => {
     try {
       const data = await getTrending();
