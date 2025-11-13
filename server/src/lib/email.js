@@ -81,7 +81,7 @@ export async function sendPasswordResetEmail(email, token) {
     const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
     
     const subject = 'Reset Your NETSPHERE Password';
-    const textContent = `Reset Your NETSPHERE Password\n\nHi there,\n\nWe received a request to reset your NETSPHERE password. Click the link below or copy and paste it into your browser to set a new password:\n\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you did not request this, you can safely ignore this email.\n\n— The NETSPHERE Team`;
+    const textContent = `Reset Your NETSPHERE Password\n\nHi there,\n\nWe received a request to reset your NETSPHERE password. Click the button in the email to set a new password.\n\nThis link will expire in 1 hour.\n\nIf you did not request this, you can safely ignore this email.\n\n— The NETSPHERE Team`;
     const htmlContent = `
         <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:24px;background:#f9f9f9;border-radius:12px;">
             <h2 style="color:#4f46e5;">Reset Your Password</h2>
@@ -90,8 +90,6 @@ export async function sendPasswordResetEmail(email, token) {
             <div style="text-align:center;">
                 <a href="${resetUrl}" style="display:inline-block;margin:24px 0;padding:12px 28px;background:#2563eb;color:#fff;border-radius:6px;text-decoration:none;font-weight:bold;font-size:1.1em;">Reset Password</a>
             </div>
-            <p style="color:#666;font-size:0.9em;margin-top:16px;">Or copy and paste this link into your browser:</p>
-            <p style="word-break:break-all;color:#2563eb;font-size:0.85em;background:#f0f4ff;padding:12px;border-radius:6px;margin:12px 0;">${resetUrl}</p>
             <p style="color:#888;font-size:0.95em;margin-top:24px;">If you did not request this, you can safely ignore this email. This link will expire in 1 hour.</p>
             <div style="margin-top:32px;text-align:center;color:#aaa;font-size:0.9em;">&mdash; The NETSPHERE Team</div>
         </div>
