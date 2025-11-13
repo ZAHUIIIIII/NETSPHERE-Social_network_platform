@@ -28,6 +28,8 @@ import { countTotalComments, listRootComments } from "../services/commentApi";
 import PortalDropdown from '../components/common/PortalDropdown';
 import AdminBadge from '../components/common/AdminBadge';
 import { isAdmin } from '../lib/isAdmin';
+import UserStatsWidget from '../components/common/UserStatsWidget';
+import PlatformNewsWidget from '../components/common/PlatformNewsWidget';
 // import { 
 //   likePost as likePostAPI
 // } from "../services/api";
@@ -1626,54 +1628,17 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Right Sidebar - Suggested Users + Trending */}
+        {/* Right Sidebar - Suggested Users + Stats + News */}
         <div className="hidden lg:block w-80 flex-shrink-0">
           <div className="sticky top-4 space-y-4">
             {/* Suggested Users - FIRST */}
             <SuggestedUsers limit={3} />
 
-            {/* Trending Now - SECOND */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-fadeIn">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp className="h-5 w-5 text-orange-500" />
-                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Trending Now</h2>
-              </div>
-              <div className="space-y-4">
-                {[
-                  { rank: 1, tag: 'WebDevelopment', posts: '2.4K', hot: true },
-                  { rank: 2, tag: 'Photography', posts: '1.8K', hot: true },
-                  { rank: 3, tag: 'AI', posts: '3.2K', hot: true },
-                  { rank: 4, tag: 'Travel', posts: '1.5K', hot: false },
-                  { rank: 5, tag: 'Fitness', posts: '987', hot: true }
-                ].map((trend) => (
-                  <div key={trend.rank} className="flex items-center justify-between group cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 p-3 rounded-xl transition-all">
-                    <div className="flex items-center gap-3">
-                      <span className="text-gray-400 dark:text-gray-500 font-bold text-sm w-6">#{trend.rank}</span>
-                      <div>
-                        <p className="font-bold text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                          #{trend.tag}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{trend.posts} posts</p>
-                      </div>
-                    </div>
-                    {trend.hot && (
-                      <span className="px-2.5 py-1 bg-gradient-to-r from-orange-400 to-red-400 text-white text-xs rounded-full font-bold shadow-sm">
-                        🔥 Hot
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* User Stats - SECOND */}
+            <UserStatsWidget />
 
-            {/* Premium Features - THIRD */}
-            <div className="bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white animate-fadeIn">
-              <h3 className="font-bold text-xl mb-2">Premium Features</h3>
-              <p className="text-sm text-blue-100 mb-4">Unlock advanced features and grow your network faster</p>
-              <button className="w-full bg-white text-blue-600 font-semibold py-2.5 rounded-xl hover:bg-blue-50 transition-all">
-                Upgrade Now
-              </button>
-            </div>
+            {/* Platform News - THIRD */}
+            <PlatformNewsWidget />
           </div>
         </div>
       </div>

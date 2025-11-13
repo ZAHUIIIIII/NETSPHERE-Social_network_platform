@@ -23,6 +23,7 @@ import notificationRoutes from './routes/notification.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import reportRoutes from './routes/report.routes.js';
 import usageRoutes from './routes/usage.routes.js';
+import statsRoutes from './routes/stats.routes.js';
 
 
 
@@ -115,6 +116,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin', usageRoutes);
+app.use('/api/stats', statsRoutes);
 
 // Catch-all for unmatched API routes (debugging)
 app.use('/api', (req, res, next) => {
