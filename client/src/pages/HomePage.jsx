@@ -44,8 +44,10 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
   const [feeling, setFeeling] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const textareaRef = useRef(null);
   const emojiPickerRef = useRef(null);
+  const dropZoneRef = useRef(null);
   
   const maxImages = 10;
   const maxCharacters = 5000;
@@ -108,6 +110,82 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
 
     setImages(prev => [...prev, ...newImages]);
   };
+
+  // Drag and Drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isPosting && images.length < maxImages) {
+      setIsDragging(true);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set dragging to false if leaving the drop zone entirely
+    if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (isPosting || images.length >= maxImages) {
+      toast.error(`Maximum ${maxImages} images allowed`);
+      return;
+    }
+
+    const files = Array.from(e.dataTransfer.files || []);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
+
+    if (imageFiles.length === 0) {
+      toast.error('Please drop image files only');
+      return;
+    }
+
+    if (imageFiles.length + images.length > maxImages) {
+      toast.error(`Maximum ${maxImages} images allowed`);
+      return;
+    }
+
+    const validFiles = imageFiles.filter(file => {
+      const isUnderLimit = file.size <= 20 * 1024 * 1024; // 20MB
+      if (!isUnderLimit) toast.error(`${file.name} exceeds 20MB limit`);
+      return isUnderLimit;
+    });
+
+    const newImages = validFiles.slice(0, maxImages - images.length).map(file => ({
+      id: Math.random().toString(36).slice(2),
+      url: URL.createObjectURL(file),
+      file
+    }));
+
+    setImages(prev => [...prev, ...newImages]);
+    
+    if (newImages.length > 0) {
+      toast.success(`${newImages.length} image${newImages.length > 1 ? 's' : ''} added!`);
+    }
+  };
+
+  // Prevent default drag behavior on window
+  useEffect(() => {
+    const preventDefaults = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    window.addEventListener('dragover', preventDefaults);
+    window.addEventListener('drop', preventDefaults);
+
+    return () => {
+      window.removeEventListener('dragover', preventDefaults);
+      window.removeEventListener('drop', preventDefaults);
+    };
+  }, []);
 
   const removeImage = (id) => {
     setImages(prev => {
@@ -183,9 +261,30 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
       onClick={onCollapse}
     >
       <div 
-        className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col animate-scaleIn"
+        ref={dropZoneRef}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col animate-scaleIn transition-all duration-200 ${
+          isDragging ? 'ring-4 ring-blue-500 ring-opacity-50 scale-[1.02]' : ''
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Drag overlay */}
+        {isDragging && (
+          <div className="absolute inset-0 bg-blue-500 bg-opacity-10 backdrop-blur-sm z-50 flex items-center justify-center pointer-events-none">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl border-4 border-dashed border-blue-500">
+              <ImageIcon className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+              <p className="text-xl font-bold text-blue-600 dark:text-blue-400 text-center">
+                Drop images here
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">
+                Up to {maxImages - images.length} more image{maxImages - images.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+          </div>
+        )}
+        
         {/* Header */}
         <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <h2 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -236,6 +335,14 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
             maxLength={maxCharacters}
             disabled={isPosting}
           />
+
+          {/* Drag and drop hint */}
+          {images.length === 0 && !content && (
+            <div className="text-center py-4 text-sm text-gray-400 dark:text-gray-500 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg mt-2">
+              <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p>Drag and drop images here or use the button below</p>
+            </div>
+          )}
 
           {/* Character count */}
           <div className="text-right text-xs text-gray-500 dark:text-gray-400 mt-1">
