@@ -1,20 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Megaphone, Sparkles, X, ExternalLink, Loader } from 'lucide-react';
+import { Megaphone, Sparkles, ExternalLink, Loader, MessageCircle } from 'lucide-react';
 import axiosInstance from '../../lib/axios';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const PlatformNewsWidget = () => {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [dismissedNews, setDismissedNews] = useState([]);
+  const [loadingAdmin, setLoadingAdmin] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchPlatformNews();
-    
-    // Load dismissed news from localStorage
-    const dismissed = JSON.parse(localStorage.getItem('dismissedNews') || '[]');
-    setDismissedNews(dismissed);
   }, []);
 
   const fetchPlatformNews = async () => {
@@ -29,20 +26,24 @@ const PlatformNewsWidget = () => {
     }
   };
 
-  const handleDismiss = (newsId) => {
-    const updated = [...dismissedNews, newsId];
-    setDismissedNews(updated);
-    localStorage.setItem('dismissedNews', JSON.stringify(updated));
-  };
-
-  const handleNewsClick = (newsItem) => {
-    if (newsItem.link) {
-      navigate(newsItem.link);
+  const handleContactAdmin = async () => {
+    try {
+      setLoadingAdmin(true);
+      const response = await axiosInstance.get('/users/admin');
+      const adminUser = response.data;
+      
+      if (adminUser) {
+        // Navigate to messages with admin user
+        navigate('/messages', { state: { selectedUser: adminUser } });
+        toast.success('Opening chat with admin...');
+      }
+    } catch (error) {
+      console.error('Error fetching admin:', error);
+      toast.error('Unable to contact admin. Please try again.');
+    } finally {
+      setLoadingAdmin(false);
     }
   };
-
-  // Filter out dismissed news
-  const visibleNews = news.filter(item => !dismissedNews.includes(item.id));
 
   if (loading) {
     return (
@@ -54,8 +55,8 @@ const PlatformNewsWidget = () => {
     );
   }
 
-  if (!news.length || !visibleNews.length) {
-    return null; // Don't show widget if no news or all dismissed
+  if (!news.length) {
+    return null; // Don't show widget if no news
   }
 
   const getTypeColor = (type) => {
@@ -95,25 +96,13 @@ const PlatformNewsWidget = () => {
 
       {/* News Items */}
       <div className="space-y-3">
-        {visibleNews.slice(0, 3).map((item) => (
+        {news.slice(0, 3).map((item) => (
           <div
             key={item.id}
-            className={`${getTypeColor(item.type)} rounded-xl p-4 border transition-all hover:scale-[1.02] cursor-pointer group relative`}
+            className={`${getTypeColor(item.type)} rounded-xl p-4 border transition-all hover:scale-[1.02] cursor-pointer group`}
             onClick={() => handleNewsClick(item)}
           >
-            {/* Dismiss Button */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDismiss(item.id);
-              }}
-              className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors opacity-0 group-hover:opacity-100"
-              title="Dismiss"
-            >
-              <X className="h-3 w-3 text-gray-500 dark:text-gray-400" />
-            </button>
-
-            <div className="flex items-start gap-3 pr-6">
+            <div className="flex items-start gap-3">
               <span className="text-2xl flex-shrink-0">{item.icon}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
@@ -138,7 +127,7 @@ const PlatformNewsWidget = () => {
       </div>
 
       {/* Show More Link */}
-      {visibleNews.length > 3 && (
+      {news.length > 3 && (
         <button
           onClick={() => navigate('/announcements')}
           className="w-full mt-3 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
@@ -146,6 +135,30 @@ const PlatformNewsWidget = () => {
           View all updates →
         </button>
       )}
+
+      {/* Contact Admin for Help - Pinned */}
+      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <button
+          onClick={handleContactAdmin}
+          disabled={loadingAdmin}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-xl transition-all font-semibold shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loadingAdmin ? (
+            <>
+              <Loader className="h-4 w-4 animate-spin" />
+              <span>Loading...</span>
+            </>
+          ) : (
+            <>
+              <MessageCircle className="h-4 w-4" />
+              <span>Contact Admin for Help</span>
+            </>
+          )}
+        </button>
+        <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
+          Have questions? We're here to help! 💬
+        </p>
+      </div>
     </div>
   );
 };

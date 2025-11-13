@@ -28,7 +28,6 @@ import { countTotalComments, listRootComments } from "../services/commentApi";
 import PortalDropdown from '../components/common/PortalDropdown';
 import AdminBadge from '../components/common/AdminBadge';
 import { isAdmin } from '../lib/isAdmin';
-import UserStatsWidget from '../components/common/UserStatsWidget';
 import PlatformNewsWidget from '../components/common/PlatformNewsWidget';
 // import { 
 //   likePost as likePostAPI
@@ -1628,16 +1627,13 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Right Sidebar - Suggested Users + Stats + News */}
+        {/* Right Sidebar - Suggested Users + News */}
         <div className="hidden lg:block w-80 flex-shrink-0">
           <div className="sticky top-4 space-y-4">
             {/* Suggested Users - FIRST */}
             <SuggestedUsers limit={3} />
 
-            {/* User Stats - SECOND */}
-            <UserStatsWidget />
-
-            {/* Platform News - THIRD */}
+            {/* Platform News - SECOND */}
             <PlatformNewsWidget />
           </div>
         </div>
