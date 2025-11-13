@@ -315,6 +315,13 @@ export const forgotPassword = async (req, res) => {
             });
         }
 
+        // Check if user logged in with Google
+        if (user.isGoogleUser) {
+            return res.status(400).json({
+                message: "This account uses Google Sign-In. Please log in with Google instead of resetting your password."
+            });
+        }
+
         // Generate reset token
         const resetToken = crypto.randomBytes(32).toString('hex');
         const resetTokenExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour

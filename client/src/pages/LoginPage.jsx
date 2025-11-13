@@ -73,7 +73,12 @@ export default function LoginPage() {
       await forgotPassword(forgotEmail);
       setForgotSent(true);
     } catch (err) {
-      setForgotError('Could not send reset email. Please try again.');
+      // Check if it's a Google user error
+      if (err.response?.status === 400 && err.response?.data?.message?.includes('Google')) {
+        setForgotError(err.response.data.message);
+      } else {
+        setForgotError('Could not send reset email. Please try again.');
+      }
     } finally {
       setForgotLoading(false);
     }
