@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Megaphone, ArrowLeft, ExternalLink, Loader, Calendar, TrendingUp } from 'lucide-react';
+import { Megaphone, ArrowLeft, ExternalLink, Loader, Calendar, TrendingUp, MessageCircle } from 'lucide-react';
 import axiosInstance from '../lib/axios';
 import { useNavigate } from 'react-router-dom';
 
@@ -133,6 +133,17 @@ const AnnouncementsPage = () => {
               </div>
             </div>
           )}
+
+          {/* Contact Admin Button */}
+          <div className="mt-4">
+            <button
+              onClick={() => navigate('/messages?contact=admin')}
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center gap-2"
+            >
+              <MessageCircle className="h-5 w-5" />
+              <span>Contact Admin</span>
+            </button>
+          </div>
         </div>
 
         {/* All Announcements */}

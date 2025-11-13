@@ -15,22 +15,13 @@ export const getPlatformNews = async (req, res) => {
     const news = [
       {
         id: 1,
-        icon: '🎉',
+        icon: '☀️/🌙',
         title: 'New feature: Dark mode is here!',
         description: 'Toggle between light and dark themes in settings',
         type: 'feature',
         date: new Date('2024-11-10'),
         priority: 'high',
         link: '/settings'
-      },
-      {
-        id: 2,
-        icon: '📊',
-        title: `Netsphere hits ${formatNumber(totalUsers)} users!`,
-        description: 'Thank you for being part of our growing community',
-        type: 'milestone',
-        date: new Date('2024-11-12'),
-        priority: 'medium'
       },
       {
         id: 3,
@@ -43,22 +34,12 @@ export const getPlatformNews = async (req, res) => {
       },
       {
         id: 4,
-        icon: '�',
+        icon: '💬',
         title: 'New Messages features!',
         description: 'Mute conversations, delete chats, and better chat organization',
         type: 'feature',
         date: new Date('2024-11-13'),
         priority: 'high',
-        link: '/messages'
-      },
-      {
-        id: 5,
-        icon: '✉️',
-        title: 'Real-time messaging',
-        description: 'Instant message delivery with typing indicators and online status',
-        type: 'feature',
-        date: new Date('2024-11-11'),
-        priority: 'medium',
         link: '/messages'
       },
       {
@@ -83,7 +64,7 @@ export const getPlatformNews = async (req, res) => {
       },
       {
         id: 8,
-        icon: '�🔔',
+        icon: '🔔',
         title: 'Improved notifications',
         description: 'Real-time updates and better filtering options',
         type: 'improvement',
