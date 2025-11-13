@@ -10,6 +10,7 @@ import SearchPage from './pages/SearchPage';
 import PostDetailPage from './pages/PostDetailPage';
 import NotificationPage from './pages/NotificationPage';
 import AdminPage from './pages/AdminPage';
+import AnnouncementsPage from './pages/AnnouncementsPage';
 
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
@@ -172,6 +173,7 @@ const App = () => {
             <Route path='/profile/:username?' element={authUser ? <ProfilePage /> : <Navigate to="/login" />} />
             <Route path='/post/:postId' element={authUser ? <PostDetailPage /> : <Navigate to="/login" />} />
             <Route path='/notifications' element={authUser ? <NotificationPage /> : <Navigate to="/login" />} />
+            <Route path='/announcements' element={authUser ? <AnnouncementsPage /> : <Navigate to="/login" />} />
           </Routes>
         </div>
         <Toaster />

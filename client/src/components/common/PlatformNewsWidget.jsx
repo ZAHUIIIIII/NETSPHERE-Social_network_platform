@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Megaphone, Sparkles, ExternalLink, Loader, MessageCircle } from 'lucide-react';
+import { Megaphone, Sparkles, X, ExternalLink, Loader, MessageCircle } from 'lucide-react';
 import axiosInstance from '../../lib/axios';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -7,11 +7,13 @@ import toast from 'react-hot-toast';
 const PlatformNewsWidget = () => {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dismissedNews, setDismissedNews] = useState([]);
   const [loadingAdmin, setLoadingAdmin] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchPlatformNews();
+    // Don't load dismissed news from localStorage - resets on page refresh
   }, []);
 
   const fetchPlatformNews = async () => {
@@ -24,6 +26,18 @@ const PlatformNewsWidget = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleNewsClick = (newsItem) => {
+    if (newsItem.link) {
+      navigate(newsItem.link);
+    }
+  };
+
+  const handleDismiss = (newsId) => {
+    const updated = [...dismissedNews, newsId];
+    setDismissedNews(updated);
+    // Don't save to localStorage - will reappear on page refresh
   };
 
   const handleContactAdmin = async () => {
@@ -45,6 +59,9 @@ const PlatformNewsWidget = () => {
     }
   };
 
+  // Filter out dismissed news
+  const visibleNews = news.filter(item => !dismissedNews.includes(item.id));
+
   if (loading) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 animate-fadeIn">
@@ -55,8 +72,8 @@ const PlatformNewsWidget = () => {
     );
   }
 
-  if (!news.length) {
-    return null; // Don't show widget if no news
+  if (!news.length || !visibleNews.length) {
+    return null; // Don't show widget if no news or all dismissed
   }
 
   const getTypeColor = (type) => {
@@ -96,13 +113,25 @@ const PlatformNewsWidget = () => {
 
       {/* News Items */}
       <div className="space-y-3">
-        {news.slice(0, 3).map((item) => (
+        {visibleNews.slice(0, 3).map((item) => (
           <div
             key={item.id}
-            className={`${getTypeColor(item.type)} rounded-xl p-4 border transition-all hover:scale-[1.02] cursor-pointer group`}
+            className={`${getTypeColor(item.type)} rounded-xl p-4 border transition-all hover:scale-[1.02] cursor-pointer group relative`}
             onClick={() => handleNewsClick(item)}
           >
-            <div className="flex items-start gap-3">
+            {/* Dismiss Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDismiss(item.id);
+              }}
+              className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors opacity-0 group-hover:opacity-100"
+              title="Dismiss"
+            >
+              <X className="h-3 w-3 text-gray-500 dark:text-gray-400" />
+            </button>
+
+            <div className="flex items-start gap-3 pr-6">
               <span className="text-2xl flex-shrink-0">{item.icon}</span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
@@ -126,15 +155,13 @@ const PlatformNewsWidget = () => {
         ))}
       </div>
 
-      {/* Show More Link */}
-      {news.length > 3 && (
-        <button
-          onClick={() => navigate('/announcements')}
-          className="w-full mt-3 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
-        >
-          View all updates →
-        </button>
-      )}
+      {/* View All Updates Link - Always show */}
+      <button
+        onClick={() => navigate('/announcements')}
+        className="w-full mt-3 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
+      >
+        View all updates →
+      </button>
 
       {/* Contact Admin for Help - Pinned */}
       <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
