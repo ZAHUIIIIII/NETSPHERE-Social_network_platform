@@ -359,7 +359,7 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
       {/* Confirmation Dialog */}
       {showConfirmDialog && confirmAction && selectedUserForAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-slideUp">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-slideUp">
             {/* Warning Header */}
             <div className={`px-6 py-5 ${confirmAction.requiresConfirmation ? 'bg-gradient-to-r from-red-600 to-red-700' : 'bg-gradient-to-r from-orange-500 to-red-500'}`}>
               <div className="flex items-center gap-3 text-white">
@@ -377,8 +377,8 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
             {/* Content */}
             <div className="p-6">
               {confirmAction.requiresConfirmation && (
-                <div className="mb-4 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
-                  <p className="text-sm font-semibold text-red-800 flex items-center gap-2">
+                <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/30 border-2 border-red-200 dark:border-red-800 rounded-xl">
+                  <p className="text-sm font-semibold text-red-800 dark:text-red-300 flex items-center gap-2">
                     <svg viewBox="0 0 24 24" className="w-5 h-5 flex-shrink-0" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
@@ -387,26 +387,26 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                 </div>
               )}
               
-              <p className="text-sm text-gray-700 mb-4 leading-relaxed whitespace-pre-line">
+              <p className="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed whitespace-pre-line">
                 {confirmAction.message}
               </p>
 
               {/* Confirmation Input */}
               {confirmAction.requiresConfirmation && (
                 <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirm by typing: <span className="font-bold text-red-600">{confirmAction.confirmationText}</span>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Confirm by typing: <span className="font-bold text-red-600 dark:text-red-400">{confirmAction.confirmationText}</span>
                   </label>
                   <input
                     type="text"
                     value={confirmationInput}
                     onChange={(e) => setConfirmationInput(e.target.value)}
                     placeholder={confirmAction.confirmationText}
-                    className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors font-medium"
+                    className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-colors font-medium placeholder-gray-400 dark:placeholder-gray-500"
                     autoFocus
                   />
                   {confirmationInput && confirmationInput !== confirmAction.confirmationText && (
-                    <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                    <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
                       <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M6 18L18 6M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
@@ -414,7 +414,7 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
                     </p>
                   )}
                   {confirmationInput === confirmAction.confirmationText && (
-                    <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                    <p className="mt-2 text-sm text-green-600 dark:text-green-400 flex items-center gap-1">
                       <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
@@ -428,7 +428,7 @@ const UsersPanel = ({ users, searchQuery, setSearchQuery, suspendUser, activateU
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={handleCancelAction}
-                  className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all"
+                  className="px-5 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-400 dark:hover:border-gray-500 transition-all"
                 >
                   Cancel
                 </button>

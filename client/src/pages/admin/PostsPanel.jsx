@@ -756,7 +756,7 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedPost && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl animate-slideUp">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full shadow-2xl animate-slideUp">
             {/* Modal Header */}
             <div className="bg-gradient-to-r from-red-500 to-red-600 px-6 py-4 flex items-center justify-between">
               <h3 className="text-xl font-bold text-white">⚠️ Delete Post Permanently</h3>
@@ -773,17 +773,17 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
 
             {/* Modal Body */}
             <div className="p-6">
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-                <p className="text-red-800 font-semibold mb-1">⚠️ Warning: This action cannot be undone!</p>
-                <p className="text-red-700 text-sm">
+              <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                <p className="text-red-800 dark:text-red-300 font-semibold mb-1">⚠️ Warning: This action cannot be undone!</p>
+                <p className="text-red-700 dark:text-red-400 text-sm">
                   All associated data including comments and reactions will be permanently deleted.
                 </p>
               </div>
 
               {/* Post Author */}
               <div className="mb-4">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Post Author:</h4>
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Post Author:</h4>
+                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                   {selectedPost.author?.avatar ? (
                     <img 
                       src={selectedPost.author.avatar} 
@@ -796,8 +796,8 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                     </div>
                   )}
                   <div>
-                    <div className="font-semibold text-gray-900">{selectedPost.author?.name || selectedPost.author?.username || 'Unknown'}</div>
-                    <div className="text-xs text-gray-500">{selectedPost.author?.email || 'No email'}</div>
+                    <div className="font-semibold text-gray-900 dark:text-gray-100">{selectedPost.author?.name || selectedPost.author?.username || 'Unknown'}</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">{selectedPost.author?.email || 'No email'}</div>
                   </div>
                 </div>
               </div>
@@ -805,50 +805,50 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
               {/* Post Content */}
               {selectedPost.content && (
                 <div className="mb-4">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Post Content:</h4>
-                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <p className="text-sm text-gray-700 line-clamp-3">{selectedPost.content}</p>
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Post Content:</h4>
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                    <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-3">{selectedPost.content}</p>
                   </div>
                 </div>
               )}
 
               {/* Data That Will Be Lost */}
               <div className="mb-4">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Data That Will Be Permanently Deleted:</h4>
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Data That Will Be Permanently Deleted:</h4>
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-lg p-3 border border-red-200">
-                    <div className="text-xs text-gray-600 mb-1">Reactions</div>
-                    <div className="text-xl font-bold text-red-600">{selectedPost.likes || 0}</div>
+                  <div className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/30 dark:to-pink-900/30 rounded-lg p-3 border border-red-200 dark:border-red-800">
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Reactions</div>
+                    <div className="text-xl font-bold text-red-600 dark:text-red-400">{selectedPost.likes || 0}</div>
                   </div>
-                  <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-lg p-3 border border-red-200">
-                    <div className="text-xs text-gray-600 mb-1">Comments</div>
-                    <div className="text-xl font-bold text-red-600">{selectedPost.commentsCount || 0}</div>
+                  <div className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/30 dark:to-pink-900/30 rounded-lg p-3 border border-red-200 dark:border-red-800">
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Comments</div>
+                    <div className="text-xl font-bold text-red-600 dark:text-red-400">{selectedPost.commentsCount || 0}</div>
                   </div>
-                  <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-lg p-3 border border-red-200">
-                    <div className="text-xs text-gray-600 mb-1">Images</div>
-                    <div className="text-xl font-bold text-red-600">{selectedPost.images?.length || 0}</div>
+                  <div className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/30 dark:to-pink-900/30 rounded-lg p-3 border border-red-200 dark:border-red-800">
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Images</div>
+                    <div className="text-xl font-bold text-red-600 dark:text-red-400">{selectedPost.images?.length || 0}</div>
                   </div>
                 </div>
               </div>
 
               {/* Post Details */}
               <div className="mb-4">
-                <h4 className="text-sm font-semibold text-gray-700 mb-2">Post Information:</h4>
-                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200 space-y-2">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Post Information:</h4>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 border border-gray-200 dark:border-gray-600 space-y-2">
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Created:</span>
-                    <span className="font-medium text-gray-900">{formatDate(selectedPost.createdAt)}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Created:</span>
+                    <span className="font-medium text-gray-900 dark:text-gray-100">{formatDate(selectedPost.createdAt)}</span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Reports:</span>
-                    <span className="font-medium text-red-600">{selectedPost.reportsCount || 0}</span>
+                    <span className="text-gray-600 dark:text-gray-400">Reports:</span>
+                    <span className="font-medium text-red-600 dark:text-red-400">{selectedPost.reportsCount || 0}</span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600">Status:</span>
+                    <span className="text-gray-600 dark:text-gray-400">Status:</span>
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      selectedPost.status === 'published' ? 'bg-blue-100 text-blue-700' :
-                      selectedPost.status === 'flagged' ? 'bg-red-100 text-red-700' :
-                      'bg-gray-100 text-gray-700'
+                      selectedPost.status === 'published' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400' :
+                      selectedPost.status === 'flagged' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' :
+                      'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                     }`}>
                       {selectedPost.status || 'published'}
                     </span>
@@ -857,15 +857,15 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Type <span className="text-red-600 font-mono bg-red-100 px-2 py-0.5 rounded">DELETE</span> to confirm:
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Type <span className="text-red-600 dark:text-red-400 font-mono bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded">DELETE</span> to confirm:
                 </label>
                 <input
                   type="text"
                   value={deleteConfirmText}
                   onChange={(e) => setDeleteConfirmText(e.target.value)}
                   placeholder="Type DELETE here"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none placeholder-gray-400 dark:placeholder-gray-500"
                 />
               </div>
 
@@ -876,7 +876,7 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                   className={`flex-1 px-4 py-2.5 rounded-lg font-semibold transition-colors ${
                     deleteConfirmText === 'DELETE'
                       ? 'bg-red-600 text-white hover:bg-red-700'
-                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
                   }`}
                 >
                   Delete Permanently
@@ -886,7 +886,7 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                     setShowDeleteModal(false);
                     setDeleteConfirmText('');
                   }}
-                  className="px-4 py-2.5 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
+                  className="px-4 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors font-semibold"
                 >
                   Cancel
                 </button>
