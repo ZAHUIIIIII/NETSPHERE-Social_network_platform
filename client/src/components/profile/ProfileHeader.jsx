@@ -289,19 +289,14 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
               {/* Action Buttons */}
               <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3">
                 {isOwnProfile ? (
-                  <>
-                    <button
-                      onClick={onEditClick}
-                      className="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 lg:px-6 py-1.5 sm:py-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg transition-colors font-semibold text-xs sm:text-sm"
-                    >
-                      <Edit size={14} className="sm:w-4 sm:h-4" />
-                      <span className="hidden xs:inline">Edit Profile</span>
-                      <span className="xs:hidden">Edit</span>
-                    </button>
-                    <button className="p-1.5 sm:p-2 hover:bg-gray-50 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg transition-colors">
-                      <MoreHorizontal size={18} className="sm:w-5 sm:h-5 text-gray-900 dark:text-gray-100" />
-                    </button>
-                  </>
+                  <button
+                    onClick={onEditClick}
+                    className="inline-flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 lg:px-6 py-1.5 sm:py-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg transition-colors font-semibold text-xs sm:text-sm"
+                  >
+                    <Edit size={14} className="sm:w-4 sm:h-4" />
+                    <span className="hidden xs:inline">Edit Profile</span>
+                    <span className="xs:hidden">Edit</span>
+                  </button>
                 ) : (
                   <div className="flex items-center gap-2">
                     <FollowButton
