@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Image as ImageIcon, MapPin, Smile, Globe, Lock, Users, Video as VideoIcon, Play } from 'lucide-react';
+import { X, Image as ImageIcon, MapPin, Smile, Globe, Lock, Users, Video as VideoIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createPost, uploadPostImages, uploadPostVideo } from '../services/api';
 
@@ -107,46 +107,19 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
     setImages(prev => [...prev, ...newImages]);
   };
 
-  const handleVideoChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('video/')) {
-      toast.error('Please select a video file');
-      return;
-    }
-
-    if (file.size > maxVideoSize) {
-      toast.error(`Video size must be less than ${maxVideoSize / (1024 * 1024)}MB`);
-      return;
-    }
-
-    const url = URL.createObjectURL(file);
-    setVideo({ id: Math.random().toString(36).slice(2), url, file });
-    toast.success('Video added successfully!');
-  };
-
-  const removeVideo = () => {
-    if (video?.url) {
-      URL.revokeObjectURL(video.url);
-    }
-    setVideo(null);
-  };
-
   // Drag and Drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isPosting) {
-      if ((mediaType === 'images' && images.length < maxImages) || (mediaType === 'video' && !video)) {
-        setIsDragging(true);
-      }
+    if (!isPosting && images.length < maxImages) {
+      setIsDragging(true);
     }
   };
 
   const handleDragLeave = (e) => {
     e.preventDefault();
     e.stopPropagation();
+    // Only set dragging to false if leaving the drop zone entirely
     if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget)) {
       setIsDragging(false);
     }
@@ -157,59 +130,40 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
     e.stopPropagation();
     setIsDragging(false);
 
-    if (isPosting) return;
+    if (isPosting || images.length >= maxImages) {
+      toast.error(`Maximum ${maxImages} images allowed`);
+      return;
+    }
 
     const files = Array.from(e.dataTransfer.files || []);
+    const imageFiles = files.filter(file => file.type.startsWith('image/'));
 
-    if (mediaType === 'images') {
-      const imageFiles = files.filter(file => file.type.startsWith('image/'));
-      if (imageFiles.length === 0) {
-        toast.error('Please drop image files only');
-        return;
-      }
+    if (imageFiles.length === 0) {
+      toast.error('Please drop image files only');
+      return;
+    }
 
-      if (imageFiles.length + images.length > maxImages) {
-        toast.error(`Maximum ${maxImages} images allowed`);
-        return;
-      }
+    if (imageFiles.length + images.length > maxImages) {
+      toast.error(`Maximum ${maxImages} images allowed`);
+      return;
+    }
 
-      const validFiles = imageFiles.filter(file => {
-        const isUnderLimit = file.size <= 10 * 1024 * 1024;
-        if (!isUnderLimit) toast.error(`${file.name} exceeds 10MB limit`);
-        return isUnderLimit;
-      });
+    const validFiles = imageFiles.filter(file => {
+      const isUnderLimit = file.size <= 10 * 1024 * 1024; // 10MB
+      if (!isUnderLimit) toast.error(`${file.name} exceeds 10MB limit`);
+      return isUnderLimit;
+    });
 
-      const newImages = validFiles.slice(0, maxImages - images.length).map(file => ({
-        id: Math.random().toString(36).slice(2),
-        url: URL.createObjectURL(file),
-        file
-      }));
+    const newImages = validFiles.slice(0, maxImages - images.length).map(file => ({
+      id: Math.random().toString(36).slice(2),
+      url: URL.createObjectURL(file),
+      file
+    }));
 
-      setImages(prev => [...prev, ...newImages]);
-      
-      if (newImages.length > 0) {
-        toast.success(`${newImages.length} image${newImages.length > 1 ? 's' : ''} added!`);
-      }
-    } else if (mediaType === 'video') {
-      const videoFile = files.find(file => file.type.startsWith('video/'));
-      if (!videoFile) {
-        toast.error('Please drop a video file');
-        return;
-      }
-
-      if (videoFile.size > maxVideoSize) {
-        toast.error(`Video size must be less than ${maxVideoSize / (1024 * 1024)}MB`);
-        return;
-      }
-
-      if (video) {
-        toast.error('Only one video allowed per post');
-        return;
-      }
-
-      const url = URL.createObjectURL(videoFile);
-      setVideo({ id: Math.random().toString(36).slice(2), url, file: videoFile });
-      toast.success('Video added successfully!');
+    setImages(prev => [...prev, ...newImages]);
+    
+    if (newImages.length > 0) {
+      toast.success(`${newImages.length} image${newImages.length > 1 ? 's' : ''} added!`);
     }
   };
 
@@ -222,18 +176,16 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
   };
 
   const handleSubmit = async () => {
-    if (!content.trim() && images.length === 0 && !video) {
-      toast.error('Please add some content, images, or a video');
+    if (!content.trim() && images.length === 0) {
+      toast.error('Please add some content or images');
       return;
     }
 
     setIsPosting(true);
     try {
       let imageUrls = [];
-      let videoUrls = [];
 
-      // Upload images or video based on mediaType
-      if (mediaType === 'images' && images.length > 0) {
+      if (images.length > 0) {
         const imageFiles = images.map(img => img.file).filter(Boolean);
         
         if (imageFiles.length > 0) {
@@ -248,33 +200,21 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
             imageUrls = uploadResponse.images;
           }
         }
-      } else if (mediaType === 'video' && video) {
-        const uploadResponse = await uploadPostVideo(video.file, (progressEvent) => {
-          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress(progress);
-        });
-        
-        if (Array.isArray(uploadResponse)) {
-          videoUrls = uploadResponse;
-        } else if (uploadResponse?.videos) {
-          videoUrls = uploadResponse.videos;
-        }
       }
 
       const postData = {
         content: content.trim(),
-        ...(imageUrls.length > 0 && { images: imageUrls }),
-        ...(videoUrls.length > 0 && { videos: videoUrls }),
+        images: imageUrls,
         privacy,
-        ...(location && { location }),
+        ...(location.trim() && { location: location.trim() }),
         ...(feeling && { feeling })
       };
 
       const response = await createPost(postData);
-      const newPost = response.post || response;
+      const newPost = response.post || response; // Extract post from response
       toast.success('Post created successfully! 🎉');
       
-      // Emit custom event to notify HomePage
+      // Emit custom event to notify HomePage to refresh posts with the new post data
       window.dispatchEvent(new CustomEvent('postCreated', {
         detail: { post: newPost }
       }));
@@ -282,11 +222,9 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
       // Reset form
       setContent('');
       setImages([]);
-      setVideo(null);
       setLocation('');
       setFeeling('');
       setUploadProgress(0);
-      setMediaType('images');
       
       if (onPostCreated) onPostCreated();
       onClose();
@@ -328,21 +266,13 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
         {isDragging && (
           <div className="absolute inset-0 bg-blue-500 bg-opacity-10 backdrop-blur-sm z-50 flex items-center justify-center pointer-events-none">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl border-4 border-dashed border-blue-500">
-              {mediaType === 'images' ? (
-                <>
-                  <ImageIcon className="w-16 h-16 text-blue-500 mx-auto mb-4" />
-                  <p className="text-xl font-bold text-blue-600 dark:text-blue-400 text-center">
-                    Drop images here
-                  </p>
-                </>
-              ) : (
-                <>
-                  <VideoIcon className="w-16 h-16 text-blue-500 mx-auto mb-4" />
-                  <p className="text-xl font-bold text-blue-600 dark:text-blue-400 text-center">
-                    Drop video here
-                  </p>
-                </>
-              )}
+              <ImageIcon className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+              <p className="text-xl font-bold text-blue-600 dark:text-blue-400 text-center">
+                Drop images here
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">
+                Up to {maxImages - images.length} more image{maxImages - images.length !== 1 ? 's' : ''}
+              </p>
             </div>
           </div>
         )}
@@ -398,6 +328,14 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
             disabled={isPosting}
           />
 
+          {/* Drag and drop hint */}
+          {images.length === 0 && !content && (
+            <div className="text-center py-4 text-sm text-gray-400 dark:text-gray-500 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg mt-2">
+              <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p>Drag and drop images here or use the button below</p>
+            </div>
+          )}
+
           {/* Character count */}
           <div className="text-right text-xs text-gray-500 dark:text-gray-400 mt-1">
             {content.length}/{maxCharacters}
@@ -407,7 +345,7 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
           {(feeling || location) && (
             <div className="flex flex-wrap gap-2 mt-3">
               {feeling && (
-                <span className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-sm">
+                <span key="feeling" className="inline-flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-sm">
                   <Smile className="w-4 h-4" />
                   feeling {feeling}
                   <button
@@ -420,7 +358,7 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
                 </span>
               )}
               {location && (
-                <span className="inline-flex items-center gap-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-sm">
+                <span key="location" className="inline-flex items-center gap-1 bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-3 py-1 rounded-full text-sm">
                   <MapPin className="w-4 h-4" />
                   at {location}
                   <button
@@ -435,42 +373,8 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
             </div>
           )}
 
-          {/* Media Type Toggle */}
-          <div className="flex gap-2 mt-4 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-            <button
-              onClick={() => {
-                setMediaType('images');
-                setVideo(null);
-              }}
-              disabled={isPosting}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md transition-all ${
-                mediaType === 'images'
-                  ? 'bg-blue-500 text-white shadow-md'
-                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
-              }`}
-            >
-              <ImageIcon className="w-5 h-5" />
-              <span className="font-medium">Images</span>
-            </button>
-            <button
-              onClick={() => {
-                setMediaType('video');
-                setImages([]);
-              }}
-              disabled={isPosting}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md transition-all ${
-                mediaType === 'video'
-                  ? 'bg-blue-500 text-white shadow-md'
-                  : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
-              }`}
-            >
-              <VideoIcon className="w-5 h-5" />
-              <span className="font-medium">Video</span>
-            </button>
-          </div>
-
           {/* Image Preview */}
-          {mediaType === 'images' && images.length > 0 && (
+          {images.length > 0 && (
             <div className="mt-4 grid grid-cols-2 gap-2">
               {images.map((img) => (
                 <div key={img.id} className="relative group">
@@ -491,35 +395,16 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
             </div>
           )}
 
-          {/* Video Preview */}
-          {mediaType === 'video' && video && (
-            <div className="mt-4 relative group">
-              <video
-                ref={videoRef}
-                src={video.url}
-                controls
-                className="w-full rounded-lg max-h-96"
-              />
-              <button
-                onClick={removeVideo}
-                disabled={isPosting}
-                className="absolute top-2 right-2 bg-gray-900 bg-opacity-75 text-white p-2 rounded-full hover:bg-opacity-100 transition-all opacity-0 group-hover:opacity-100"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-          )}
-
           {/* Upload Progress */}
           {isPosting && uploadProgress > 0 && (
             <div className="mt-4">
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
                   className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
+              <p className="text-xs text-gray-500 mt-1 text-center">
                 Uploading... {uploadProgress}%
               </p>
             </div>
@@ -531,37 +416,17 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Add to your post</span>
               <div className="flex items-center gap-2">
                 {/* Image Upload */}
-                {mediaType === 'images' && (
-                  <label className={`cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors ${
-                    isPosting || images.length >= maxImages ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}>
-                    <ImageIcon className="w-5 h-5 text-green-600" />
-                    <input
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageChange}
-                      className="hidden"
-                      disabled={isPosting || images.length >= maxImages}
-                    />
-                  </label>
-                )}
-
-                {/* Video Upload */}
-                {mediaType === 'video' && (
-                  <label className={`cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors ${
-                    isPosting || video ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}>
-                    <VideoIcon className="w-5 h-5 text-purple-600" />
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={handleVideoChange}
-                      className="hidden"
-                      disabled={isPosting || video !== null}
-                    />
-                  </label>
-                )}
+                <label className="cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+                  <ImageIcon className="w-5 h-5 text-green-600" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageChange}
+                    className="hidden"
+                    disabled={isPosting || images.length >= maxImages}
+                  />
+                </label>
 
                 {/* Feeling */}
                 <div className="relative" ref={emojiPickerRef}>
@@ -595,26 +460,28 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
                 </div>
 
                 {/* Location */}
-                <button
-                  onClick={() => {
-                    const loc = prompt('Enter location:', location);
-                    if (loc !== null) setLocation(loc.trim());
-                  }}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                  disabled={isPosting}
-                >
-                  <MapPin className="w-5 h-5 text-red-600" />
-                </button>
+                <div className="relative group">
+                  <button
+                    onClick={() => {
+                      const loc = prompt('Enter location:', location);
+                      if (loc !== null) setLocation(loc.trim());
+                    }}
+                    className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    disabled={isPosting}
+                  >
+                    <MapPin className="w-5 h-5 text-red-600" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 dark:border-gray-700 p-4 flex-shrink-0">
+        <div className="border-t border-gray-200 p-4">
           <button
             onClick={handleSubmit}
-            disabled={isPosting || (!content.trim() && images.length === 0 && !video)}
+            disabled={isPosting || (!content.trim() && images.length === 0)}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPosting ? 'Posting...' : 'Post'}
