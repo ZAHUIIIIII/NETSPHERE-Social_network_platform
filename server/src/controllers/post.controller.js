@@ -81,11 +81,12 @@ export const getAllPosts = async (req, res) => {
 // Create a new post
 export const createPost = async (req, res) => {
   try {
-    const { content, images = [], privacy = 'public', location, feeling } = req.body;
+    const { content, images = [], videos = [], privacy = 'public', location, feeling } = req.body;
 
     const post = new Post({
       content,
       images,
+      videos,
       privacy,
       author: req.user._id,
       ...(location && { location }),
@@ -793,7 +794,7 @@ export const getUserReposts = async (req, res) => {
     })
       .populate({
         path: 'originalPost',
-        select: 'content images author createdAt reactions status',
+        select: 'content images videos author createdAt reactions status',
         populate: {
           path: 'author',
           select: 'username avatar name'

@@ -63,7 +63,7 @@ export const getMyReports = async (req, res) => {
     const userId = req.user._id;
 
     const reports = await Report.find({ reportedBy: userId })
-      .populate('postId', 'content images author')
+      .populate('postId', 'content images videos author')
       .populate({
         path: 'postId',
         populate: {

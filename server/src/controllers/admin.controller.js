@@ -943,7 +943,7 @@ export const getAllReports = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(Number(skip))
       .limit(Number(limit))
-      .populate('postId', 'content images author status')
+      .populate('postId', 'content images videos author status')
       .populate({
         path: 'postId',
         populate: {
@@ -1012,7 +1012,7 @@ export const resolveReport = async (req, res) => {
       },
       { new: true }
     )
-    .populate('postId', 'content images author status')
+    .populate('postId', 'content images videos author status')
     .populate({
       path: 'postId',
       populate: {
@@ -1051,7 +1051,7 @@ export const dismissReport = async (req, res) => {
       },
       { new: true }
     )
-    .populate('postId', 'content images author status')
+    .populate('postId', 'content images videos author status')
     .populate({
       path: 'postId',
       populate: {
