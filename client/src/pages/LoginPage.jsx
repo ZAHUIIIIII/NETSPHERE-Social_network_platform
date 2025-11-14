@@ -113,8 +113,8 @@ export default function LoginPage() {
               <div className="absolute bottom-20 right-8 w-8 h-8 bg-purple-300 rounded-full opacity-60"></div>
               
               {/* Logo in card */}
-              <div className="w-16 h-16 bg-white bg-opacity-20 rounded-2xl flex items-center justify-center mb-6">
-                <span className="text-white font-bold text-2xl">N</span>
+              <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6">
+                <img src="/logo.svg" alt="NETSPHERE" className="w-full h-full" />
               </div>
               
               {/* Card content */}
