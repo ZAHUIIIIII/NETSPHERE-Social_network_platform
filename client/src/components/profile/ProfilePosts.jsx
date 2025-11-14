@@ -64,6 +64,30 @@ const ProfilePosts = ({ posts, isOwnProfile, onPostsUpdate }) => {
                   alt="User post"
                   className="w-full h-full object-cover transition-transform group-hover:scale-105"
                 />
+              ) : post.videos && post.videos[0] ? (
+                <div className="relative w-full h-full">
+                  <video
+                    src={post.videos[0].url}
+                    poster={post.videos[0].thumbnail}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Video indicator overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <div className="bg-black/60 rounded-full p-3 sm:p-4 backdrop-blur-sm">
+                      <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </div>
+                  </div>
+                  {/* Video duration badge */}
+                  {post.videos[0].duration && (
+                    <div className="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2">
+                      <div className="bg-black/80 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded text-[10px] sm:text-xs font-medium backdrop-blur-sm">
+                        {Math.floor(post.videos[0].duration / 60)}:{String(Math.floor(post.videos[0].duration % 60)).padStart(2, '0')}
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 p-2 sm:p-4">
                   <p className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm line-clamp-4 sm:line-clamp-6 text-center">

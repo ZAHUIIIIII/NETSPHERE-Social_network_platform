@@ -419,6 +419,30 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                 </div>
               )}
 
+              {/* Post Videos */}
+              {selectedPost.videos && selectedPost.videos.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-semibold text-gray-500 uppercase mb-2">Videos ({selectedPost.videos.length})</h4>
+                  <div className="space-y-2">
+                    {selectedPost.videos.map((video, idx) => (
+                      <div key={idx} className="relative">
+                        <video 
+                          src={video.url}
+                          poster={video.thumbnail}
+                          controls
+                          className="w-full max-h-96 rounded-lg border border-gray-200 bg-black"
+                        />
+                        {video.duration && (
+                          <div className="mt-1 text-xs text-gray-500">
+                            Duration: {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Post Stats */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="bg-gradient-to-br from-red-50 to-pink-50 rounded-lg p-4 border border-red-100">
@@ -564,6 +588,12 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-gray-600">Images:</span>
                       <span className="font-medium text-gray-900">{selectedPost.images.length} image{selectedPost.images.length > 1 ? 's' : ''}</span>
+                    </div>
+                  )}
+                  {selectedPost.videos && selectedPost.videos.length > 0 && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-600">Videos:</span>
+                      <span className="font-medium text-gray-900">{selectedPost.videos.length} video{selectedPost.videos.length > 1 ? 's' : ''}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center text-sm">
@@ -815,7 +845,7 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
               {/* Data That Will Be Lost */}
               <div className="mb-4">
                 <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Data That Will Be Permanently Deleted:</h4>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-4 gap-3">
                   <div className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/30 dark:to-pink-900/30 rounded-lg p-3 border border-red-200 dark:border-red-800">
                     <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Reactions</div>
                     <div className="text-xl font-bold text-red-600 dark:text-red-400">{selectedPost.likes || 0}</div>
@@ -827,6 +857,10 @@ const PostsPanel = ({ posts, removePost, restorePost, deletePost }) => {
                   <div className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/30 dark:to-pink-900/30 rounded-lg p-3 border border-red-200 dark:border-red-800">
                     <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Images</div>
                     <div className="text-xl font-bold text-red-600 dark:text-red-400">{selectedPost.images?.length || 0}</div>
+                  </div>
+                  <div className="bg-gradient-to-br from-red-50 to-pink-50 dark:from-red-900/30 dark:to-pink-900/30 rounded-lg p-3 border border-red-200 dark:border-red-800">
+                    <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Videos</div>
+                    <div className="text-xl font-bold text-red-600 dark:text-red-400">{selectedPost.videos?.length || 0}</div>
                   </div>
                 </div>
               </div>

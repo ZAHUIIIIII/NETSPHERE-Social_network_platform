@@ -153,11 +153,68 @@ export const uploadImages = async (req, res) => {
   }
 };
 
+// Upload post video
+export const uploadVideo = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No video file provided' });
+    }
+
+    // Upload video to Cloudinary with optimizations
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'video',
+          folder: 'netsphere/videos',
+          chunk_size: 6000000, // 6MB chunks for large files
+          eager: [
+            { 
+              width: 300, 
+              height: 300, 
+              crop: 'pad', 
+              format: 'jpg',
+              video_sampling: 1 // Generate thumbnail from first frame
+            }
+          ],
+          eager_async: true,
+          transformation: [
+            { quality: 'auto:good' },
+            { fetch_format: 'auto' }
+          ]
+        },
+        (error, result) => {
+          if (error) {
+            console.error('Error uploading video:', error);
+            reject(error);
+          } else {
+            resolve(result);
+          }
+        }
+      );
+      uploadStream.end(req.file.buffer);
+    });
+
+    res.json({
+      url: result.secure_url,
+      publicId: result.public_id,
+      thumbnail: result.eager?.[0]?.secure_url || result.secure_url.replace(/\.[^/.]+$/, '.jpg'),
+      duration: result.duration || 0,
+      format: result.format || 'mp4'
+    });
+  } catch (error) {
+    console.error('Error in uploadVideo:', error);
+    res.status(500).json({ 
+      message: 'Error uploading video',
+      error: error.message 
+    });
+  }
+};
+
 // Update a post
 export const updatePost = async (req, res) => {
   try {
     const { postId } = req.params;
-    const { content, privacy, images, location, feeling } = req.body;
+    const { content, privacy, images, videos, location, feeling } = req.body;
 
     const post = await Post.findById(postId);
 
@@ -174,6 +231,7 @@ export const updatePost = async (req, res) => {
     post.content = content;
     if (privacy !== undefined) post.privacy = privacy;
     if (images !== undefined) post.images = images;
+    if (videos !== undefined) post.videos = videos;
     if (location !== undefined) post.location = location;
     if (feeling !== undefined) post.feeling = feeling;
 
@@ -210,6 +268,18 @@ export const deletePost = async (req, res) => {
           await cloudinary.uploader.destroy(`posts/${publicId}`);
         } catch (err) {
           console.error('Error deleting image from cloudinary:', err);
+        }
+      }));
+    }
+
+    // Delete associated videos from cloudinary
+    if (post.videos && post.videos.length > 0) {
+      await Promise.all(post.videos.map(async (video) => {
+        try {
+          // Delete video using publicId stored in the video object
+          await cloudinary.uploader.destroy(video.publicId, { resource_type: 'video' });
+        } catch (err) {
+          console.error('Error deleting video from cloudinary:', err);
         }
       }));
     }

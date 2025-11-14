@@ -636,6 +636,26 @@ const PostDetailPage = () => {
             </div>
           )}
 
+          {/* Post Videos */}
+          {post.videos && post.videos.length > 0 && (
+            <div className="relative bg-black">
+              <video 
+                src={post.videos[0].url}
+                poster={post.videos[0].thumbnail}
+                controls
+                className="w-full max-h-[600px] object-contain"
+                controlsList="nodownload"
+              >
+                Your browser does not support the video tag.
+              </video>
+              {post.videos[0].duration && (
+                <div className="absolute top-4 right-4 px-3 py-1.5 bg-black/70 text-white rounded-full text-sm font-medium backdrop-blur-sm">
+                  {Math.floor(post.videos[0].duration / 60)}:{String(Math.floor(post.videos[0].duration % 60)).padStart(2, '0')}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Lightbox Modal */}
           {showLightbox && (
             <div 

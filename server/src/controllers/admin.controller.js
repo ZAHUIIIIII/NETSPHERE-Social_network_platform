@@ -714,11 +714,36 @@ export const deletePost = async (req, res) => {
   try {
     const { postId } = req.params;
     
-    const post = await Post.findByIdAndDelete(postId);
+    const post = await Post.findById(postId);
 
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
+
+    // Delete associated images from cloudinary
+    if (post.images && post.images.length > 0) {
+      await Promise.all(post.images.map(async (imageUrl) => {
+        try {
+          const publicId = imageUrl.split('/').slice(-1)[0].split('.')[0];
+          await cloudinary.uploader.destroy(`posts/${publicId}`);
+        } catch (err) {
+          console.error('Error deleting image from cloudinary:', err);
+        }
+      }));
+    }
+
+    // Delete associated videos from cloudinary
+    if (post.videos && post.videos.length > 0) {
+      await Promise.all(post.videos.map(async (video) => {
+        try {
+          await cloudinary.uploader.destroy(video.publicId, { resource_type: 'video' });
+        } catch (err) {
+          console.error('Error deleting video from cloudinary:', err);
+        }
+      }));
+    }
+
+    await Post.findByIdAndDelete(postId);
 
     res.json({ message: 'Post deleted successfully' });
   } catch (error) {

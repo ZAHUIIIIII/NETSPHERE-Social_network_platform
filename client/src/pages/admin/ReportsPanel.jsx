@@ -368,6 +368,30 @@ const ReportsPanel = ({ reports, resolveReport, dismissReport }) => {
                 </div>
               )}
 
+              {/* Post Videos */}
+              {selectedReport.postId?.videos && selectedReport.postId.videos.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase mb-2">Post Videos ({selectedReport.postId.videos.length})</h4>
+                  <div className="space-y-2">
+                    {selectedReport.postId.videos.map((video, idx) => (
+                      <div key={idx} className="relative">
+                        <video 
+                          src={video.url}
+                          poster={video.thumbnail}
+                          controls
+                          className="w-full max-h-64 rounded-lg border border-gray-200 dark:border-gray-700 bg-black"
+                        />
+                        {video.duration && (
+                          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Duration: {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Action Buttons */}
               {(selectedReport.status === 'pending' || selectedReport.status === 'reviewing') && (
                 <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">

@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Image as ImageIcon, MapPin, Smile, Globe, Lock, Users } from 'lucide-react';
+import { X, Image as ImageIcon, MapPin, Smile, Globe, Lock, Users, Video } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { updatePost, uploadPostImages } from '../services/api';
+import { updatePost, uploadPostImages, uploadPostVideo } from '../services/api';
 
 const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
   const [content, setContent] = useState('');
   const [images, setImages] = useState([]);
+  const [video, setVideo] = useState(null);
+  const [mediaType, setMediaType] = useState('images'); // 'images' or 'video'
   const [isUpdating, setIsUpdating] = useState(false);
   const [privacy, setPrivacy] = useState('public');
   const [location, setLocation] = useState('');
@@ -17,6 +19,7 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
   
   const maxImages = 10;
   const maxCharacters = 5000;
+  const maxVideoSize = 100 * 1024 * 1024; // 100MB
 
   // Initialize form with post data
   useEffect(() => {
@@ -26,13 +29,34 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
       setLocation(post.location || '');
       setFeeling(post.feeling || '');
       
-      // Convert existing images to the format used by the component
-      const existingImages = (post.images || []).map((url, index) => ({
-        id: `existing-${index}`,
-        url: url,
-        isExisting: true
-      }));
-      setImages(existingImages);
+      // Determine media type based on existing post
+      if (post.videos && post.videos.length > 0) {
+        setMediaType('video');
+        setVideo({
+          id: 'existing-video',
+          url: post.videos[0].url,
+          thumbnail: post.videos[0].thumbnail,
+          duration: post.videos[0].duration,
+          isExisting: true,
+          publicId: post.videos[0].publicId
+        });
+        setImages([]);
+      } else if (post.images && post.images.length > 0) {
+        setMediaType('images');
+        // Convert existing images to the format used by the component
+        const existingImages = post.images.map((url, index) => ({
+          id: `existing-${index}`,
+          url: url,
+          isExisting: true
+        }));
+        setImages(existingImages);
+        setVideo(null);
+      } else {
+        setMediaType('images');
+        setImages([]);
+        setVideo(null);
+      }
+      
       setRemovedImages([]);
     }
   }, [post, isOpen]);
@@ -99,43 +123,105 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
     }
   };
 
+  const handleVideoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate video file type
+    if (!file.type.startsWith('video/')) {
+      toast.error('Please select a video file');
+      return;
+    }
+
+    // Validate video file size (100MB)
+    if (file.size > maxVideoSize) {
+      toast.error('Video size must be less than 100MB');
+      return;
+    }
+
+    // Create video preview
+    const videoUrl = URL.createObjectURL(file);
+    setVideo({
+      id: Math.random().toString(36).slice(2),
+      url: videoUrl,
+      file,
+      isExisting: false
+    });
+    
+    toast.success('Video added!');
+  };
+
+  const removeVideo = () => {
+    if (video?.url && !video.isExisting) {
+      URL.revokeObjectURL(video.url);
+    }
+    setVideo(null);
+  };
+
   const handleSubmit = async () => {
-    if (!content.trim() && images.filter(img => !removedImages.includes(img.url)).length === 0) {
-      toast.error('Please add some content or images');
+    if (!content.trim() && images.filter(img => !removedImages.includes(img.url)).length === 0 && !video) {
+      toast.error('Please add some content, images, or a video');
       return;
     }
 
     setIsUpdating(true);
     try {
       let imageUrls = [];
+      let videoUrls = [];
 
-      // Keep existing images that weren't removed
-      const keptExistingImages = images
-        .filter(img => img.isExisting && !removedImages.includes(img.url))
-        .map(img => img.url);
+      if (mediaType === 'images') {
+        // Keep existing images that weren't removed
+        const keptExistingImages = images
+          .filter(img => img.isExisting && !removedImages.includes(img.url))
+          .map(img => img.url);
 
-      // Upload new images
-      const newImages = images.filter(img => !img.isExisting && img.file);
-      if (newImages.length > 0) {
-        const imageFiles = newImages.map(img => img.file);
-        
-        const uploadResponse = await uploadPostImages(imageFiles, (progressEvent) => {
-          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress(progress);
-        });
-        
-        if (Array.isArray(uploadResponse)) {
-          imageUrls = [...keptExistingImages, ...uploadResponse];
-        } else if (uploadResponse?.images) {
-          imageUrls = [...keptExistingImages, ...uploadResponse.images];
+        // Upload new images
+        const newImages = images.filter(img => !img.isExisting && img.file);
+        if (newImages.length > 0) {
+          const imageFiles = newImages.map(img => img.file);
+          
+          const uploadResponse = await uploadPostImages(imageFiles, (progressEvent) => {
+            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(progress);
+          });
+          
+          if (Array.isArray(uploadResponse)) {
+            imageUrls = [...keptExistingImages, ...uploadResponse];
+          } else if (uploadResponse?.images) {
+            imageUrls = [...keptExistingImages, ...uploadResponse.images];
+          }
+        } else {
+          imageUrls = keptExistingImages;
         }
-      } else {
-        imageUrls = keptExistingImages;
+      } else if (mediaType === 'video') {
+        // Handle video
+        if (video?.isExisting) {
+          // Keep existing video
+          videoUrls = [{
+            url: video.url,
+            publicId: video.publicId,
+            thumbnail: video.thumbnail,
+            duration: video.duration
+          }];
+        } else if (video?.file) {
+          // Upload new video
+          const uploadResponse = await uploadPostVideo(video.file, (progressEvent) => {
+            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(progress);
+          });
+          
+          if (Array.isArray(uploadResponse)) {
+            videoUrls = uploadResponse;
+          } else if (uploadResponse?.videos) {
+            videoUrls = uploadResponse.videos;
+          }
+        }
       }
 
       const postData = {
         content: content.trim(),
-        images: imageUrls,
+        ...(imageUrls.length > 0 && { images: imageUrls }),
+        ...(videoUrls.length > 0 && { videos: videoUrls }),
         privacy,
         location: location || undefined,
         feeling: feeling || undefined
@@ -275,7 +361,7 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
           )}
 
           {/* Image Preview */}
-          {visibleImages.length > 0 && (
+          {visibleImages.length > 0 && mediaType === 'images' && (
             <div className="mt-4 grid grid-cols-2 gap-2">
               {visibleImages.map((img) => (
                 <div key={img.id} className="relative group">
@@ -296,6 +382,27 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
             </div>
           )}
 
+          {/* Video Preview */}
+          {video && mediaType === 'video' && (
+            <div className="mt-4">
+              <div className="relative group">
+                <video
+                  src={video.url}
+                  controls
+                  poster={video.thumbnail}
+                  className="w-full max-h-96 rounded-lg bg-black"
+                />
+                <button
+                  onClick={removeVideo}
+                  disabled={isUpdating}
+                  className="absolute top-2 right-2 bg-gray-900 bg-opacity-75 text-white p-1.5 rounded-full hover:bg-opacity-100 transition-all opacity-0 group-hover:opacity-100"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Upload Progress */}
           {isUpdating && uploadProgress > 0 && (
             <div className="mt-4">
@@ -313,21 +420,75 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
 
           {/* Add to Post Options */}
           <div className="mt-4 border border-gray-300 dark:border-gray-600 rounded-lg p-3">
+            {/* Media Type Toggle */}
+            <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Media Type</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setMediaType('images');
+                    setVideo(null);
+                  }}
+                  disabled={isUpdating}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    mediaType === 'images'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  <ImageIcon className="w-4 h-4" />
+                  Images
+                </button>
+                <button
+                  onClick={() => {
+                    setMediaType('video');
+                    setImages([]);
+                    setRemovedImages([]);
+                  }}
+                  disabled={isUpdating}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    mediaType === 'video'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  <Video className="w-4 h-4" />
+                  Video
+                </button>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Add to your post</span>
               <div className="flex items-center gap-2">
                 {/* Image Upload */}
-                <label className="cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
-                  <ImageIcon className="w-5 h-5 text-green-600 dark:text-green-500" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageChange}
-                    className="hidden"
-                    disabled={isUpdating || visibleImages.length >= maxImages}
-                  />
-                </label>
+                {mediaType === 'images' && (
+                  <label className="cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+                    <ImageIcon className="w-5 h-5 text-green-600 dark:text-green-500" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageChange}
+                      className="hidden"
+                      disabled={isUpdating || visibleImages.length >= maxImages}
+                    />
+                  </label>
+                )}
+
+                {/* Video Upload */}
+                {mediaType === 'video' && (
+                  <label className="cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+                    <Video className="w-5 h-5 text-purple-600 dark:text-purple-500" />
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoChange}
+                      className="hidden"
+                      disabled={isUpdating || !!video}
+                    />
+                  </label>
+                )}
 
                 {/* Feeling */}
                 <div className="relative">

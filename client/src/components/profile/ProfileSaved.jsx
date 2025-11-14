@@ -130,6 +130,30 @@ const ProfileSaved = ({ userId }) => {
                   alt="Saved post"
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                 />
+              ) : post.videos && post.videos[0] ? (
+                <div className="relative w-full h-full">
+                  <video
+                    src={post.videos[0].url}
+                    poster={post.videos[0].thumbnail}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Video play indicator */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <div className="bg-black/60 rounded-full p-3 sm:p-4 backdrop-blur-sm">
+                      <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </div>
+                  </div>
+                  {/* Video duration badge */}
+                  {post.videos[0].duration && (
+                    <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3">
+                      <div className="bg-black/80 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold backdrop-blur-sm">
+                        {Math.floor(post.videos[0].duration / 60)}:{String(Math.floor(post.videos[0].duration % 60)).padStart(2, '0')}
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 p-3 sm:p-4 lg:p-6">
                   <p className="text-gray-700 dark:text-gray-300 text-xs sm:text-sm line-clamp-4 sm:line-clamp-6 text-center font-medium">

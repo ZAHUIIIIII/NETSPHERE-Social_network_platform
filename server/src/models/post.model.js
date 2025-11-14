@@ -66,6 +66,13 @@ commentSchema.index({ 'author': 1 });
 const postSchema = new mongoose.Schema({
   content: { type: String, trim: true },
   images: [{ type: String }],
+  videos: [{
+    url: { type: String },
+    publicId: { type: String },
+    thumbnail: { type: String },
+    duration: { type: Number },
+    format: { type: String }
+  }],
   author: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

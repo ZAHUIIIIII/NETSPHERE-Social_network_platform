@@ -82,6 +82,45 @@ const ProfileReposts = ({ reposts, isOwnProfile }) => {
                     </div>
                   )}
                 </>
+              ) : post.videos && post.videos.length > 0 ? (
+                <>
+                  <video
+                    src={post.videos[0].url}
+                    poster={post.videos[0].thumbnail}
+                    className="w-full h-full object-cover"
+                  />
+                  {/* Video play indicator */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <div className="bg-black/60 rounded-full p-3 sm:p-4 backdrop-blur-sm">
+                      <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </div>
+                  </div>
+                  {/* Repost indicator */}
+                  <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 bg-green-500 text-white p-1 sm:p-1.5 rounded-full z-10">
+                    <Repeat className="h-3 w-3 sm:h-4 sm:w-4" />
+                  </div>
+                  {/* Video duration badge */}
+                  {post.videos[0].duration && (
+                    <div className="absolute bottom-1.5 right-1.5 sm:bottom-2 sm:right-2">
+                      <div className="bg-black/80 text-white px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-md text-[10px] sm:text-xs font-medium">
+                        {Math.floor(post.videos[0].duration / 60)}:{String(Math.floor(post.videos[0].duration % 60)).padStart(2, '0')}
+                      </div>
+                    </div>
+                  )}
+                  {/* Overlay with stats */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-all duration-200 flex items-center justify-center gap-4 sm:gap-6">
+                    <div className="flex items-center gap-1 sm:gap-2 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Heart className="h-4 w-4 sm:h-5 sm:w-5 fill-white" />
+                      <span className="font-semibold text-sm sm:text-base">{totalReactions}</span>
+                    </div>
+                    <div className="flex items-center gap-1 sm:gap-2 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                      <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5 fill-white" />
+                      <span className="font-semibold text-sm sm:text-base">{commentCount}</span>
+                    </div>
+                  </div>
+                </>
               ) : (
                 // Text-only post
                 <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-3 sm:p-4 lg:p-6 flex flex-col justify-between relative">

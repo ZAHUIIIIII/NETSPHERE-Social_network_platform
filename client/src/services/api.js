@@ -53,6 +53,22 @@ export const uploadPostImages = async (files, onProgress) => {
   }
 };
 
+export const uploadPostVideo = async (file, onProgress) => {
+  try {
+    const formData = new FormData();
+    formData.append('video', file);
+
+    const response = await axiosInstance.post('/posts/upload-video', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: onProgress
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error uploading video:', error);
+    throw error;
+  }
+};
+
 export const savePost = async (postId) => {
   try {
     const response = await axiosInstance.post(`/posts/${postId}/save`);

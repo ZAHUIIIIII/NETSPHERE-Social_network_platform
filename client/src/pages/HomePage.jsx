@@ -4,7 +4,7 @@ import {
   MoreHorizontal, TrendingUp, Bookmark, Smile, MapPin, 
   Eye, EyeOff, Globe, Lock, Users, Play, Pause, Volume2, VolumeX,
   ChevronLeft, ChevronRight, Repeat, ThumbsUp, Laugh, AlertCircle,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Video
 } from 'lucide-react';
 import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate } from 'react-router-dom';
@@ -13,6 +13,7 @@ import {
   getPosts, 
   createPost, 
   uploadPostImages,
+  uploadPostVideo,
   savePost as savePostAPI,
   checkPostSaved,
   reactToPost as reactToPostAPI
@@ -38,6 +39,8 @@ import PlatformNewsWidget from '../components/common/PlatformNewsWidget';
 const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
   const [content, setContent] = useState('');
   const [images, setImages] = useState([]);
+  const [video, setVideo] = useState(null);
+  const [mediaType, setMediaType] = useState('images'); // 'images' or 'video'
   const [isPosting, setIsPosting] = useState(false);
   const [privacy, setPrivacy] = useState('public');
   const [location, setLocation] = useState('');
@@ -51,6 +54,7 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
   
   const maxImages = 10;
   const maxCharacters = 5000;
+  const maxVideoSize = 100 * 1024 * 1024; // 100MB
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -111,12 +115,48 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
     setImages(prev => [...prev, ...newImages]);
   };
 
+  const handleVideoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate video file type
+    if (!file.type.startsWith('video/')) {
+      toast.error('Please select a video file');
+      return;
+    }
+
+    // Validate video file size (100MB)
+    if (file.size > maxVideoSize) {
+      toast.error('Video size must be less than 100MB');
+      return;
+    }
+
+    // Create video preview
+    const videoUrl = URL.createObjectURL(file);
+    setVideo({
+      id: Math.random().toString(36).slice(2),
+      url: videoUrl,
+      file
+    });
+    
+    toast.success('Video added!');
+  };
+
+  const removeVideo = () => {
+    if (video?.url) {
+      URL.revokeObjectURL(video.url);
+    }
+    setVideo(null);
+  };
+
   // Drag and Drop handlers
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!isPosting && images.length < maxImages) {
-      setIsDragging(true);
+    if (!isPosting) {
+      if ((mediaType === 'images' && images.length < maxImages) || (mediaType === 'video' && !video)) {
+        setIsDragging(true);
+      }
     }
   };
 
@@ -134,40 +174,73 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
     e.stopPropagation();
     setIsDragging(false);
 
-    if (isPosting || images.length >= maxImages) {
-      toast.error(`Maximum ${maxImages} images allowed`);
-      return;
-    }
+    if (isPosting) return;
 
     const files = Array.from(e.dataTransfer.files || []);
-    const imageFiles = files.filter(file => file.type.startsWith('image/'));
-
-    if (imageFiles.length === 0) {
-      toast.error('Please drop image files only');
-      return;
-    }
-
-    if (imageFiles.length + images.length > maxImages) {
-      toast.error(`Maximum ${maxImages} images allowed`);
-      return;
-    }
-
-    const validFiles = imageFiles.filter(file => {
-      const isUnderLimit = file.size <= 20 * 1024 * 1024; // 20MB
-      if (!isUnderLimit) toast.error(`${file.name} exceeds 20MB limit`);
-      return isUnderLimit;
-    });
-
-    const newImages = validFiles.slice(0, maxImages - images.length).map(file => ({
-      id: Math.random().toString(36).slice(2),
-      url: URL.createObjectURL(file),
-      file
-    }));
-
-    setImages(prev => [...prev, ...newImages]);
     
-    if (newImages.length > 0) {
-      toast.success(`${newImages.length} image${newImages.length > 1 ? 's' : ''} added!`);
+    if (mediaType === 'images') {
+      if (images.length >= maxImages) {
+        toast.error(`Maximum ${maxImages} images allowed`);
+        return;
+      }
+
+      const imageFiles = files.filter(file => file.type.startsWith('image/'));
+
+      if (imageFiles.length === 0) {
+        toast.error('Please drop image files only');
+        return;
+      }
+
+      if (imageFiles.length + images.length > maxImages) {
+        toast.error(`Maximum ${maxImages} images allowed`);
+        return;
+      }
+
+      const validFiles = imageFiles.filter(file => {
+        const isUnderLimit = file.size <= 20 * 1024 * 1024; // 20MB
+        if (!isUnderLimit) toast.error(`${file.name} exceeds 20MB limit`);
+        return isUnderLimit;
+      });
+
+      const newImages = validFiles.slice(0, maxImages - images.length).map(file => ({
+        id: Math.random().toString(36).slice(2),
+        url: URL.createObjectURL(file),
+        file
+      }));
+
+      setImages(prev => [...prev, ...newImages]);
+      
+      if (newImages.length > 0) {
+        toast.success(`${newImages.length} image${newImages.length > 1 ? 's' : ''} added!`);
+      }
+    } else if (mediaType === 'video') {
+      if (video) {
+        toast.error('Only one video allowed per post');
+        return;
+      }
+
+      const videoFiles = files.filter(file => file.type.startsWith('video/'));
+
+      if (videoFiles.length === 0) {
+        toast.error('Please drop a video file');
+        return;
+      }
+
+      const file = videoFiles[0];
+      
+      if (file.size > maxVideoSize) {
+        toast.error('Video size must be less than 100MB');
+        return;
+      }
+
+      const videoUrl = URL.createObjectURL(file);
+      setVideo({
+        id: Math.random().toString(36).slice(2),
+        url: videoUrl,
+        file
+      });
+      
+      toast.success('Video added!');
     }
   };
 
@@ -196,16 +269,18 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
   };
 
   const handleSubmit = async () => {
-    if (!content.trim() && images.length === 0) {
-      toast.error('Please add some content or images');
+    if (!content.trim() && images.length === 0 && !video) {
+      toast.error('Please add some content, images, or a video');
       return;
     }
 
     setIsPosting(true);
     try {
       let imageUrls = [];
+      let videoUrls = [];
 
-      if (images.length > 0) {
+      // Upload images or video based on mediaType
+      if (mediaType === 'images' && images.length > 0) {
         const imageFiles = images.map(img => img.file).filter(Boolean);
         
         if (imageFiles.length > 0) {
@@ -220,11 +295,23 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
             imageUrls = uploadResponse.images;
           }
         }
+      } else if (mediaType === 'video' && video) {
+        const uploadResponse = await uploadPostVideo(video.file, (progressEvent) => {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(progress);
+        });
+        
+        if (Array.isArray(uploadResponse)) {
+          videoUrls = uploadResponse;
+        } else if (uploadResponse?.videos) {
+          videoUrls = uploadResponse.videos;
+        }
       }
 
       const postData = {
         content: content.trim(),
-        images: imageUrls,
+        ...(imageUrls.length > 0 && { images: imageUrls }),
+        ...(videoUrls.length > 0 && { videos: videoUrls }),
         privacy,
         ...(location && { location }),
         ...(feeling && { feeling })
@@ -235,6 +322,7 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
       
       setContent('');
       setImages([]);
+      setVideo(null);
       setLocation('');
       setFeeling('');
       setUploadProgress(0);
@@ -274,13 +362,27 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
         {isDragging && (
           <div className="absolute inset-0 bg-blue-500 bg-opacity-10 backdrop-blur-sm z-50 flex items-center justify-center pointer-events-none">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-2xl border-4 border-dashed border-blue-500">
-              <ImageIcon className="w-16 h-16 text-blue-500 mx-auto mb-4" />
-              <p className="text-xl font-bold text-blue-600 dark:text-blue-400 text-center">
-                Drop images here
-              </p>
-              <p className="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">
-                Up to {maxImages - images.length} more image{maxImages - images.length !== 1 ? 's' : ''}
-              </p>
+              {mediaType === 'images' ? (
+                <>
+                  <ImageIcon className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+                  <p className="text-xl font-bold text-blue-600 dark:text-blue-400 text-center">
+                    Drop images here
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">
+                    Up to {maxImages - images.length} more image{maxImages - images.length !== 1 ? 's' : ''}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Video className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+                  <p className="text-xl font-bold text-blue-600 dark:text-blue-400 text-center">
+                    Drop video here
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 text-center mt-2">
+                    Max 100MB
+                  </p>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -337,10 +439,19 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
           />
 
           {/* Drag and drop hint */}
-          {images.length === 0 && !content && (
+          {images.length === 0 && !video && !content && (
             <div className="text-center py-4 text-sm text-gray-400 dark:text-gray-500 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-lg mt-2">
-              <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p>Drag and drop images here or use the button below</p>
+              {mediaType === 'images' ? (
+                <>
+                  <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>Drag and drop images here or use the button below</p>
+                </>
+              ) : (
+                <>
+                  <Video className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>Drag and drop a video here or use the button below</p>
+                </>
+              )}
             </div>
           )}
 
@@ -403,6 +514,26 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
             </div>
           )}
 
+          {/* Video Preview */}
+          {video && (
+            <div className="mt-4">
+              <div className="relative group">
+                <video
+                  src={video.url}
+                  controls
+                  className="w-full max-h-96 rounded-lg bg-black"
+                />
+                <button
+                  onClick={removeVideo}
+                  disabled={isPosting}
+                  className="absolute top-2 right-2 bg-gray-900 bg-opacity-75 text-white p-1.5 rounded-full hover:bg-opacity-100 transition-all opacity-0 group-hover:opacity-100"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Upload Progress */}
           {isPosting && uploadProgress > 0 && (
             <div className="mt-4">
@@ -420,21 +551,74 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
 
           {/* Add to Post Options */}
           <div className="mt-4 border border-gray-300 dark:border-gray-600 rounded-lg p-3">
+            {/* Media Type Toggle */}
+            <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
+              <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Media Type</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setMediaType('images');
+                    setVideo(null);
+                  }}
+                  disabled={isPosting}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    mediaType === 'images'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  <ImageIcon className="w-4 h-4" />
+                  Images
+                </button>
+                <button
+                  onClick={() => {
+                    setMediaType('video');
+                    setImages([]);
+                  }}
+                  disabled={isPosting}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                    mediaType === 'video'
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                >
+                  <Video className="w-4 h-4" />
+                  Video
+                </button>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Add to your post</span>
               <div className="flex items-center gap-2">
                 {/* Image Upload */}
-                <label className="cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
-                  <ImageIcon className="w-5 h-5 text-green-600 dark:text-green-500" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleImageChange}
-                    className="hidden"
-                    disabled={isPosting || images.length >= maxImages}
-                  />
-                </label>
+                {mediaType === 'images' && (
+                  <label className="cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+                    <ImageIcon className="w-5 h-5 text-green-600 dark:text-green-500" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageChange}
+                      className="hidden"
+                      disabled={isPosting || images.length >= maxImages}
+                    />
+                  </label>
+                )}
+
+                {/* Video Upload */}
+                {mediaType === 'video' && (
+                  <label className="cursor-pointer p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors">
+                    <Video className="w-5 h-5 text-purple-600 dark:text-purple-500" />
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoChange}
+                      className="hidden"
+                      disabled={isPosting || !!video}
+                    />
+                  </label>
+                )}
 
                 {/* Feeling */}
                 <div className="relative" ref={emojiPickerRef}>
@@ -1055,6 +1239,26 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Post Videos */}
+      {post.videos && post.videos.length > 0 && (
+        <div className="relative bg-black">
+          <video 
+            src={post.videos[0].url}
+            poster={post.videos[0].thumbnail}
+            controls
+            className="w-full max-h-[600px] object-contain"
+            controlsList="nodownload"
+          >
+            Your browser does not support the video tag.
+          </video>
+          {post.videos[0].duration && (
+            <div className="absolute top-2 sm:top-4 right-2 sm:right-4 px-2 sm:px-3 py-1 sm:py-1.5 bg-black/70 text-white rounded-full text-xs sm:text-sm font-medium backdrop-blur-sm">
+              {Math.floor(post.videos[0].duration / 60)}:{String(Math.floor(post.videos[0].duration % 60)).padStart(2, '0')}
+            </div>
+          )}
         </div>
       )}
 
