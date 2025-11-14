@@ -24,6 +24,16 @@ export const getPlatformNews = async (req, res) => {
         link: '/settings'
       },
       {
+        id: 2,
+        icon: '🎥',
+        title: 'Video posts are now available!',
+        description: 'Share videos up to 100MB with auto-generated thumbnails',
+        type: 'feature',
+        date: new Date('2024-11-14'),
+        priority: 'high',
+        link: '/'
+      },
+      {
         id: 3,
         icon: '💬',
         title: 'Enhanced commenting system',
