@@ -411,28 +411,21 @@ export default function SignUpPage() {
               name="verificationCode"
               value={form.verificationCode}
               onChange={handleChange}
-              className="w-full border border-gray-200 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all text-gray-900 text-center text-base sm:text-lg tracking-wider"
+              className="w-full border border-gray-200 rounded-lg px-3 sm:px-4 py-2.5 sm:py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all text-gray-900 text-center text-base sm:text-lg tracking-wider font-semibold"
               placeholder="Enter 6-digit code"
               maxLength="6"
+              autoFocus
             />
             <p className="text-xs sm:text-sm text-gray-600 mt-2 text-center">
               We sent a verification code to <strong className="break-all">{form.email}</strong>
             </p>
-            <div className="flex justify-between gap-2 sm:gap-3 mt-4 sm:mt-6">
-              <button 
-                type="button" 
-                className="bg-gray-200 text-gray-700 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base font-medium transition-colors hover:bg-gray-300" 
-                onClick={prevStep} 
-                disabled={loading}
-              >
-                Back
-              </button>
+            <div className="mt-4 sm:mt-6">
               <button 
                 type="submit" 
-                className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm sm:text-base flex items-center justify-center font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg" 
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 sm:py-4 rounded-lg text-base sm:text-lg flex items-center justify-center font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-xl hover:from-blue-600 hover:to-blue-700 transform hover:scale-[1.02] active:scale-[0.98]" 
                 disabled={!form.verificationCode || loading}
               >
-                {loading ? <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-spin" /> : null}
+                {loading ? <Loader2 className="h-5 w-5 sm:h-6 sm:w-6 mr-2 animate-spin" /> : null}
                 {loading ? 'Verifying...' : 'Verify Email'}
               </button>
             </div>
