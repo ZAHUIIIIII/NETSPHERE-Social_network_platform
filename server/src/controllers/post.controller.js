@@ -195,13 +195,16 @@ export const uploadVideo = async (req, res) => {
       uploadStream.end(req.file.buffer);
     });
 
-    res.json({
+    const videoData = {
       url: result.secure_url,
       publicId: result.public_id,
       thumbnail: result.eager?.[0]?.secure_url || result.secure_url.replace(/\.[^/.]+$/, '.jpg'),
       duration: result.duration || 0,
       format: result.format || 'mp4'
-    });
+    };
+
+    // Return array format to match frontend expectations
+    res.json({ videos: [videoData] });
   } catch (error) {
     console.error('Error in uploadVideo:', error);
     res.status(500).json({ 
