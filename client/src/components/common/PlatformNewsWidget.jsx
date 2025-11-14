@@ -116,7 +116,7 @@ const PlatformNewsWidget = () => {
       {/* News Items */}
       {visibleNews.length > 0 ? (
         <div className="space-y-3">
-          {visibleNews.slice(0, 3).map((item) => (
+          {visibleNews.slice(0, 2).map((item) => (
             <div
               key={item.id}
               className={`${getTypeColor(item.type)} rounded-xl p-4 border transition-all hover:scale-[1.02] cursor-pointer group relative`}
