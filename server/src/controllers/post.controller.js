@@ -161,23 +161,13 @@ export const uploadVideo = async (req, res) => {
       return res.status(400).json({ message: 'No video file provided' });
     }
 
-    // Upload video to Cloudinary with optimizations
+    // Upload video to Cloudinary without eager transformations to avoid sync processing limits
     const result = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           resource_type: 'video',
           folder: 'netsphere/videos',
           chunk_size: 6000000, // 6MB chunks for large files
-          eager: [
-            { 
-              width: 300, 
-              height: 300, 
-              crop: 'pad', 
-              format: 'jpg',
-              video_sampling: 1 // Generate thumbnail from first frame
-            }
-          ],
-          eager_async: true,
           transformation: [
             { quality: 'auto:good' },
             { fetch_format: 'auto' }
@@ -195,10 +185,21 @@ export const uploadVideo = async (req, res) => {
       uploadStream.end(req.file.buffer);
     });
 
+    // Generate thumbnail URL using Cloudinary's on-the-fly transformation
+    // This generates thumbnail dynamically without blocking the upload
+    const thumbnailUrl = cloudinary.url(result.public_id, {
+      resource_type: 'video',
+      transformation: [
+        { width: 300, height: 300, crop: 'pad' },
+        { format: 'jpg' },
+        { start_offset: '0' } // Get thumbnail from first frame
+      ]
+    });
+
     const videoData = {
       url: result.secure_url,
       publicId: result.public_id,
-      thumbnail: result.eager?.[0]?.secure_url || result.secure_url.replace(/\.[^/.]+$/, '.jpg'),
+      thumbnail: thumbnailUrl,
       duration: result.duration || 0,
       format: result.format || 'mp4'
     };

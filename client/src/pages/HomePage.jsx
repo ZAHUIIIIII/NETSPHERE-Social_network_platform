@@ -674,7 +674,7 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
         <div className="border-t border-gray-200 dark:border-gray-700 p-3 sm:p-4 flex-shrink-0">
           <button
             onClick={handleSubmit}
-            disabled={isPosting || (!content.trim() && images.length === 0)}
+            disabled={isPosting || (!content.trim() && images.length === 0 && !video)}
             className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isPosting ? 'Posting...' : 'Post'}
