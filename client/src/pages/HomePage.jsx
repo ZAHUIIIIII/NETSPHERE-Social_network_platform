@@ -269,6 +269,7 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
   };
 
   const handleSubmit = async () => {
+    // Allow posts with: content only, images only, video only, or combinations
     if (!content.trim() && images.length === 0 && !video) {
       toast.error('Please add some content, images, or a video');
       return;
@@ -309,7 +310,7 @@ const CreatePostExpanded = ({ onPostCreated, user, onCollapse }) => {
       }
 
       const postData = {
-        content: content.trim(),
+        ...(content.trim() && { content: content.trim() }),
         ...(imageUrls.length > 0 && { images: imageUrls }),
         ...(videoUrls.length > 0 && { videos: videoUrls }),
         privacy,
