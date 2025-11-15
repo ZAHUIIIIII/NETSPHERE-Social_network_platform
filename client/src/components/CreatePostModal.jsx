@@ -92,9 +92,9 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
 
     const validFiles = files.filter(file => {
       const isValid = file.type.startsWith('image/');
-      const isUnderLimit = file.size <= 10 * 1024 * 1024; // 10MB
+      const isUnderLimit = file.size <= 20 * 1024 * 1024; // 20MB
       if (!isValid) toast.error(`${file.name} is not an image`);
-      if (!isUnderLimit) toast.error(`${file.name} exceeds 10MB limit`);
+      if (!isUnderLimit) toast.error(`${file.name} exceeds 20MB limit`);
       return isValid && isUnderLimit;
     });
 
@@ -174,8 +174,8 @@ const CreatePostModal = ({ isOpen, onClose, user, onPostCreated }) => {
       }
 
       const validFiles = imageFiles.filter(file => {
-        const isUnderLimit = file.size <= 10 * 1024 * 1024;
-        if (!isUnderLimit) toast.error(`${file.name} exceeds 10MB limit`);
+        const isUnderLimit = file.size <= 20 * 1024 * 1024;
+        if (!isUnderLimit) toast.error(`${file.name} exceeds 20MB limit`);
         return isUnderLimit;
       });
 
