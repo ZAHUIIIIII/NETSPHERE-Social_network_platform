@@ -1248,7 +1248,6 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
         <div className="relative bg-black">
           <video 
             src={post.videos[0].url}
-            poster={post.videos[0].thumbnail}
             controls
             className="w-full max-h-[600px] object-contain"
             controlsList="nodownload"
