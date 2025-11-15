@@ -161,17 +161,14 @@ export const uploadVideo = async (req, res) => {
       return res.status(400).json({ message: 'No video file provided' });
     }
 
-    // Upload video to Cloudinary without eager transformations to avoid sync processing limits
+    // Upload video to Cloudinary without any transformations to avoid sync processing limits
+    // For large videos (>40-50MB), any transformation triggers synchronous processing which fails
     const result = await new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           resource_type: 'video',
           folder: 'netsphere/videos',
-          chunk_size: 6000000, // 6MB chunks for large files
-          transformation: [
-            { quality: 'auto:good' },
-            { fetch_format: 'auto' }
-          ]
+          chunk_size: 6000000 // 6MB chunks for large files
         },
         (error, result) => {
           if (error) {
