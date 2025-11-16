@@ -1,0 +1,380 @@
+paths:
+  # Post Endpoints
+  /api/posts:
+    get:
+      summary: Get all posts (feed)
+      tags: [Posts]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Page number
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Items per page
+      responses:
+        '200':
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+                  hasMore:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    post:
+      summary: Create a new post
+      tags: [Posts]
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  example: This is my post content
+                images:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                      publicId:
+                        type: string
+                videos:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                      publicId:
+                        type: string
+                      duration:
+                        type: number
+                      thumbnail:
+                        type: string
+                privacy:
+                  type: string
+                  enum: [public, followers, private]
+                  default: public
+                feeling:
+                  type: string
+                location:
+                  type: string
+      responses:
+        '201':
+          description: Post created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  post:
+                    $ref: '#/components/schemas/Post'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /api/posts/{postId}:
+    get:
+      summary: Get post by ID
+      tags: [Posts]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  post:
+                    $ref: '#/components/schemas/Post'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    put:
+      summary: Update post
+      tags: [Posts]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                content:
+                  type: string
+                privacy:
+                  type: string
+                  enum: [public, followers, private]
+      responses:
+        '200':
+          description: Post updated successfully
+    
+    delete:
+      summary: Delete post
+      tags: [Posts]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post deleted successfully
+
+  /api/posts/saved:
+    get:
+      summary: Get saved posts
+      tags: [Posts]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Saved posts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+
+  /api/posts/upload:
+    post:
+      summary: Upload images
+      tags: [Posts]
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  maxItems: 10
+      responses:
+        '200':
+          description: Images uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  imageUrls:
+                    type: array
+                    items:
+                      type: string
+
+  /api/posts/upload-video:
+    post:
+      summary: Upload video
+      tags: [Posts]
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                video:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Video uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  videoData:
+                    type: object
+
+  /api/posts/user/{userId}:
+    get:
+      summary: Get user's posts
+      tags: [Posts]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User posts
+
+  /api/posts/{postId}/saved-status:
+    get:
+      summary: Check if post is saved
+      tags: [Posts]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Saved status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isSaved:
+                    type: boolean
+
+  /api/posts/{postId}/likes:
+    get:
+      summary: Get post likes
+      tags: [Posts]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post likes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  likes:
+                    type: array
+                    items:
+                      type: string
+
+  /api/posts/{postId}/react:
+    post:
+      summary: React to post
+      tags: [Posts]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reactionType]
+              properties:
+                reactionType:
+                  type: string
+                  enum: [like, love, haha, wow, sad, angry]
+      responses:
+        '200':
+          description: Reaction added/updated
+
+  /api/posts/{postId}/save:
+    post:
+      summary: Save/unsave post
+      tags: [Posts]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post saved/unsaved
+
+  /api/posts/{postId}/repost:
+    post:
+      summary: Repost a post
+      tags: [Posts]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post reposted successfully
+
+  /api/posts/reposts/{userId}:
+    get:
+      summary: Get user's reposts
+      tags: [Posts]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User reposts

@@ -1,0 +1,369 @@
+paths:
+  # Message Endpoints
+  /api/messages/users:
+    get:
+      summary: Get users for sidebar
+      tags: [Messages]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Users list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+
+  /api/messages/{id}:
+    get:
+      summary: Get messages with user
+      tags: [Messages]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Messages list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+
+  /api/messages/send/{id}:
+    post:
+      summary: Send message
+      tags: [Messages]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                image:
+                  type: string
+      responses:
+        '201':
+          description: Message sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    $ref: '#/components/schemas/Message'
+
+  /api/messages/conversation/{id}/mute/toggle:
+    post:
+      summary: Mute/unmute conversation
+      tags: [Messages]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Conversation mute status toggled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isMuted:
+                    type: boolean
+
+  /api/messages/conversation/{id}/mute/status:
+    get:
+      summary: Check conversation mute status
+      tags: [Messages]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Mute status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isMuted:
+                    type: boolean
+
+  /api/messages/conversation/{id}:
+    delete:
+      summary: Delete conversation
+      tags: [Messages]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Conversation deleted successfully
+
+  # Notification Endpoints
+  /api/notifications:
+    get:
+      summary: Get notifications
+      tags: [Notifications]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Notifications list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+                  hasMore:
+                    type: boolean
+
+  /api/notifications/unread-count:
+    get:
+      summary: Get unread count
+      tags: [Notifications]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Unread count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  /api/notifications/settings:
+    get:
+      summary: Get notification settings
+      tags: [Notifications]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Notification settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  settings:
+                    type: object
+
+  /api/notifications/settings/mute-all/toggle:
+    post:
+      summary: Toggle mute all notifications
+      tags: [Notifications]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Mute all toggled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  allNotificationsMuted:
+                    type: boolean
+
+  /api/notifications/settings/preference:
+    post:
+      summary: Update notification preference
+      tags: [Notifications]
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, value]
+              properties:
+                type:
+                  type: string
+                value:
+                  type: boolean
+      responses:
+        '200':
+          description: Preference updated
+
+  /api/notifications/settings/mute-post/{postId}/toggle:
+    post:
+      summary: Toggle mute post notifications
+      tags: [Notifications]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post mute toggled
+
+  /api/notifications/settings/mute-user/{userId}/toggle:
+    post:
+      summary: Toggle mute user notifications
+      tags: [Notifications]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User mute toggled
+
+  /api/notifications/settings/mute-post/{postId}/status:
+    get:
+      summary: Check post mute status
+      tags: [Notifications]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post mute status
+
+  /api/notifications/settings/mute-user/{userId}/status:
+    get:
+      summary: Check user mute status
+      tags: [Notifications]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User mute status
+
+  /api/notifications/{notificationId}/read:
+    patch:
+      summary: Mark notification as read
+      tags: [Notifications]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: notificationId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Marked as read
+
+  /api/notifications/{notificationId}/unread:
+    patch:
+      summary: Mark notification as unread
+      tags: [Notifications]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: notificationId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Marked as unread
+
+  /api/notifications/mark-all-read:
+    patch:
+      summary: Mark all notifications as read
+      tags: [Notifications]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: All marked as read
+
+  /api/notifications/{notificationId}:
+    delete:
+      summary: Delete notification
+      tags: [Notifications]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: notificationId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Notification deleted

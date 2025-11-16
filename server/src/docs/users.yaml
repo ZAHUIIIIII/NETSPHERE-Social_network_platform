@@ -1,0 +1,314 @@
+paths:
+  # User Endpoints
+  /api/users/profile/{username}:
+    get:
+      summary: Get user profile by username
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: username
+          required: true
+          schema:
+            type: string
+          description: Username
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  isFollowing:
+                    type: boolean
+                  isBlocked:
+                    type: boolean
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/users/{userId}/posts:
+    get:
+      summary: Get user's posts
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User posts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+
+  /api/users/{userId}/follow:
+    post:
+      summary: Follow a user
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User followed successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/users/{userId}/unfollow:
+    post:
+      summary: Unfollow a user
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User unfollowed successfully
+
+  /api/users/{followerId}/remove-follower:
+    delete:
+      summary: Remove a follower
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: followerId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Follower removed successfully
+
+  /api/users/{userId}/followers:
+    get:
+      summary: Get user's followers list
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Followers list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  followers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+
+  /api/users/{userId}/following:
+    get:
+      summary: Get user's following list
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Following list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  following:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+
+  /api/users/upload-avatar:
+    post:
+      summary: Upload profile avatar
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                avatar:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Avatar uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  avatarUrl:
+                    type: string
+
+  /api/users/saved-posts:
+    get:
+      summary: Get saved posts
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Saved posts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+
+  /api/users/suggestions:
+    get:
+      summary: Get suggested users to follow
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: User suggestions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+
+  /api/users/admin:
+    get:
+      summary: Get admin user info
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Admin user info
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  admin:
+                    $ref: '#/components/schemas/User'
+
+  /api/users/{userId}/block:
+    post:
+      summary: Block a user
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User blocked successfully
+
+  /api/users/{userId}/unblock:
+    post:
+      summary: Unblock a user
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User unblocked successfully
+
+  /api/users/blocked-users:
+    get:
+      summary: Get list of blocked users
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Blocked users list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  blockedUsers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+
+  /api/users/{userId}/block-status:
+    get:
+      summary: Check block status with user
+      tags: [Users]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Block status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isBlocked:
+                    type: boolean
+                  blockedBy:
+                    type: string

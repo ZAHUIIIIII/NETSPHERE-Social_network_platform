@@ -1,0 +1,558 @@
+paths:
+  # Search Endpoints
+  /api/search:
+    get:
+      summary: Search users and posts
+      tags: [Search]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+          description: Search query
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [all, users, posts]
+            default: all
+          description: Search type
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  posts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Post'
+
+  /api/search/trending:
+    get:
+      summary: Get trending content
+      tags: [Search]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Trending content
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  trending:
+                    type: array
+                    items:
+                      type: object
+
+  /api/search/suggestions:
+    get:
+      summary: Get search suggestions
+      tags: [Search]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+          description: Search query
+      responses:
+        '200':
+          description: Search suggestions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suggestions:
+                    type: array
+                    items:
+                      type: string
+
+  /api/search/popular:
+    get:
+      summary: Get popular searches
+      tags: [Search]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Popular searches
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  searches:
+                    type: array
+                    items:
+                      type: string
+
+  # Report Endpoints
+  /api/reports/posts/{postId}:
+    post:
+      summary: Report a post
+      tags: [Reports]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason, description]
+              properties:
+                reason:
+                  type: string
+                  enum: [spam, harassment, hate_speech, violence, nudity, false_information, scam, intellectual_property, self_harm, other]
+                description:
+                  type: string
+      responses:
+        '201':
+          description: Report created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  report:
+                    $ref: '#/components/schemas/Report'
+
+  /api/reports/my-reports:
+    get:
+      summary: Get my reports
+      tags: [Reports]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: My reports
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reports:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Report'
+
+  # Admin Endpoints
+  /api/admin/stats:
+    get:
+      summary: Get dashboard statistics
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stats:
+                    type: object
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/admin/activities:
+    get:
+      summary: Get recent activities
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Recent activities
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activities:
+                    type: array
+                    items:
+                      type: object
+
+  /api/admin/users:
+    get:
+      summary: Get all users
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [all, active, suspended, banned]
+            default: all
+      responses:
+        '200':
+          description: Users list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  total:
+                    type: integer
+
+  /api/admin/users/{userId}/suspend:
+    put:
+      summary: Suspend user
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                duration:
+                  type: number
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: User suspended
+
+  /api/admin/users/{userId}/activate:
+    put:
+      summary: Activate user
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User activated
+
+  /api/admin/users/{userId}/ban:
+    put:
+      summary: Ban user permanently
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: User banned
+
+  /api/admin/users/{userId}:
+    delete:
+      summary: Delete user
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User deleted
+
+  /api/admin/posts:
+    get:
+      summary: Get all posts
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [all, published, flagged, removed]
+            default: all
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: Posts list
+
+  /api/admin/posts/{postId}/remove:
+    put:
+      summary: Remove post
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Post removed
+
+  /api/admin/posts/{postId}/restore:
+    put:
+      summary: Restore post
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post restored
+
+  /api/admin/posts/{postId}/status:
+    put:
+      summary: Update post status
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [published, flagged, removed]
+      responses:
+        '200':
+          description: Status updated
+
+  /api/admin/posts/{postId}:
+    delete:
+      summary: Delete post permanently
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: postId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Post deleted
+
+  /api/admin/reports:
+    get:
+      summary: Get all reports
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, reviewed, resolved, dismissed]
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: Reports list
+
+  /api/admin/reports/{reportId}/resolve:
+    put:
+      summary: Resolve report
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: reportId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                adminNotes:
+                  type: string
+                action:
+                  type: string
+      responses:
+        '200':
+          description: Report resolved
+
+  /api/admin/reports/{reportId}/dismiss:
+    put:
+      summary: Dismiss report
+      tags: [Admin]
+      security:
+        - cookieAuth: []
+      parameters:
+        - in: path
+          name: reportId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                adminNotes:
+                  type: string
+      responses:
+        '200':
+          description: Report dismissed
+
+  # Statistics & Usage Endpoints
+  /api/stats/platform-news:
+    get:
+      summary: Get platform news/announcements
+      tags: [Statistics]
+      responses:
+        '200':
+          description: Platform news
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  news:
+                    type: array
+                    items:
+                      type: object
+
+  /api/admin/db-usage:
+    get:
+      summary: Get database usage statistics
+      tags: [Statistics]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Database usage stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usage:
+                    type: object
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/admin/cdn-usage:
+    get:
+      summary: Get CDN usage statistics
+      tags: [Statistics]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: CDN usage stats
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usage:
+                    type: object
+        '403':
+          $ref: '#/components/responses/Forbidden'

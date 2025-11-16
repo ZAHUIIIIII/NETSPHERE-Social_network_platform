@@ -24,6 +24,7 @@ import adminRoutes from './routes/admin.routes.js';
 import reportRoutes from './routes/report.routes.js';
 import usageRoutes from './routes/usage.routes.js';
 import statsRoutes from './routes/stats.routes.js';
+import swaggerRoutes from './routes/swagger.routes.js';
 
 
 
@@ -105,6 +106,9 @@ app.use(passport.session());
 
 // Health check 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+// Swagger API Documentation
+app.use('/api-docs', swaggerRoutes);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
