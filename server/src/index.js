@@ -29,7 +29,7 @@ import swaggerRoutes from './routes/swagger.routes.js';
 
 
 const PORT = process.env.PORT || 5001;
-const CLIENT_URL = process.env.CLIENT_URL || 'https://netsphere-nine.vercel.app';
+const CLIENT_URL = process.env.CLIENT_URL || 'https://netsphere-one.vercel.app';
 
 // Trust proxy - Required for cookies to work behind Render's proxy
 if (process.env.NODE_ENV === 'production') {
@@ -49,7 +49,7 @@ const corsOptions = {
     // Define allowed origins
     const allowedOrigins = [
       CLIENT_URL,
-      'https://netsphere-nine.vercel.app',
+      'https://netsphere-one.vercel.app',
       /^https:\/\/netsphere-[a-zA-Z0-9-]+\.vercel\.app$/, // All Vercel preview deployments
     ];
     

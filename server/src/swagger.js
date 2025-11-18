@@ -24,8 +24,8 @@ const options = {
         description: 'Development server',
       },
       {
-        url: 'https://api.netsphere.com',
-        description: 'Production server',
+        url: 'https://netsphere-901z.onrender.com',
+        description: 'Production server (Render)',
       },
     ],
     components: {

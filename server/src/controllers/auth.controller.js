@@ -621,12 +621,12 @@ export const googleCallback = (req, res, next) => {
     
     if (!isConfigured) {
         console.error('❌ Google OAuth not configured in callback');
-        const frontendUrl = process.env.CLIENT_URL || 'https://netsphere-nine.vercel.app';
+        const frontendUrl = process.env.CLIENT_URL || 'https://netsphere-one.vercel.app';
         return res.redirect(`${frontendUrl}/login?error=oauth_not_configured`);
     }
     
     passport.authenticate('google', { session: false }, (err, data, info) => {
-        const frontendUrl = process.env.CLIENT_URL || 'https://netsphere-nine.vercel.app';
+        const frontendUrl = process.env.CLIENT_URL || 'https://netsphere-one.vercel.app';
         console.log('🔵 Redirecting to frontend:', frontendUrl);
         
         if (err) {
