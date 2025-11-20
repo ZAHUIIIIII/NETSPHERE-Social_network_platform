@@ -24,6 +24,18 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
+  getAllUsersForNewMessage: async () => {
+    try {
+      const res = await axiosInstance.get("/messages/users/all");
+      console.log("All users fetched for new message:", res.data.length);
+      return res.data;
+    } catch (error) {
+      console.error("Error fetching all users:", error);
+      toast.error(error.response?.data?.message || "Failed to fetch users");
+      return [];
+    }
+  },
+
   getMessages: async (userId) => {
     set({ isMessagesLoading: true });
     try {

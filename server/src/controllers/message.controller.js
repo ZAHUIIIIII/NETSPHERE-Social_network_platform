@@ -14,9 +14,28 @@ export const getUsersForSidebar = async (req, res) => {
     const currentUser = await User.findById(loggedInUserId);
     const mutedConversations = currentUser?.notificationSettings?.mutedConversations || [];
     
-    // Exclude logged in user and blocked users
+    // Get users with whom you have message history
+    const sentMessages = await Message.distinct('receiverId', {
+      senderId: loggedInUserId,
+      deletedFor: { $ne: loggedInUserId }
+    });
+    
+    const receivedMessages = await Message.distinct('senderId', {
+      receiverId: loggedInUserId,
+      deletedFor: { $ne: loggedInUserId }
+    });
+    
+    // Combine and remove duplicates
+    const userIdsWithMessages = [...new Set([...sentMessages, ...receivedMessages])];
+    
+    // Exclude blocked users and logged-in user
     const excludeIds = [loggedInUserId, ...blockedUserIds];
-    const filteredUsers = await User.find({ _id: { $nin: excludeIds } }).select("-password");
+    const validUserIds = userIdsWithMessages.filter(id => 
+      !excludeIds.some(excludeId => excludeId.toString() === id.toString())
+    );
+    
+    // Fetch only users with conversation history
+    const filteredUsers = await User.find({ _id: { $in: validUserIds } }).select("-password");
     
     // Get last message and unread count for each user
     const usersWithLastMessage = await Promise.all(
@@ -69,7 +88,7 @@ export const getUsersForSidebar = async (req, res) => {
       return new Date(b.lastMessage.createdAt) - new Date(a.lastMessage.createdAt);
     });
 
-    console.log("Found users with last messages:", usersWithLastMessage.length);
+    console.log("Found users with conversation history:", usersWithLastMessage.length);
     res.status(200).json(usersWithLastMessage);
   } catch (error) {
     console.error("Error in getUsersForSidebar: ", error.message);
@@ -239,6 +258,27 @@ export const checkConversationMuteStatus = async (req, res) => {
   } catch (error) {
     console.error('Error in checkConversationMuteStatus:', error);
     res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
+// Get all users for new message modal (excludes blocked users and self)
+export const getAllUsersForNewMessage = async (req, res) => {
+  try {
+    console.log("getAllUsersForNewMessage called by user:", req.user._id);
+    const loggedInUserId = req.user._id;
+    const blockedUserIds = req.blockedUserIds || [];
+    
+    // Exclude logged in user and blocked users
+    const excludeIds = [loggedInUserId, ...blockedUserIds];
+    const users = await User.find({ _id: { $nin: excludeIds } })
+      .select("username avatar bio")
+      .sort({ username: 1 }); // Sort alphabetically
+    
+    console.log("Found all users for new message:", users.length);
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error in getAllUsersForNewMessage: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 

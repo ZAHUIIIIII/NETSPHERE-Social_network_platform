@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useChatStore } from "../../store/useChatStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
-import { Users, Search, BellOff } from "lucide-react";
+import NewMessageModal from "./NewMessageModal";
+import { Users, Search, BellOff, Edit } from "lucide-react";
 
 // Helper function to format time
 const formatTime = (dateString) => {
@@ -32,6 +33,7 @@ const Sidebar = () => {
   const { onlineUsers } = useAuthStore();
   const [showOnlineOnly, setShowOnlineOnly] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isNewMessageModalOpen, setIsNewMessageModalOpen] = useState(false);
 
   useEffect(() => {
     getUsers();
@@ -46,15 +48,32 @@ const Sidebar = () => {
   if (isUsersLoading) return <SidebarSkeleton />;
 
   return (
-    <aside className="h-full w-full lg:w-80 border-r border-gray-200/50 dark:border-gray-700/50 flex flex-col transition-all duration-200 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
-      {/* Header */}
-      <div className="border-b border-gray-200/50 dark:border-gray-700/50 w-full p-3 lg:p-3 bg-gradient-to-r from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10">
-        <div className="flex items-center gap-2">
-          <div className="p-2 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg">
-            <Users className="size-5 lg:size-4 text-blue-600 dark:text-blue-400" />
+    <>
+      <NewMessageModal 
+        isOpen={isNewMessageModalOpen} 
+        onClose={() => setIsNewMessageModalOpen(false)} 
+      />
+      
+      <aside className="h-full w-full lg:w-80 border-r border-gray-200/50 dark:border-gray-700/50 flex flex-col transition-all duration-200 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm">
+        {/* Header */}
+        <div className="border-b border-gray-200/50 dark:border-gray-700/50 w-full p-3 lg:p-3 bg-gradient-to-r from-blue-500/5 to-purple-500/5 dark:from-blue-500/10 dark:to-purple-500/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg">
+                <Users className="size-5 lg:size-4 text-blue-600 dark:text-blue-400" />
+              </div>
+              <span className="font-semibold text-gray-800 dark:text-gray-100 text-base lg:text-sm">Messages</span>
+            </div>
+            
+            {/* New Message Button */}
+            <button
+              onClick={() => setIsNewMessageModalOpen(true)}
+              className="p-2 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm hover:shadow-md"
+              title="New Message"
+            >
+              <Edit className="size-4" />
+            </button>
           </div>
-          <span className="font-semibold text-gray-800 dark:text-gray-100 text-base lg:text-sm">Messages</span>
-        </div>
         
         {/* Search Bar */}
         <div className="mt-3">
@@ -157,12 +176,13 @@ const Sidebar = () => {
             <div className="text-gray-400 dark:text-gray-500 mb-2">🔍</div>
             <div className="text-sm font-medium dark:text-gray-300">No conversations found</div>
             <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-              {searchTerm ? "Try a different search term" : "No users match your filter"}
+              {searchTerm ? "Try a different search term" : "Click 'New Message' to start chatting"}
             </div>
           </div>
         )}
       </div>
     </aside>
+    </>
   );
 };
 export default Sidebar;
