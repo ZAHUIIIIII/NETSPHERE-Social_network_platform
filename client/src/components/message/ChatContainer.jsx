@@ -14,9 +14,11 @@ const ChatContainer = () => {
     getMessages,
     isMessagesLoading,
     selectedUser,
+    searchInConversation,
   } = useChatStore();
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
+  const messageRefs = useRef({});
 
   useEffect(() => {
     if (selectedUser?._id) {
@@ -29,6 +31,16 @@ const ChatContainer = () => {
       messageEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
+
+  // Auto-scroll to current search match
+  useEffect(() => {
+    if (searchInConversation?.currentMatchId && messageRefs.current[searchInConversation.currentMatchId]) {
+      messageRefs.current[searchInConversation.currentMatchId].scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [searchInConversation?.currentMatchId]);
 
   // Safety check for required data
   if (!selectedUser || !authUser) {
@@ -84,9 +96,15 @@ const ChatContainer = () => {
             
             const showAvatar = index === 0 || prevMessageSenderId !== messageSenderId;
             
+            // Check if this message matches the search
+            const isSearchMatch = searchInConversation?.query && 
+              message.text?.toLowerCase().includes(searchInConversation.query.toLowerCase());
+            const isCurrentMatch = searchInConversation?.currentMatchId === message._id;
+            
             return (
               <div
                 key={message._id}
+                ref={(el) => messageRefs.current[message._id] = el}
                 className={`flex flex-col ${isMyMessage ? "items-end" : "items-start"}`}
               >
                 {/* Message time - positioned above the message */}
@@ -126,7 +144,13 @@ const ChatContainer = () => {
                       isMyMessage
                         ? "bg-blue-500 dark:bg-blue-600 text-white"
                         : "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border border-gray-100 dark:border-gray-600 shadow-sm"
-                    } rounded-2xl px-4 py-3`}
+                    } ${
+                      isCurrentMatch 
+                        ? "ring-4 ring-yellow-400 dark:ring-yellow-500 shadow-lg" 
+                        : isSearchMatch 
+                        ? "ring-2 ring-yellow-300 dark:ring-yellow-600" 
+                        : ""
+                    } rounded-2xl px-4 py-3 transition-all duration-300`}
                   >
                     {/* Message content */}
                     <div className="space-y-2">

@@ -9,12 +9,14 @@ import PortalDropdown from "../common/PortalDropdown";
 
 const ChatHeader = () => {
   const navigate = useNavigate();
-  const { selectedUser, setSelectedUser, messages, getUsers } = useChatStore();
+  const { selectedUser, setSelectedUser, messages, getUsers, searchInConversation, setSearchInConversation } = useChatStore();
   const { onlineUsers } = useAuthStore();
   
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [showSearchInConversation, setShowSearchInConversation] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const [matchingMessages, setMatchingMessages] = useState([]);
   const [isConversationMuted, setIsConversationMuted] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
 
@@ -48,9 +50,54 @@ const ChatHeader = () => {
     checkBlocked();
   }, [selectedUser?._id]);
 
+  // Update matching messages when search query changes
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const matches = messages
+        .map((msg, index) => ({ ...msg, originalIndex: index }))
+        .filter(msg => msg.text?.toLowerCase().includes(searchQuery.toLowerCase()));
+      setMatchingMessages(matches);
+      setCurrentMatchIndex(0);
+      
+      // Update store with search info for highlighting
+      setSearchInConversation({
+        query: searchQuery,
+        currentMatchId: matches[0]?._id || null,
+      });
+    } else {
+      setMatchingMessages([]);
+      setCurrentMatchIndex(0);
+      setSearchInConversation(null);
+    }
+  }, [searchQuery, messages, setSearchInConversation]);
+
   const handleSearchInConversation = () => {
     setShowOptionsMenu(false);
     setShowSearchInConversation(!showSearchInConversation);
+    if (showSearchInConversation) {
+      setSearchQuery("");
+      setSearchInConversation(null);
+    }
+  };
+
+  const handleNextMatch = () => {
+    if (matchingMessages.length === 0) return;
+    const newIndex = (currentMatchIndex + 1) % matchingMessages.length;
+    setCurrentMatchIndex(newIndex);
+    setSearchInConversation({
+      query: searchQuery,
+      currentMatchId: matchingMessages[newIndex]._id,
+    });
+  };
+
+  const handlePreviousMatch = () => {
+    if (matchingMessages.length === 0) return;
+    const newIndex = currentMatchIndex === 0 ? matchingMessages.length - 1 : currentMatchIndex - 1;
+    setCurrentMatchIndex(newIndex);
+    setSearchInConversation({
+      query: searchQuery,
+      currentMatchId: matchingMessages[newIndex]._id,
+    });
   };
 
   const handleToggleMute = async () => {
@@ -245,21 +292,48 @@ const ChatHeader = () => {
                 autoFocus
               />
             </div>
+            
+            {/* Navigation buttons */}
+            {matchingMessages.length > 0 && (
+              <div className="flex items-center gap-1">
+                <div className="text-xs text-gray-500 dark:text-gray-400 px-2">
+                  {currentMatchIndex + 1}/{matchingMessages.length}
+                </div>
+                <button
+                  onClick={handlePreviousMatch}
+                  className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  title="Previous match"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={handleNextMatch}
+                  className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  title="Next match"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            
             <button
               onClick={() => {
                 setShowSearchInConversation(false);
                 setSearchQuery("");
+                setSearchInConversation(null);
               }}
               className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
-          {searchQuery && (
+          {searchQuery && matchingMessages.length === 0 && (
             <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-              {messages.filter(msg => 
-                msg.text?.toLowerCase().includes(searchQuery.toLowerCase())
-              ).length} message(s) found
+              No messages found
             </div>
           )}
         </div>

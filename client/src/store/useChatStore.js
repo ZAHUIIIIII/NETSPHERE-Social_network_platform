@@ -9,6 +9,7 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
+  searchInConversation: null, // { query: string, currentMatchId: string }
 
   getUsers: async () => {
     set({ isUsersLoading: true });
@@ -189,4 +190,5 @@ export const useChatStore = create((set, get) => ({
   },
 
   setSelectedUser: (selectedUser) => set({ selectedUser }),
+  setSearchInConversation: (searchData) => set({ searchInConversation: searchData }),
 }));
