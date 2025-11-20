@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Search, UserPlus } from "lucide-react";
+import { X, Search, MessageSquare } from "lucide-react";
 import { useChatStore } from "../../store/useChatStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import toast from "react-hot-toast";
@@ -49,7 +49,7 @@ const NewMessageModal = ({ isOpen, onClose }) => {
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-blue-500/10 dark:bg-blue-500/20 rounded-lg">
-              <UserPlus className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              <MessageSquare className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
               New Message
@@ -135,7 +135,7 @@ const NewMessageModal = ({ isOpen, onClose }) => {
 
                   <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                     <div className="p-2 bg-blue-500 dark:bg-blue-600 text-white rounded-full">
-                      <UserPlus className="w-4 h-4" />
+                      <MessageSquare className="w-4 h-4" />
                     </div>
                   </div>
                 </button>

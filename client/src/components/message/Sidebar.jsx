@@ -3,7 +3,7 @@ import { useChatStore } from "../../store/useChatStore";
 import { useAuthStore } from "../../store/useAuthStore";
 import SidebarSkeleton from "./skeletons/SidebarSkeleton";
 import NewMessageModal from "./NewMessageModal";
-import { Users, Search, BellOff, MessageSquarePlus } from "lucide-react";
+import { Users, Search, BellOff, Edit } from "lucide-react";
 
 // Helper function to format time
 const formatTime = (dateString) => {
@@ -71,7 +71,7 @@ const Sidebar = () => {
               className="p-2 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm hover:shadow-md"
               title="New Message"
             >
-              <MessageSquarePlus className="size-4" />
+              <Edit className="size-4" />
             </button>
           </div>
         
