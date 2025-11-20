@@ -146,7 +146,7 @@ const ProfilePage = () => {
 
           // Only update if there's an actual change
           if (JSON.stringify(authUser) !== JSON.stringify(newAuthUserData)) {
-            updateAuthUserProfile(newAuthUserData);
+            setAuthUser(newAuthUserData);
           }
         }
       }
