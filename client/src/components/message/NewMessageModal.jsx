@@ -6,38 +6,46 @@ import toast from "react-hot-toast";
 
 const NewMessageModal = ({ isOpen, onClose }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [allUsers, setAllUsers] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const { getAllUsersForNewMessage, setSelectedUser } = useChatStore();
   const { onlineUsers } = useAuthStore();
 
   useEffect(() => {
     if (isOpen) {
-      fetchAllUsers();
+      setSearchTerm("");
+      setSearchResults([]);
     }
   }, [isOpen]);
 
-  const fetchAllUsers = async () => {
+  const handleSearch = async (value) => {
+    setSearchTerm(value);
+    
+    if (!value.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const users = await getAllUsersForNewMessage();
-      setAllUsers(users);
+      const filtered = users.filter((user) =>
+        user.username?.toLowerCase().includes(value.toLowerCase())
+      );
+      setSearchResults(filtered);
     } catch (error) {
-      console.error("Error fetching users:", error);
-      toast.error("Failed to load users");
+      console.error("Error searching users:", error);
+      toast.error("Failed to search users");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const filteredUsers = allUsers.filter((user) =>
-    user.username?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   const handleSelectUser = (user) => {
     setSelectedUser(user);
     onClose();
     setSearchTerm("");
+    setSearchResults([]);
   };
 
   if (!isOpen) return null;
@@ -71,7 +79,7 @@ const NewMessageModal = ({ isOpen, onClose }) => {
               type="text"
               placeholder="Search users..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               autoFocus
               className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 dark:focus:ring-blue-400/30 focus:border-blue-500/30 dark:focus:border-blue-400/40 transition-all"
             />
@@ -84,19 +92,29 @@ const NewMessageModal = ({ isOpen, onClose }) => {
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
             </div>
-          ) : filteredUsers.length === 0 ? (
+          ) : !searchTerm ? (
             <div className="text-center py-12 px-4">
               <div className="text-gray-400 dark:text-gray-500 mb-2 text-3xl">🔍</div>
+              <div className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                Search for users
+              </div>
+              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                Type a username to start searching
+              </div>
+            </div>
+          ) : searchResults.length === 0 ? (
+            <div className="text-center py-12 px-4">
+              <div className="text-gray-400 dark:text-gray-500 mb-2 text-3xl">😔</div>
               <div className="text-sm font-medium text-gray-600 dark:text-gray-300">
                 No users found
               </div>
               <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                {searchTerm ? "Try a different search term" : "No users available"}
+                Try a different search term
               </div>
             </div>
           ) : (
             <div className="space-y-1">
-              {filteredUsers.map((user) => (
+              {searchResults.map((user) => (
                 <button
                   key={user._id}
                   onClick={() => handleSelectUser(user)}

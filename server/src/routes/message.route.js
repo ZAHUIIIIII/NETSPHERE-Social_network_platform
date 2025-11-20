@@ -14,8 +14,8 @@ import {
 
 const router = express.Router();
 
-router.get("/users", protectRoute, filterBlockedUsers, getUsersForSidebar);
 router.get("/users/all", protectRoute, filterBlockedUsers, getAllUsersForNewMessage);
+router.get("/users", protectRoute, filterBlockedUsers, getUsersForSidebar);
 router.get("/:id", protectRoute, checkBlockStatus, getMessages);
 router.post("/send/:id", protectRoute, checkBlockStatus, sendMessage);
 
