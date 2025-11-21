@@ -223,7 +223,7 @@ export const getDashboardStats = async (req, res) => {
 // Get all users with filtering
 export const getAllUsers = async (req, res) => {
   try {
-    const { search = '', status = '', skip = 0, limit = 50 } = req.query;
+    const { search = '', status = '' } = req.query;
 
     const query = {};
     
@@ -242,8 +242,6 @@ export const getAllUsers = async (req, res) => {
     const users = await User.find(query)
       .select('-password')
       .sort({ createdAt: -1 })
-      .skip(Number(skip))
-      .limit(Number(limit))
       .lean();
 
     // Get post counts and format dates for each user
@@ -279,12 +277,11 @@ export const getAllUsers = async (req, res) => {
       })
     );
 
-    const total = await User.countDocuments(query);
+    const total = usersWithStats.length;
 
     res.json({
       users: usersWithStats,
-      total,
-      hasMore: skip + limit < total
+      total
     });
   } catch (error) {
     console.error('Error in getAllUsers:', error);
@@ -295,7 +292,7 @@ export const getAllUsers = async (req, res) => {
 // Get all posts with filtering
 export const getAllPosts = async (req, res) => {
   try {
-    const { status = '', skip = 0, limit = 50 } = req.query;
+    const { status = '' } = req.query;
 
     const query = {};
     
@@ -305,8 +302,6 @@ export const getAllPosts = async (req, res) => {
 
     const posts = await Post.find(query)
       .sort({ createdAt: -1 })
-      .skip(Number(skip))
-      .limit(Number(limit))
       .populate('author', 'name username avatar email')
       .lean();
 
@@ -347,12 +342,11 @@ export const getAllPosts = async (req, res) => {
       })
     );
 
-    const total = await Post.countDocuments(query);
+    const total = enrichedPosts.length;
 
     res.json({
       posts: enrichedPosts,
-      total,
-      hasMore: skip + limit < total
+      total
     });
   } catch (error) {
     console.error('Error in getAllPosts:', error);
