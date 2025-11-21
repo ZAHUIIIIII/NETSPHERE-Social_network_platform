@@ -227,9 +227,7 @@ const EditPostModal = ({ isOpen, onClose, post, onPostUpdated }) => {
         feeling: feeling || undefined
       };
 
-      console.log('Updating post with data:', postData);
       const updatedPost = await updatePost(post._id, postData);
-      console.log('Post updated successfully:', updatedPost);
       
       toast.success('Post updated successfully! ✨');
       

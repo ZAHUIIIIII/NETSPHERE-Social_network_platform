@@ -19,7 +19,6 @@ import { useThemeStore } from './store/useThemeStore';
 import { useChatStore } from './store/useChatStore';
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { UserProvider } from './UserContext';
 
 import {Loader} from 'lucide-react';
 import {Toaster} from 'react-hot-toast';
@@ -146,10 +145,9 @@ const App = () => {
   const isChatConversationOpen = isChatPage && selectedUser !== null;
 
   return (
-    <UserProvider>
-      <div className="flex">
-        {/* Navbar - hides top bar on mobile chat page, hides bottom nav only in active conversation */}
-        {authUser && <Navbar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} hideBottomNav={isMobile && isChatConversationOpen} hideTopBar={isMobile && isChatPage} />}
+    <div className="flex">
+      {/* Navbar - hides top bar on mobile chat page, hides bottom nav only in active conversation */}
+      {authUser && <Navbar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} hideBottomNav={isMobile && isChatConversationOpen} hideTopBar={isMobile && isChatPage} />}
 
         {/* Main content */}
         <div className={`flex-1 transition-all duration-300 ${
@@ -175,10 +173,9 @@ const App = () => {
             <Route path='/notifications' element={authUser ? <NotificationPage /> : <Navigate to="/login" />} />
             <Route path='/announcements' element={authUser ? <AnnouncementsPage /> : <Navigate to="/login" />} />
           </Routes>
-        </div>
-        <Toaster />
       </div>
-    </UserProvider>
+      <Toaster />
+    </div>
   )
 }
 

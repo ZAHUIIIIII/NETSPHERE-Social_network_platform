@@ -43,14 +43,6 @@ const FollowersModal = ({ userId, type, onClose, userName, onCountChange }) => {
   };
 
   const handleFollowChange = (targetUserId, data) => {
-    console.log('FollowersModal - Follow change:', {
-      modalType: type,
-      profileUserId: userId,
-      targetUserId,
-      newFollowStatus: data.isFollowing,
-      message: `Current user ${data.isFollowing ? 'followed' : 'unfollowed'} targetUser. ProfileUser's ${type} list is NOT modified.`
-    });
-    
     // Update local users list immediately for better UX
     // Only update isFollowing status - don't remove users from list
     setUsers(prevUsers => 

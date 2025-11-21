@@ -109,7 +109,7 @@ const AdminPage = ({ onBack } = {}) => {
       setRecentActivities(activitiesData.activities || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      toast.error('Failed to load dashboard data');
+      toast.error('Unable to load dashboard. Please refresh the page.');
     } finally {
       setLoading(false);
     }
@@ -121,7 +121,7 @@ const AdminPage = ({ onBack } = {}) => {
       setUsers(data.users || []);
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast.error('Failed to load users');
+      toast.error('Unable to load users. Please try again.');
     }
   };
 
@@ -131,7 +131,7 @@ const AdminPage = ({ onBack } = {}) => {
       setPosts(data.posts || []);
     } catch (error) {
       console.error('Error fetching posts:', error);
-      toast.error('Failed to load posts');
+      toast.error('Unable to load posts. Please try again.');
     }
   };
 
@@ -141,7 +141,7 @@ const AdminPage = ({ onBack } = {}) => {
       setReports(data.reports || []);
     } catch (error) {
       console.error('Error fetching reports:', error);
-      toast.error('Failed to load reports');
+      toast.error('Unable to load reports. Please try again.');
     }
   };
 
@@ -230,7 +230,7 @@ const AdminPage = ({ onBack } = {}) => {
       setPosts(prev => prev.map(p => p._id === id ? { ...p, status: 'removed' } : p));
       toast.success('Post removed');
     } catch (error) {
-      toast.error('Failed to remove post');
+      toast.error('Unable to remove post. Please try again.');
     }
   };
 
@@ -240,7 +240,7 @@ const AdminPage = ({ onBack } = {}) => {
       setPosts(prev => prev.map(p => p._id === id ? { ...p, status: 'published' } : p));
       toast.success('Post restored');
     } catch (error) {
-      toast.error('Failed to restore post');
+      toast.error('Unable to restore post. Please try again.');
     }
   };
 
@@ -250,7 +250,7 @@ const AdminPage = ({ onBack } = {}) => {
       setPosts(prev => prev.filter(p => p._id !== id));
       toast.success('Post deleted');
     } catch (error) {
-      toast.error('Failed to delete post');
+      toast.error('Unable to delete post. Please try again.');
     }
   };
 
@@ -261,7 +261,7 @@ const AdminPage = ({ onBack } = {}) => {
       toast.success('Report resolved');
     } catch (error) {
       console.error('Error resolving report:', error);
-      toast.error('Failed to resolve report');
+      toast.error('Unable to resolve report. Please try again.');
     }
   };
 
@@ -272,7 +272,7 @@ const AdminPage = ({ onBack } = {}) => {
       toast.success('Report dismissed');
     } catch (error) {
       console.error('Error dismissing report:', error);
-      toast.error('Failed to dismiss report');
+      toast.error('Unable to dismiss report. Please try again.');
     }
   };
 

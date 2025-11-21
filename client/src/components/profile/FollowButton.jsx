@@ -13,11 +13,6 @@ const FollowButton = ({ userId, initialIsFollowing, onFollowChange, isFollowBack
 
   // Update local state when prop changes (important for when navigating between profiles)
   React.useEffect(() => {
-    console.log('FollowButton - Prop changed:', {
-      userId,
-      initialIsFollowing,
-      currentIsFollowing: isFollowing
-    });
     setIsFollowing(initialIsFollowing);
   }, [initialIsFollowing, userId]);
 

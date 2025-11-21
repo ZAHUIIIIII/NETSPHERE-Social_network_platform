@@ -1,10 +1,8 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { 
-  Heart, MessageCircle, Send, Image as ImageIcon, X, 
-  MoreHorizontal, TrendingUp, Bookmark, Smile, MapPin, 
-  Eye, EyeOff, Globe, Lock, Users, Play, Pause, Volume2, VolumeX,
-  ChevronLeft, ChevronRight, Repeat, ThumbsUp, Laugh, AlertCircle,
-  ChevronDown, ChevronUp, Video
+  Heart, MessageCircle, Image as ImageIcon, X, 
+  MoreHorizontal, Bookmark, Smile, MapPin, 
+  Eye, Globe, Lock, Users, ChevronLeft, ChevronRight, Repeat, AlertCircle, Video
 } from 'lucide-react';
 import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate } from 'react-router-dom';
@@ -30,9 +28,6 @@ import PortalDropdown from '../components/common/PortalDropdown';
 import AdminBadge from '../components/common/AdminBadge';
 import { isAdmin } from '../lib/isAdmin';
 import PlatformNewsWidget from '../components/common/PlatformNewsWidget';
-// import { 
-//   likePost as likePostAPI
-// } from "../services/api";
 
 
 // Enhanced Create Post Component
@@ -847,7 +842,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
       });
     } catch (error) {
       console.error('Error toggling save:', error);
-      toast.error('Failed to save post');
+      toast.error('Unable to save post. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -924,7 +919,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
           reactions: oldReactions
         });
       }
-      toast.error('Failed to react to post');
+      toast.error('Unable to react to post. Please try again.');
     }
   };
 
@@ -936,7 +931,7 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
       setShowOptions(false); // Close the dropdown menu
     } catch (error) {
       console.error('Error copying link:', error);
-      toast.error('Failed to copy link');
+      toast.error('Unable to copy link. Please try again.');
     }
   };
 
@@ -1712,7 +1707,7 @@ export default function HomePage() {
     } catch (error) {
       console.error('Error fetching posts:', error);
       if (skip === 0) {
-        toast.error('Failed to load posts');
+        toast.error('Unable to load posts. Please refresh the page.');
         setPosts([]);
         setError(true);
       }
@@ -1743,7 +1738,7 @@ export default function HomePage() {
       toast.success('Post deleted successfully');
     } catch (error) {
       console.error('Error deleting post:', error);
-      toast.error('Failed to delete post');
+      toast.error('Unable to delete post. Please try again.');
     }
   };
 

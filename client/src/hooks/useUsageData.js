@@ -17,8 +17,6 @@ export const useUsageData = () => {
         setLoading(true);
         setError(null);
 
-        console.log('🔄 Fetching usage data...');
-
         // Fetch both endpoints in parallel
         // Note: axios baseURL already includes '/api', so we only need '/admin/...'
         const [dbResponse, cdnResponse] = await Promise.all([
@@ -31,9 +29,6 @@ export const useUsageData = () => {
             return { data: null };
           })
         ]);
-
-        console.log('📊 DB Response:', dbResponse.data);
-        console.log('📊 CDN Response:', cdnResponse.data);
 
         setDb(dbResponse.data);
         setCdn(cdnResponse.data);

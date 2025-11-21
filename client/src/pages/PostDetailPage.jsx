@@ -109,7 +109,7 @@ const PostDetailPage = () => {
       setIsSaved(savedResponse.data.isSaved);
     } catch (error) {
       console.error('Error fetching post:', error);
-      toast.error('Failed to load post');
+      toast.error('Unable to load post. Please try again.');
       navigate('/');
     } finally {
       setIsLoading(false);
@@ -184,7 +184,7 @@ const PostDetailPage = () => {
       setUserReaction(oldReaction);
       setReactions(oldReactions);
       setPost(oldPost);
-      toast.error('Failed to react to post');
+      toast.error('Unable to react to post. Please try again.');
     }
   };
 
@@ -195,7 +195,7 @@ const PostDetailPage = () => {
       toast.success(response.data.message);
     } catch (error) {
       console.error('Error saving post:', error);
-      toast.error('Failed to save post');
+      toast.error('Unable to save post. Please try again.');
     }
   };
 
@@ -219,7 +219,7 @@ const PostDetailPage = () => {
       toast.success('Comment added');
     } catch (error) {
       console.error('Error adding comment:', error);
-      toast.error('Failed to add comment');
+      toast.error('Unable to add comment. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -237,7 +237,7 @@ const PostDetailPage = () => {
       toast.success('Comment deleted');
     } catch (error) {
       console.error('Error deleting comment:', error);
-      toast.error('Failed to delete comment');
+      toast.error('Unable to delete comment. Please try again.');
     }
   };
 
@@ -249,7 +249,7 @@ const PostDetailPage = () => {
       setShowOptions(false);
     } catch (error) {
       console.error('Error copying link:', error);
-      toast.error('Failed to copy link');
+      toast.error('Unable to copy link. Please try again.');
     }
   };
 
@@ -285,7 +285,7 @@ const PostDetailPage = () => {
       }));
     } catch (error) {
       console.error('Error reposting:', error);
-      toast.error('Failed to repost');
+      toast.error('Unable to repost. Please try again.');
     }
   };
 

@@ -35,7 +35,7 @@ const NewMessageModal = ({ isOpen, onClose }) => {
       setSearchResults(filtered);
     } catch (error) {
       console.error("Error searching users:", error);
-      toast.error("Failed to search users");
+      toast.error("Unable to search users. Please try again.");
     } finally {
       setIsLoading(false);
     }

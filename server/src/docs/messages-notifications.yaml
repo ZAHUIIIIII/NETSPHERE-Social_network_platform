@@ -1,5 +1,24 @@
 paths:
   # Message Endpoints
+  /api/messages/users/all:
+    get:
+      summary: Get all users for new message modal
+      tags: [Messages]
+      security:
+        - cookieAuth: []
+      responses:
+        '200':
+          description: All users list (for discovery/new message)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+
   /api/messages/users:
     get:
       summary: Get users for sidebar
@@ -8,7 +27,7 @@ paths:
         - cookieAuth: []
       responses:
         '200':
-          description: Users list
+          description: Users list (only users with conversation history)
           content:
             application/json:
               schema:

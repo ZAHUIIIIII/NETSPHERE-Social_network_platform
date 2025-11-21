@@ -31,14 +31,6 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
       const newFollowingCount = Array.isArray(user.following) ? user.following.length : 0;
       const newIsFollowing = user.isFollowing || false;
       
-      console.log('ProfileHeader - Updating state:', {
-        username: user.username,
-        newIsFollowing,
-        newFollowersCount,
-        newFollowingCount,
-        userIsFollowing: user.isFollowing
-      });
-      
       // Update all states
       setFollowersCount(newFollowersCount);
       setFollowingCount(newFollowingCount);
@@ -196,19 +188,8 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
     // When viewing another user's profile, their counts should NOT change
     // when current user follows/unfollows people in their lists
     if (!isOwnProfile) {
-      console.log('ProfileHeader - Ignoring count change (not own profile):', {
-        isOwnProfile,
-        type,
-        change,
-        message: 'Not updating another users counts'
-      });
       return;
     }
-    
-    console.log('ProfileHeader - Updating own profile count:', {
-      type,
-      change
-    });
     
     // Update the appropriate count based on the type
     if (type === 'following') {
@@ -233,7 +214,6 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
                     alt={user.username}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      console.log('Image failed to load:', e.target.src);
                       e.target.style.display = 'none';
                       if (e.target.nextSibling) {
                         e.target.nextSibling.style.display = 'flex';

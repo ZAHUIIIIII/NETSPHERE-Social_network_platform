@@ -180,11 +180,8 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
     // Subscribe to comment events
     const cleanup = subscribeToCommentEvents(socket, {
       onNewComment: (comment) => {
-        console.log('🆕 New comment received:', comment);
-        
         // Skip if this comment was created by current user (already added optimistically)
         if (comment.author?._id === authUser?._id) {
-          console.log('⏭️ Skipping own comment (already added optimistically)');
           return;
         }
         
@@ -221,8 +218,6 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
       },
 
       onCommentUpdated: (updated) => {
-        console.log('✏️ Comment updated:', updated);
-        
         // Update in root comments
         setRootComments(prev =>
           prev.map(c => c._id === updated._id ? { ...c, ...updated } : c)
@@ -240,8 +235,6 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
       },
 
       onCommentDeleted: ({ commentId, postId, rootId }) => {
-        console.log('🗑️ Comment deleted:', commentId, 'rootId:', rootId);
-        
         // Remove from root comments
         setRootComments(prev => {
           let updated = prev.filter(c => c._id !== commentId);
@@ -269,8 +262,6 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
       },
 
       onCommentReacted: ({ commentId, reactions, userReaction }) => {
-        console.log('❤️ Comment reacted:', commentId);
-        
         // Update in root comments
         setRootComments(prev =>
           prev.map(c =>

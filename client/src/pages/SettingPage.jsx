@@ -204,15 +204,13 @@ const SettingPage = () => {
     }
     
     try {
-      // In a real app, this would verify the code with backend
-      // For now, we'll just enable it locally
       setTwoFactorEnabled(true);
       localStorage.setItem('twoFactorEnabled', 'true');
       toast.success('Two-factor authentication enabled!');
       setTwoFactorOpen(false);
       setVerificationCode('');
     } catch (error) {
-      toast.error('Failed to enable 2FA');
+      toast.error('Unable to enable two-factor authentication. Please try again.');
     }
   };
 
@@ -223,7 +221,7 @@ const SettingPage = () => {
       toast.success('Two-factor authentication disabled!');
       setTwoFactorOpen(false);
     } catch (error) {
-      toast.error('Failed to disable 2FA');
+      toast.error('Unable to disable two-factor authentication. Please try again.');
     }
   };
 
@@ -236,7 +234,7 @@ const SettingPage = () => {
           setBlockedUsers(response.blockedUsers || []);
         } catch (error) {
           console.error('Failed to fetch blocked users:', error);
-          toast.error('Failed to load blocked users');
+          toast.error('Unable to load blocked users. Please try again.');
         }
       }
     };
@@ -286,7 +284,7 @@ const SettingPage = () => {
       toast.success('Opening chat with admin...');
     } catch (error) {
       console.error('Failed to contact admin:', error);
-      toast.error('Failed to open chat with admin');
+      toast.error('Unable to open chat with admin. Please try again later.');
     }
   };
 
@@ -397,7 +395,7 @@ const SettingPage = () => {
     } catch (error) {
       // Revert on error
       setPrivacy(prev => ({ ...prev, showEmail: !newValue }));
-      toast.error('Failed to update email visibility');
+      toast.error('Unable to update email visibility. Please try again.');
       console.error('Error updating showEmail:', error);
     }
   };

@@ -97,36 +97,24 @@ const NotificationPage = () => {
       // Only refresh if it's actually a new notification (not from our own follow action)
       const notification = event.detail;
       
-      console.log('📥 New notification event received:', {
-        type: notification?.type,
-        senderId: notification?.sender?._id,
-        currentUserId: authUser?._id,
-        isSelf: notification?.sender?._id === authUser?._id
-      });
-      
       // Don't refetch if we're the sender (our own follow action)
       if (notification?.sender?._id === authUser?._id) {
-        console.log('⏭️ Ignoring own notification');
         return;
       }
       
       // Prevent rapid refetches (debounce 500ms)
       const now = Date.now();
       if (now - lastRefetchTime.current < 500) {
-        console.log('⏸️ Skipping refetch - too soon after last refetch');
         return;
       }
       
       // Don't refetch if we just marked notifications as read
       if (recentlyMarkedAsRead.current.size > 0) {
-        console.log('⏸️ Skipping refetch - recently marked notifications as read:', 
-          Array.from(recentlyMarkedAsRead.current));
         return;
       }
       
       lastRefetchTime.current = now;
       
-      console.log('🔄 Refetching notifications from server');
       // Refresh notifications when a new one arrives from someone else
       const { fetchNotifications } = useNotificationStore.getState();
       fetchNotifications(false);
@@ -201,7 +189,7 @@ const NotificationPage = () => {
       setOpenMenuId(null);
       await markAsRead(notificationId);
     } catch (error) {
-      toast.error('Failed to mark as read');
+      toast.error('Unable to mark as read. Please try again.');
     }
   };
 
@@ -212,7 +200,7 @@ const NotificationPage = () => {
       setOpenMenuId(null);
       await markAsUnread(notificationId);
     } catch (error) {
-      toast.error('Failed to mark as unread');
+      toast.error('Unable to mark as unread. Please try again.');
     }
   };
 
@@ -221,7 +209,7 @@ const NotificationPage = () => {
       await markAllAsRead();
       toast.success('All notifications marked as read');
     } catch (error) {
-      toast.error('Failed to mark all as read');
+      toast.error('Unable to mark all as read. Please try again.');
     }
   };
 
@@ -248,7 +236,7 @@ const NotificationPage = () => {
       toast.success('All notifications cleared');
     } catch (error) {
       console.error('Failed to clear all notifications:', error);
-      toast.error('Failed to clear all notifications');
+      toast.error('Unable to clear notifications. Please try again.');
     }
   };
 
@@ -260,7 +248,7 @@ const NotificationPage = () => {
       await deleteNotificationFromStore(notificationId);
       toast.success('Notification deleted');
     } catch (error) {
-      toast.error('Failed to delete notification');
+      toast.error('Unable to delete notification. Please try again.');
     }
   };
 
@@ -268,17 +256,13 @@ const NotificationPage = () => {
     e.stopPropagation();
     e.preventDefault();
     try {
-      console.log('🔇 handleMutePost called with postId:', postId);
       setOpenMenuId(null);
       const result = await togglePostMute(postId);
-      console.log('✅ togglePostMute result:', result);
       
       // After toggling, check the updated settings from the store
       const { notificationSettings } = useNotificationStore.getState();
-      console.log('📦 Updated notificationSettings:', notificationSettings);
       
       const isMuted = notificationSettings?.mutedPosts?.includes(postId);
-      console.log('🔍 Is now muted?', isMuted);
       
       toast.success(isMuted ? '🔇 Post notifications muted' : '🔊 Post notifications unmuted');
     } catch (error) {
@@ -291,17 +275,13 @@ const NotificationPage = () => {
     e.stopPropagation();
     e.preventDefault();
     try {
-      console.log('🔇 handleMuteUser called with userId:', userId);
       setOpenMenuId(null);
       const result = await useNotificationStore.getState().toggleUserMute(userId);
-      console.log('✅ toggleUserMute result:', result);
       
       // After toggling, check the updated settings from the store
       const { notificationSettings } = useNotificationStore.getState();
-      console.log('📦 Updated notificationSettings:', notificationSettings);
       
       const isMuted = notificationSettings?.mutedUsers?.includes(userId);
-      console.log('🔍 Is now muted?', isMuted);
       
       const username = notifications.find(n => n.sender?._id === userId)?.sender?.username || 'user';
       toast.success(isMuted ? `🔇 Muted @${username}` : `🔊 Unmuted @${username}`);
@@ -355,8 +335,6 @@ const NotificationPage = () => {
       // Mark notification as read if notification ID is provided
       if (notificationId) {
         try {
-          console.log('🔔 Marking notification as read:', notificationId);
-          
           // Add to recently marked set to prevent refetch from overwriting
           recentlyMarkedAsRead.current.add(notificationId);
           
@@ -366,7 +344,6 @@ const NotificationPage = () => {
           }, 2000);
           
           await markAsRead(notificationId);
-          console.log('✅ Notification marked as read successfully');
         } catch (markReadError) {
           console.error('❌ Failed to mark notification as read:', markReadError);
           // Remove from set if marking failed

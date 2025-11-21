@@ -112,7 +112,7 @@ const ChatHeader = () => {
       await getUsers(); // Refresh the users list to update sidebar with new mute status and unread count
     } catch (error) {
       console.error('Error toggling conversation mute:', error);
-      toast.error('Failed to update conversation settings');
+      toast.error('Unable to update settings. Please try again.');
     }
   };
 
@@ -128,7 +128,7 @@ const ChatHeader = () => {
       await getUsers(); // Refresh the users list to update sidebar
     } catch (error) {
       console.error('Error deleting conversation:', error);
-      toast.error('Failed to delete conversation');
+      toast.error('Unable to delete conversation. Please try again.');
     }
   };
 
@@ -144,7 +144,7 @@ const ChatHeader = () => {
       setSelectedUser(null); // Close the chat
     } catch (error) {
       console.error('Error blocking user:', error);
-      toast.error('Failed to block user');
+      toast.error('Unable to block user. Please try again.');
     }
   };
 

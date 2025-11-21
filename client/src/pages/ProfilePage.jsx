@@ -39,7 +39,6 @@ const ProfilePage = () => {
     if (!isOwnProfile) return; // Only refresh on own profile
     
     const handlePostCreated = async () => {
-      console.log('📝 New post created, refreshing profile posts...');
       if (profileUser?._id) {
         const userPosts = await getUserPosts(profileUser._id);
         setPosts(userPosts || []);

@@ -504,7 +504,6 @@ const Navbar = ({ isCollapsed, setIsCollapsed, hideBottomNav = false, hideTopBar
                     alt={authUser.username}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      console.log('Navbar avatar failed to load:', e.target.src);
                       e.target.style.display = 'none';
                       const fallback = e.target.parentElement.querySelector('.avatar-fallback');
                       if (fallback) fallback.style.display = 'flex';
@@ -531,7 +530,6 @@ const Navbar = ({ isCollapsed, setIsCollapsed, hideBottomNav = false, hideTopBar
                     alt={authUser.username}
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      console.log('Navbar collapsed avatar failed to load:', e.target.src);
                       e.target.style.display = 'none';
                       const fallback = e.target.parentElement.querySelector('.avatar-fallback');
                       if (fallback) fallback.style.display = 'flex';

@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AdminBadge from '../components/common/AdminBadge';
 import { isAdmin } from '../lib/isAdmin';
+import { useFollow } from '../hooks/useFollow';
 
 const SearchPage = () => {
   const { authUser } = useAuthStore();
@@ -304,43 +305,71 @@ const SearchPage = () => {
     return num.toString();
   };
 
-  const UserResult = ({ user }) => (
-    <div
-      onClick={() => navigate(`/profile/${user.username}`)}
-      className="flex items-center gap-4 p-4 hover:bg-gray-50 rounded-lg cursor-pointer transition-all duration-200 group"
-    >
-      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
-        <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
-          {user.avatar ? (
-            <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-gray-700 font-bold">{user.username?.charAt(0).toUpperCase() || 'U'}</span>
-          )}
-        </div>
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <p className="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-            {user.username}
-          </p>
-          {isAdmin(user) && (
-            <AdminBadge size="xs" showLabel={false} />
-          )}
-        </div>
-        {user.bio && <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user.bio}</p>}
-        {user.email && !user.bio && <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{user.email}</p>}
-      </div>
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          toast.success('Follow feature coming soon!');
-        }}
-        className="px-4 py-2 bg-blue-500 dark:bg-blue-600 text-white rounded-lg hover:bg-blue-600 dark:hover:bg-blue-500 transition-colors text-sm font-medium opacity-0 group-hover:opacity-100"
+  const UserResult = ({ user }) => {
+    const { authUser, setAuthUser } = useAuthStore();
+    const isOwnProfile = authUser?._id === user._id;
+    const initialIsFollowing = authUser?.following?.includes(user._id) || false;
+    const { isFollowing, isLoading, toggleFollow, setIsFollowing } = useFollow(initialIsFollowing);
+
+    const handleFollowClick = async (e) => {
+      e.stopPropagation();
+      
+      const result = await toggleFollow(user._id);
+      
+      if (result.success) {
+        // Update auth user's following list
+        const updatedAuthUser = {
+          ...authUser,
+          following: result.isFollowing
+            ? [...(authUser.following || []), user._id]
+            : (authUser.following || []).filter(id => id !== user._id)
+        };
+        setAuthUser(updatedAuthUser);
+      }
+    };
+
+    return (
+      <div
+        onClick={() => navigate(`/profile/${user.username}`)}
+        className="flex items-center gap-4 p-4 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg cursor-pointer transition-all duration-200 group"
       >
-        Follow
-      </button>
-    </div>
-  );
+        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 p-[2px] flex-shrink-0">
+          <div className="h-full w-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.username} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-gray-700 font-bold">{user.username?.charAt(0).toUpperCase() || 'U'}</span>
+            )}
+          </div>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <p className="font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              {user.username}
+            </p>
+            {isAdmin(user) && (
+              <AdminBadge size="xs" showLabel={false} />
+            )}
+          </div>
+          {user.bio && <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{user.bio}</p>}
+          {user.email && !user.bio && <p className="text-xs text-gray-400 dark:text-gray-500 truncate">{user.email}</p>}
+        </div>
+        {!isOwnProfile && (
+          <button
+            onClick={handleFollowClick}
+            disabled={isLoading}
+            className={`px-4 py-2 rounded-lg transition-all text-sm font-medium opacity-0 group-hover:opacity-100 ${
+              isFollowing
+                ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                : 'bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-500'
+            } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {isLoading ? 'Loading...' : isFollowing ? 'Following' : 'Follow'}
+          </button>
+        )}
+      </div>
+    );
+  };
 
   const PostResult = ({ post }) => {
     // Initialize reactions with proper structure

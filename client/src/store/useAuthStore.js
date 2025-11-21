@@ -160,12 +160,8 @@ export const useAuthStore = create((set, get) => ({
     },
 
     connectSocket: () => {
-        const { authUser } = get();
-        if (!authUser || get().socket?.connected) return;
-        
-        console.log("Connecting socket for user:", authUser._id);
-
-        const socket = io(BASE_URL, {
+      const { authUser } = get();
+      if (!authUser || get().socket?.connected) return;        const socket = io(BASE_URL, {
             query: { 
                 userId: authUser._id,
             },
@@ -174,28 +170,21 @@ export const useAuthStore = create((set, get) => ({
         socket.connect();
         set({ socket: socket });
 
-        socket.on("get-online-users", (userIds) => {
-            console.log("Received online users:", userIds);
+            socket.on("getOnlineUsers", (userIds) => {
             set({ onlineUsers: userIds });
         });
 
-        socket.on("connect", () => {
-            console.log("✅ Socket connected successfully:", socket.id);
-        });
+            socket.on("connect", () => {
+            });
 
-        socket.on("disconnect", () => {
-            console.log("❌ Socket disconnected");
-        });
-
-        // Notification event listeners
+            socket.on("disconnect", () => {
+            });        // Notification event listeners
         socket.on("newNotification", (notification) => {
-            console.log("🔔 New notification received:", notification);
             // Emit custom event that App.jsx can listen to
             window.dispatchEvent(new CustomEvent('newNotification', { detail: notification }));
         });
 
         socket.on("unreadCount", (data) => {
-            console.log("📊 Unread count updated:", data.count);
             // Emit custom event that App.jsx can listen to
             window.dispatchEvent(new CustomEvent('unreadCountUpdate', { detail: data.count }));
         });

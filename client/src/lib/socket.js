@@ -3,13 +3,11 @@
 export const joinPostRoom = (socket, postId) => {
   if (!socket || !postId) return;
   socket.emit('join-post', postId);
-  console.log(`📍 Joined post room: ${postId}`);
 };
 
 export const leavePostRoom = (socket, postId) => {
   if (!socket || !postId) return;
   socket.emit('leave-post', postId);
-  console.log(`📍 Left post room: ${postId}`);
 };
 
 export const subscribeToCommentEvents = (socket, handlers = {}) => {

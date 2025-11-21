@@ -15,11 +15,10 @@ export const useChatStore = create((set, get) => ({
     set({ isUsersLoading: true });
     try {
       const res = await axiosInstance.get("/messages/users");
-      console.log("Users fetched:", res.data); // Debug log
       set({ users: res.data });
     } catch (error) {
       console.error("Error fetching users:", error);
-      toast.error(error.response?.data?.message || "Failed to fetch users");
+      toast.error("Unable to load conversations. Please refresh the page.");
     } finally {
       set({ isUsersLoading: false });
     }
@@ -28,11 +27,10 @@ export const useChatStore = create((set, get) => ({
   getAllUsersForNewMessage: async () => {
     try {
       const res = await axiosInstance.get("/messages/users/all");
-      console.log("All users fetched for new message:", res.data.length);
       return res.data;
     } catch (error) {
       console.error("Error fetching all users:", error);
-      toast.error(error.response?.data?.message || "Failed to fetch users");
+      toast.error("Unable to load users. Please try again.");
       return [];
     }
   },
@@ -54,7 +52,7 @@ export const useChatStore = create((set, get) => ({
       set({ users: updatedUsers });
     } catch (error) {
       console.error("Error fetching messages:", error);
-      toast.error(error.response?.data?.message || "Failed to fetch messages");
+      toast.error("Unable to load messages. Please try again.");
     } finally {
       set({ isMessagesLoading: false });
     }
@@ -102,7 +100,7 @@ export const useChatStore = create((set, get) => ({
       set({ users: updatedUsers });
     } catch (error) {
       console.error("Error sending message:", error);
-      toast.error(error.response?.data?.message || "Failed to send message");
+      toast.error("Unable to send message. Please check your connection.");
     }
   },  
   
