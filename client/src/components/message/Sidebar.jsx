@@ -90,7 +90,7 @@ const Sidebar = () => {
         </div>
 
         {/* Online filter toggle */}
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-3">
           <label className="cursor-pointer flex items-center gap-2">
             <input
               type="checkbox"
@@ -100,9 +100,6 @@ const Sidebar = () => {
             />
             <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">Online only</span>
           </label>
-          <span className="text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-1 rounded-full font-medium">
-            {onlineUsers.length - 1} online
-          </span>
         </div>
       </div>
 
