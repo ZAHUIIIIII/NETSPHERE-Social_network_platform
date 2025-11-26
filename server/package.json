@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "build": "echo 'No build step required'"
+    "build": "echo 'No build step required'",
+    "seed": "node src/scripts/seed.js",
+    "update-dates": "node src/scripts/update-user-dates.js",
+    "update-post-dates": "node src/scripts/update-post-dates.js"
   },
   "engines": {
     "node": ">=18.0.0"
