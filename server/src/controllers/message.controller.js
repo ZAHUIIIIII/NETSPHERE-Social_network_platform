@@ -163,6 +163,7 @@ export const sendMessage = async (req, res) => {
     const messagesDisabled = settings.messages === false;
     const pushDisabled = settings.push === false;
 
+    // Emit to receiver's socket
     const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
       // Always emit the message so it appears in chat
@@ -179,6 +180,12 @@ export const sendMessage = async (req, res) => {
           showToast: !pushDisabled
         });
       }
+    }
+
+    // Emit to sender's other sockets/devices for cross-tab/device sync
+    const senderSocketId = getReceiverSocketId(senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("newMessage", newMessage);
     }
 
     res.status(201).json(newMessage);

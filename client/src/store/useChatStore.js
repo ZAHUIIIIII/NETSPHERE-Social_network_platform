@@ -106,21 +106,32 @@ export const useChatStore = create((set, get) => ({
   
   subscribeToMessages: () => {
     const socket = useAuthStore.getState().socket;
+    const currentUserId = useAuthStore.getState().authUser?._id;
 
     socket.on("newMessage", (newMessage) => {
       const { selectedUser, messages, users } = get();
-      const isMessageSentFromSelectedUser = newMessage.senderId === selectedUser?._id;
       
-      if (isMessageSentFromSelectedUser) {
-        // Add message to current conversation if from selected user
-        set({
-          messages: [...messages, newMessage],
-        });
+      // Check if message is part of current conversation (either received or sent)
+      const isMessageFromSelectedUser = newMessage.senderId === selectedUser?._id;
+      const isMessageToSelectedUser = newMessage.receiverId === selectedUser?._id;
+      const isInCurrentConversation = isMessageFromSelectedUser || isMessageToSelectedUser;
+      
+      if (isInCurrentConversation) {
+        // Avoid duplicate: only add if not already in messages array
+        const messageExists = messages.some(msg => msg._id === newMessage._id);
+        if (!messageExists) {
+          set({
+            messages: [...messages, newMessage],
+          });
+        }
       }
       
       // Update the user's last message in the users list (but don't increment unread count here)
+      const isMyOwnMessage = newMessage.senderId === currentUserId;
+      const chatPartnerId = isMyOwnMessage ? newMessage.receiverId : newMessage.senderId;
+      
       const updatedUsers = users.map(user => {
-        if (user._id === newMessage.senderId) {
+        if (user._id === chatPartnerId) {
           return {
             ...user,
             lastMessage: {
@@ -128,9 +139,9 @@ export const useChatStore = create((set, get) => ({
               text: newMessage.text || '',
               image: newMessage.image || null,
               senderId: newMessage.senderId,
-              senderName: user.username,
+              senderName: isMyOwnMessage ? 'You' : user.username,
               createdAt: newMessage.createdAt || new Date().toISOString(),
-              isFromMe: false
+              isFromMe: isMyOwnMessage
             },
             // Don't increment unread count here - it will be handled by newMessageNotification event
             // This ensures muted conversations don't show unread counts

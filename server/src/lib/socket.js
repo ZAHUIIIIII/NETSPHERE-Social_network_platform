@@ -16,7 +16,8 @@ const io = new Server(server, {
       
       // Define allowed origins
       const allowedOrigins = [
-        CLIENT_URL,
+        ...CLIENT_URL.split(',').map(url => url.trim()), // Support comma-separated URLs
+        "http://localhost:5173", // Explicit localhost support for development
         "https://netsphere-one.vercel.app",
         /^https:\/\/netsphere-[a-zA-Z0-9-]+\.vercel\.app$/, // All Vercel preview deployments
       ];

@@ -46,10 +46,12 @@ const corsOptions = {
     // Allow requests with no origin (mobile apps, Postman, curl)
     if (!origin) return callback(null, true);
     
-    // Define allowed origins
+    // Define allowed origins (supports comma-separated CLIENT_URL for local + production)
     const allowedOrigins = [
-      CLIENT_URL,
+      ...CLIENT_URL.split(',').map(url => url.trim()), // Support multiple URLs from env
       'https://netsphere-one.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:5174',
       /^https:\/\/netsphere-[a-zA-Z0-9-]+\.vercel\.app$/, // All Vercel preview deployments
     ];
     

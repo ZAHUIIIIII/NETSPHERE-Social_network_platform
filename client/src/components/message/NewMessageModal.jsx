@@ -11,6 +11,11 @@ const NewMessageModal = ({ isOpen, onClose }) => {
   const { getAllUsersForNewMessage, setSelectedUser } = useChatStore();
   const { onlineUsers } = useAuthStore();
 
+  // Helper function to remove diacritics for accent-insensitive search
+  const removeDiacritics = (str) => {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  };
+
   useEffect(() => {
     if (isOpen) {
       setSearchTerm("");
@@ -29,9 +34,11 @@ const NewMessageModal = ({ isOpen, onClose }) => {
     setIsLoading(true);
     try {
       const users = await getAllUsersForNewMessage();
-      const filtered = users.filter((user) =>
-        user.username?.toLowerCase().includes(value.toLowerCase())
-      );
+      const searchNormalized = removeDiacritics(value.toLowerCase());
+      const filtered = users.filter((user) => {
+        const usernameNormalized = removeDiacritics(user.username?.toLowerCase() || '');
+        return usernameNormalized.includes(searchNormalized);
+      });
       setSearchResults(filtered);
     } catch (error) {
       console.error("Error searching users:", error);

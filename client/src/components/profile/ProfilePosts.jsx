@@ -68,7 +68,7 @@ const ProfilePosts = ({ posts, isOwnProfile, onPostsUpdate }) => {
                 <div className="relative w-full h-full">
                   <video
                     src={post.videos[0].url}
-                    poster={post.videos[0].thumbnail}
+                    preload="metadata"
                     className="w-full h-full object-cover"
                   />
                   {/* Video indicator overlay */}
