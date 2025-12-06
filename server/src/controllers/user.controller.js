@@ -4,6 +4,24 @@ import Comment from '../models/comment.model.js';
 import cloudinary from '../lib/cloudinary.js';
 import { createNotification } from './notification.controller.js';
 
+// Get user by ID 
+export const getUserById = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const user = await User.findById(userId).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error('Error in getUserById:', error);
+    res.status(500).json({ message: 'Error fetching user' });
+  }
+};
+
 // Get user profile by username
 export const getUserProfile = async (req, res) => {
   try {

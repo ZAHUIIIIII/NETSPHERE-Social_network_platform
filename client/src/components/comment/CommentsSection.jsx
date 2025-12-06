@@ -41,10 +41,14 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
         after: reset ? null : rootCursor
       });
 
+      // Filter out deleted root comments
+      // But keep deleted replies 
+      const activeRootComments = data.items.filter(item => !item.isDeleted);
+
       if (reset) {
-        setRootComments(data.items);
+        setRootComments(activeRootComments);
       } else {
-        setRootComments(prev => [...prev, ...data.items]);
+        setRootComments(prev => [...prev, ...activeRootComments]);
       }
 
       setRootCursor(data.nextCursor);
@@ -52,7 +56,7 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
 
       // Update total count based on ALL loaded comments, not just the current page
       if (onCommentCountChange) {
-        const allComments = reset ? data.items : [...rootComments, ...data.items];
+        const allComments = reset ? activeRootComments : [...rootComments, ...activeRootComments];
         const totalCount = countTotalComments(allComments);
         onCommentCountChange(totalCount);
       }
@@ -153,11 +157,19 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
 
       // Update root comment's reply count
       setRootComments(prev =>
-        prev.map(c =>
-          c._id === rootId
-            ? { ...c, directReplies: c.directReplies + 1, totalDescendants: c.totalDescendants + 1 }
-            : c
-        )
+        prev.map(c => {
+          if (c._id !== rootId) return c;
+          
+          // totalDescendants always increments for any descendant
+          // directReplies only increments if this is a direct child
+          const isDirectChild = immediateParent === rootId;
+          
+          return {
+            ...c,
+            directReplies: isDirectChild ? c.directReplies + 1 : c.directReplies,
+            totalDescendants: c.totalDescendants + 1
+          };
+        })
       );
 
       toast.success('Reply added!');
@@ -205,15 +217,21 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
           });
 
           // Update root comment counters
-          setRootComments(prev => {
-            const updated = prev.map(c =>
-              c._id === comment.rootId
-                ? { ...c, directReplies: c.directReplies + 1, totalDescendants: c.totalDescendants + 1 }
-                : c
-            );
-            
-            return updated;
-          });
+          setRootComments(prev =>
+            prev.map(c => {
+              if (c._id !== comment.rootId) return c;
+              
+              // totalDescendants always increments for any descendant
+              // directReplies only increments if this is a direct child
+              const isDirectChild = comment.immediateParent === c._id;
+              
+              return {
+                ...c,
+                directReplies: isDirectChild ? c.directReplies + 1 : c.directReplies,
+                totalDescendants: c.totalDescendants + 1
+              };
+            })
+          );
         }
       },
 
@@ -235,30 +253,45 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
       },
 
       onCommentDeleted: ({ commentId, postId, rootId }) => {
-        // Remove from root comments
-        setRootComments(prev => {
-          let updated = prev.filter(c => c._id !== commentId);
+        // Distinguish between root comment and reply
+        if (!rootId) {
+          // ROOT COMMENT deleted → Remove completely from UI
+          setRootComments(prev => prev.filter(c => c._id !== commentId));
           
-          // If this was a reply (has rootId), decrement parent's counts
-          if (rootId) {
-            updated = updated.map(c =>
-              c._id === rootId
-                ? { ...c, directReplies: Math.max(0, c.directReplies - 1), totalDescendants: Math.max(0, c.totalDescendants - 1) }
-                : c
-            );
-          }
-          
-          return updated;
-        });
-
-        // Remove from all threads
-        setThreadReplies(prev => {
-          const updated = { ...prev };
-          Object.keys(updated).forEach(rootId => {
-            updated[rootId] = updated[rootId].filter(r => r._id !== commentId);
+          // Remove entire thread
+          setThreadReplies(prev => {
+            const { [commentId]: deleted, ...rest } = prev;
+            return rest;
           });
-          return updated;
-        });
+          
+          // Clear expanded state
+          setExpandedThreads(prev => {
+            const { [commentId]: deleted, ...rest } = prev;
+            return rest;
+          });
+        } else {
+          // REPLY deleted → Show as placeholder to preserve structure
+          setRootComments(prev =>
+            prev.map(c =>
+              c._id === commentId
+                ? { ...c, isDeleted: true, content: '(comment deleted)' }
+                : c
+            )
+          );
+
+          // Update in thread replies to show as deleted
+          setThreadReplies(prev => {
+            const updated = { ...prev };
+            Object.keys(updated).forEach(threadRootId => {
+              updated[threadRootId] = updated[threadRootId].map(r =>
+                r._id === commentId
+                  ? { ...r, isDeleted: true, content: '(comment deleted)' }
+                  : r
+              );
+            });
+            return updated;
+          });
+        }
       },
 
       onCommentReacted: ({ commentId, reactions, userReaction }) => {
@@ -366,7 +399,21 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
               }}
               onDelete={async (commentId) => {
                 await deleteComment(commentId);
+                
+                // Remove from root comments
                 setRootComments(prev => prev.filter(c => c._id !== commentId));
+                
+                // Remove entire thread if this is a root comment
+                setThreadReplies(prev => {
+                  const { [commentId]: deleted, ...rest } = prev;
+                  return rest;
+                });
+                
+                // Clear expanded state
+                setExpandedThreads(prev => {
+                  const { [commentId]: deleted, ...rest } = prev;
+                  return rest;
+                });
               }}
               onReact={async (commentId, type) => {
                 const { reactions, userReaction } = await reactToComment(commentId, type);
@@ -422,20 +469,18 @@ const CommentsSection = ({ post, onCommentCountChange }) => {
                     onDelete={async (commentId) => {
                       await deleteComment(commentId);
                       
-                      // Update thread replies
+                      // Update reply to show as deleted (placeholder approach)
                       setThreadReplies(prev => ({
                         ...prev,
-                        [comment._id]: prev[comment._id].filter(r => r._id !== commentId)
+                        [comment._id]: prev[comment._id].map(r =>
+                          r._id === commentId
+                            ? { ...r, isDeleted: true, content: '(comment deleted)' }
+                            : r
+                        )
                       }));
                       
-                      // Update root comment's descendant count
-                      setRootComments(prev =>
-                        prev.map(c =>
-                          c._id === comment._id
-                            ? { ...c, totalDescendants: Math.max(0, c.totalDescendants - 1) }
-                            : c
-                        )
-                      );
+                      // Don't update counters 
+                      // This keeps "Show replies" button visible even when all replies are deleted
                     }}
                     onReact={async (commentId, type) => {
                       const { reactions, userReaction } = await reactToComment(commentId, type);

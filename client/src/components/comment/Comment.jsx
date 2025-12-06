@@ -141,6 +141,11 @@ const Comment = ({
 
   // ==================== RENDER ====================
 
+  // If comment is deleted, don't render anything
+  if (comment.isDeleted) {
+    return null;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -219,7 +224,7 @@ const Comment = ({
                     </div>
                     
                     {/* Three dots menu - aligned with username */}
-                    {isOwnComment && !comment.isDeleted && (
+                    {isOwnComment && (
                       <PortalDropdown
                         isOpen={showMenu}
                         onClose={() => setShowMenu(false)}
@@ -264,27 +269,19 @@ const Comment = ({
                   
                   {/* Comment text */}
                   <p className="text-sm whitespace-pre-wrap break-words text-gray-900 dark:text-gray-100">
-                    {comment.isDeleted ? (
-                      <span className="italic text-gray-500 dark:text-gray-400">
-                        (comment deleted)
-                      </span>
-                    ) : (
+                    {/* Reply To User - Inline like Facebook */}
+                    {comment.replyToSnapshot && (
                       <>
-                        {/* Reply To User - Inline like Facebook */}
-                        {comment.replyToSnapshot && (
-                          <>
-                            <Link 
-                              to={`/profile/${comment.replyToSnapshot.username}`}
-                              className="font-bold hover:underline text-gray-900 dark:text-gray-100"
-                            >
-                              {comment.replyToSnapshot.username}
-                            </Link>
-                            {' '}
-                          </>
-                        )}
-                        {comment.content}
+                        <Link 
+                          to={`/profile/${comment.replyToSnapshot.username}`}
+                          className="font-bold hover:underline text-gray-900 dark:text-gray-100"
+                        >
+                          {comment.replyToSnapshot.username}
+                        </Link>
+                        {' '}
                       </>
                     )}
+                    {comment.content}
                   </p>
                 </div>
               )}

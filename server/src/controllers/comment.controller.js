@@ -240,7 +240,7 @@ export const listRootComments = async (req, res) => {
     const after = parseCursor(req.query.after);
     const currentUserId = req.user?._id;
 
-    const query = { postId, rootId: null, isDeleted: false };
+    const query = { postId, rootId: null };
     
     if (after) {
       query.$or = [
@@ -296,7 +296,7 @@ export const listThreadReplies = async (req, res) => {
     }
 
     // Query all replies in this thread
-    const query = { postId, rootId, isDeleted: false };
+    const query = { postId, rootId };
     
     if (after) {
       query.$or = [
@@ -409,23 +409,10 @@ export const softDeleteComment = async (req, res) => {
     comment.content = '(comment deleted)';
     await comment.save();
 
-    // If this is a reply, update parent comment's counts
+    // Don't decrement counters on soft delete 
+    // Counters should reflect total replies (including deleted) so "Show replies" button works
     let rootId = null;
     if (comment.immediateParent) {
-      // Decrement directReplies on immediate parent
-      await Comment.updateOne(
-        { _id: comment.immediateParent },
-        { $inc: { directReplies: -1 } }
-      );
-
-      // Decrement totalDescendants on all ancestors
-      if (comment.ancestors && comment.ancestors.length > 0) {
-        await Comment.updateMany(
-          { _id: { $in: comment.ancestors } },
-          { $inc: { totalDescendants: -1 } }
-        );
-      }
-
       // Set rootId for socket event
       rootId = comment.rootId;
     }

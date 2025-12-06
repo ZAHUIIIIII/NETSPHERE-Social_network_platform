@@ -90,13 +90,13 @@ app.use((req, res, next) => {
 });
 
 app.use(session({
-  secret: process.env.JWT_SECRET || 'your-session-secret',
+  secret: process.env.JWT_SECRET || 'huy1612012',
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    maxAge: 24 * 60 * 60 * 1000, // 24h
+    maxAge: 2 * 60 * 60 * 1000, // 2h (reduced from 24h to prevent memory leak)
     httpOnly: true
   },
   proxy: process.env.NODE_ENV === 'production' // Trust proxy in production
@@ -146,7 +146,7 @@ app.use('/api', (req, res, next) => {
       console.log(`📡 API listening on http://0.0.0.0:${PORT}`);
       console.log(`🌐 Client URL: ${CLIENT_URL}`);
       console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
-      console.log(`⏰ Started at: ${new Date().toISOString()}\n`);
+
     });
   } catch (err) {
     console.error('❌ Failed to start server:', err);

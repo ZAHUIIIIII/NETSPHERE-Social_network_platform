@@ -11,6 +11,9 @@ const upload = multer({
   limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
 });
 
+// User info route
+router.get('/id/:userId', protectRoute, userController.getUserById);
+
 // Profile routes
 router.get('/profile/:username', protectRoute, userController.getUserProfile);
 router.get('/:userId/posts', protectRoute, userController.getUserPosts);
