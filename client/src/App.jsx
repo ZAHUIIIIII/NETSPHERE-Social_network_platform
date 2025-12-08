@@ -102,19 +102,58 @@ const App = () => {
     const urlParams = new URLSearchParams(location.search);
     const loginStatus = urlParams.get('login');
     const error = urlParams.get('error');
+    const urlToken = urlParams.get('token'); // Mobile fallback token
 
     if (loginStatus === 'success') {
-      // Token is already set in cookie (httpOnly, secure)
-      // Call checkAuth to fetch user data and update authUser state
-      checkAuth().then(() => {
-        toast.success('Successfully signed in with Google!');
-        // Clear the URL parameters after checkAuth completes
-        window.history.replaceState({}, document.title, '/');
-      }).catch((err) => {
-        console.error('OAuth checkAuth failed:', err);
-        toast.error('Authentication failed. Please try again.');
-        window.history.replaceState({}, document.title, location.pathname);
-      });
+      const handleOAuth = async () => {
+        try {
+          // CASE 1: Mobile - Token in URL (Safari ITP fallback)
+          if (urlToken) {
+            console.log('🟢 OAuth: Mobile mode - Token found in URL');
+            localStorage.setItem('token', urlToken);
+            await checkAuth();
+            console.log('✅ OAuth: Mobile auth successful');
+            toast.success('Successfully signed in with Google!');
+            window.history.replaceState({}, document.title, '/');
+            return;
+          }
+
+          // CASE 2: Desktop - Cookie-only with retry logic
+          console.log('🟢 OAuth: Desktop mode - Using cookie');
+          const retryCheckAuth = async (attempts = 3) => {
+            for (let i = 0; i < attempts; i++) {
+              try {
+                console.log(`🔵 OAuth: Attempt ${i + 1} - Calling checkAuth...`);
+                await checkAuth();
+                console.log('✅ OAuth: Desktop auth successful');
+                toast.success('Successfully signed in with Google!');
+                window.history.replaceState({}, document.title, '/');
+                return;
+              } catch (err) {
+                console.error(`❌ OAuth: checkAuth attempt ${i + 1} failed:`, err);
+                
+                if (i < attempts - 1) {
+                  const delay = 300 * Math.pow(2, i); // 300ms, 600ms, 1200ms
+                  console.log(`⏳ OAuth: Retrying in ${delay}ms...`);
+                  await new Promise(resolve => setTimeout(resolve, delay));
+                } else {
+                  console.error('❌ OAuth: All checkAuth attempts failed');
+                  toast.error('Authentication failed. Please try logging in manually.');
+                  window.history.replaceState({}, document.title, '/login');
+                }
+              }
+            }
+          };
+          
+          await retryCheckAuth();
+        } catch (err) {
+          console.error('❌ OAuth: Unexpected error:', err);
+          toast.error('Authentication failed. Please try logging in manually.');
+          window.history.replaceState({}, document.title, '/login');
+        }
+      };
+
+      handleOAuth();
     } else if (error) {
       if (error === 'oauth_error') {
         toast.error('Google sign-in failed. Please try again.');

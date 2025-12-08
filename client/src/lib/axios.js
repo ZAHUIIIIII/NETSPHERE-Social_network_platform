@@ -11,6 +11,16 @@ let isRefreshing = false;
 
 axiosInstance.interceptors.request.use(
   (config) => {
+    // Debug: Log cookie state for OAuth debugging
+    if (config.url?.includes('/auth/check')) {
+      console.log('🔍 checkAuth request:', {
+        url: config.url,
+        withCredentials: config.withCredentials,
+        cookies: document.cookie,
+        hasTokenCookie: document.cookie.includes('token=')
+      });
+    }
+    
     const token = localStorage.getItem('token');
     if (token) {
       config.headers = config.headers || {};

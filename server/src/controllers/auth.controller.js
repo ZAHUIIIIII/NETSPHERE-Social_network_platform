@@ -664,10 +664,23 @@ export const googleCallback = (req, res, next) => {
             path: '/',
         });
 
-        // Redirect to frontend - token is already set in cookie (secure, httpOnly)
-        // No need to send token in URL to prevent leaking in browser history/logs
-        const redirectUrl = `${frontendUrl}/?login=success`;
-        console.log('🟢 OAuth success, redirecting to:', redirectUrl);
+        // Mobile browser detection - fallback to token in URL for mobile Safari
+        // Desktop: Clean URL (cookie-only for better security)
+        // Mobile: Token in URL (fallback because Safari ITP blocks cross-site cookies)
+        const userAgent = req.headers['user-agent'] || '';
+        const isMobile = /Mobile|Android|iPhone|iPad|iPod/i.test(userAgent);
+        
+        let redirectUrl;
+        if (isMobile) {
+            // Mobile: Include token as fallback (Safari ITP issues)
+            redirectUrl = `${frontendUrl}/?login=success&token=${encodeURIComponent(token)}`;
+            console.log('🟢 OAuth success (mobile), redirecting with token fallback');
+        } else {
+            // Desktop: Clean URL (cookie-only)
+            redirectUrl = `${frontendUrl}/?login=success`;
+            console.log('🟢 OAuth success (desktop), redirecting cookie-only');
+        }
+        
         res.redirect(redirectUrl);
     })(req, res, next);
 };
