@@ -102,21 +102,19 @@ const App = () => {
     const urlParams = new URLSearchParams(location.search);
     const loginStatus = urlParams.get('login');
     const error = urlParams.get('error');
-    const user = urlParams.get('user');
-    const token = urlParams.get('token');
 
     if (loginStatus === 'success') {
-      // Store token in localStorage for mobile browsers where cookies may not work
-      if (token) {
-        localStorage.setItem('token', token);
-      }
-      
-      const welcomeMessage = user 
-        ? `Welcome ${decodeURIComponent(user)}! Successfully signed in with Google.`
-        : 'Successfully signed in with Google!';
-      toast.success(welcomeMessage);
-      // Clear the URL parameters
-      window.history.replaceState({}, document.title, location.pathname);
+      // Token is already set in cookie (httpOnly, secure)
+      // Call checkAuth to fetch user data and update authUser state
+      checkAuth().then(() => {
+        toast.success('Successfully signed in with Google!');
+        // Clear the URL parameters after checkAuth completes
+        window.history.replaceState({}, document.title, '/');
+      }).catch((err) => {
+        console.error('OAuth checkAuth failed:', err);
+        toast.error('Authentication failed. Please try again.');
+        window.history.replaceState({}, document.title, location.pathname);
+      });
     } else if (error) {
       if (error === 'oauth_error') {
         toast.error('Google sign-in failed. Please try again.');
@@ -131,7 +129,7 @@ const App = () => {
       // Clear the URL parameters
       window.history.replaceState({}, document.title, location.pathname);
     }
-  }, [location]);
+  }, [location, checkAuth]);
 
   if (isCheckingAuth && location.pathname !== '/reset-password') {
     return (
@@ -143,6 +141,10 @@ const App = () => {
 
   const isChatPage = location.pathname === '/messages' || location.pathname === '/chat';
   const isChatConversationOpen = isChatPage && selectedUser !== null;
+
+  // Check if this is an OAuth callback (prevent redirect to /login during OAuth processing)
+  const urlParams = new URLSearchParams(location.search);
+  const isOAuthCallback = urlParams.get('login') === 'success';
 
   return (
     <div className="flex">
@@ -158,7 +160,7 @@ const App = () => {
             : ''
         }`}>
           <Routes>
-            <Route path='/' element={authUser ? <HomePage /> : <Navigate to="/login" />} />
+            <Route path='/' element={(authUser || isOAuthCallback) ? <HomePage /> : <Navigate to="/login" />} />
             <Route path='/login' element={!authUser ? <LoginPage /> : <Navigate to="/" />} />
             <Route path='/signup' element={!authUser ? <SignUpPage /> : <Navigate to="/" />} />
             <Route path='/reset-password' element={<ResetPasswordPage />} />
