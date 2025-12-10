@@ -14,12 +14,12 @@ const userSchema = new mongoose.Schema({
     validate: {
       validator: function(v) {
           if (typeof v !== 'string') return false;
-          const s = String(v).normalize('NFC').trim();
+          const s = String(v).normalize('NFC').trim(); // 
           if (s.length === 0) return false;
           // periods are not allowed
           if (s.includes('.')) return false;
           // allowed characters: letters (incl. accents), numbers and spaces
-          if (!/^[\p{L}\p{N} ]+$/u.test(s)) return false;
+          if (!/^[\p{L}\p{N} ]+$/u.test(s)) return false; // Unicode letters and numbers
           return true;
         },
       message: props => `${props.value} is not a valid username. Use 2-35 characters: letters, numbers, and spaces. Periods are not allowed.`

@@ -1027,6 +1027,9 @@ const PostCard = ({ post, currentUser, onPostUpdate, onPostDelete, onReactionUpd
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-300 animate-slideUp">
+      
+      
+      
       {/* Post Header */}
       <div className="p-3 sm:p-4 flex items-start justify-between">
         <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">

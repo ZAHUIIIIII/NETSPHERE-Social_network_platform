@@ -1,9 +1,11 @@
-import { Server } from "socket.io";
-import http from "http";
+import { Server } from "socket.io"; // Socket.io server
+import http from "http"; 
 import express from "express";
 
-const app = express();
-const server = http.createServer(app);
+const app = express(); 
+const server = http.createServer(app); // HTTP server for Socket.io
+
+// CORS configuration
 
 const CLIENT_URL = process.env.CLIENT_URL || 'https://netsphere-one.vercel.app';
 
@@ -16,8 +18,8 @@ const io = new Server(server, {
       
       // Define allowed origins
       const allowedOrigins = [
-        ...CLIENT_URL.split(',').map(url => url.trim()), // Support comma-separated URLs
-        "http://localhost:5173", // Explicit localhost support for development
+        ...CLIENT_URL.split(',').map(url => url.trim()),
+        "http://localhost:5173", 
         "https://netsphere-one.vercel.app",
         /^https:\/\/netsphere-[a-zA-Z0-9-]+\.vercel\.app$/, // All Vercel preview deployments
       ];
@@ -49,13 +51,13 @@ const io = new Server(server, {
   allowUpgrades: true,
 });
 
+// used to store online users
+const userSocketMap = {}; // {userId: socketId}
+
 export function getReceiverSocketId(userId) {
   return userSocketMap[userId];
 }
 
-
-// used to store online users
-const userSocketMap = {}; // {userId: socketId}
 
 io.on("connection", (socket) => {
   console.log("A user connected", socket.id);
@@ -73,9 +75,11 @@ io.on("connection", (socket) => {
     console.log("No valid userId provided in socket connection");
   }
 
-  console.log("Current online users:", Object.keys(userSocketMap));
+  console.log("Current online users:", Object.keys(userSocketMap)); 
   // io.emit() is used to send events to all the connected clients
   io.emit("get-online-users", Object.keys(userSocketMap));
+
+
 
   // Join a post's comment room
   socket.on("join-post", (postId) => {
@@ -93,6 +97,8 @@ io.on("connection", (socket) => {
     }
   });
 
+
+  
   socket.on("disconnect", () => {
     console.log("A user disconnected", socket.id);
     if (userId && userId !== 'undefined') {

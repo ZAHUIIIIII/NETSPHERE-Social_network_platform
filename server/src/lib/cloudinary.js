@@ -23,4 +23,4 @@ cloudinary.config({
     api_secret,
 });
 
-export default cloudinary;
+export default cloudinary; // Export configured Cloudinary instance

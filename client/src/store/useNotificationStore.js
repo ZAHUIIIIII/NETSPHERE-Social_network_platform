@@ -24,13 +24,13 @@ export const useNotificationStore = create((set, get) => ({
     set({ isLoading: true });
     try {
       const res = await axiosInstance.get('/notifications', {
-        params: { unreadOnly }
+        params: { unreadOnly } 
       });
       set({ 
         notifications: res.data.notifications,
         unreadCount: res.data.unreadCount,
         isLoading: false 
-      });
+      }); // Set notifications and unread count
       return res.data;
     } catch (error) {
       console.error('Error fetching notifications:', error);

@@ -18,6 +18,8 @@ if (savedTheme) {
   }
 }
 
+// Render the React application
+
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
     <App />

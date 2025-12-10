@@ -19,16 +19,16 @@ const CommentSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     default: null, 
     index: true 
-  }, // null for root comments
+  }, // null for root comments,
   immediateParent: { 
     type: mongoose.Schema.Types.ObjectId, 
     default: null, 
     index: true 
-  },
+  }, 
   ancestors: { 
     type: [mongoose.Schema.Types.ObjectId], 
     default: [] 
-  }, // [rootId, ..., immediateParent]
+  }, // [rootId, ..., immediateParent], for example: [rootId, parentId]
   logicalDepth: { 
     type: Number, 
     default: 0,
@@ -39,11 +39,11 @@ const CommentSchema = new mongoose.Schema({
   directReplies: { 
     type: Number, 
     default: 0 
-  },
+  }, // direct replies only
   totalDescendants: { 
     type: Number, 
     default: 0 
-  },
+  }, // includes direct and indirect replies
 
   // Content
   content: { 

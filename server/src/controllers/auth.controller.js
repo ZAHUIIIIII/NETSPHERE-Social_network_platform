@@ -674,11 +674,9 @@ export const googleCallback = (req, res, next) => {
         if (isMobile) {
             // Mobile: Include token as fallback (Safari ITP issues)
             redirectUrl = `${frontendUrl}/?login=success&token=${encodeURIComponent(token)}`;
-            console.log('🟢 OAuth success (mobile), redirecting with token fallback');
         } else {
             // Desktop: Clean URL (cookie-only)
             redirectUrl = `${frontendUrl}/?login=success`;
-            console.log('🟢 OAuth success (desktop), redirecting cookie-only');
         }
         
         res.redirect(redirectUrl);

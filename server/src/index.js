@@ -52,7 +52,7 @@ const corsOptions = {
       'https://netsphere-one.vercel.app',
       'http://localhost:5173',
       'http://localhost:5174',
-      /^https:\/\/netsphere-[a-zA-Z0-9-]+\.vercel\.app$/, // All Vercel preview deployments
+      /^https:\/\/netsphere-[a-zA-Z0-9-]+\.vercel\.app$/, // (Regrex) All Vercel preview deployments
     ];
     
     // Check if origin is allowed
@@ -71,12 +71,12 @@ const corsOptions = {
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['set-cookie'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'], // allowed methods
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'], // header client can send
+  exposedHeaders: ['set-cookie'], // header client can read
   maxAge: 86400, // 24 hours - cache preflight requests
-  preflightContinue: false,
-  optionsSuccessStatus: 204
+  preflightContinue: false, // Pass the CORS preflight response to the next handler
+  optionsSuccessStatus: 204 // Some legacy browsers (IE11, various SmartTVs) choke on 204
 };
 
 app.use(cors(corsOptions));
@@ -89,10 +89,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// Session configuration
 app.use(session({
   secret: process.env.JWT_SECRET || 'huy1612012',
-  resave: false,
-  saveUninitialized: false,
+  resave: false, // Don't save session if not changed
+  saveUninitialized: false, // Don't create session until something stored
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
@@ -104,7 +105,7 @@ app.use(session({
 
 // Passport
 app.use(passport.initialize());
-app.use(passport.session());
+app.use(passport.session()); 
 
 // Health check 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
@@ -112,6 +113,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true }));
 // Swagger API Documentation
 app.use('/api-docs', swaggerRoutes);
 
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/posts', commentRoutes); 
@@ -138,10 +140,12 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+
+// Start server
 (async () => {
   try {
     await connectDB(); // kết nối DB trước khi accept request
-    server.listen(PORT, '0.0.0.0', () => {
+    server.listen(PORT, '0.0.0.0', () => { 
       console.log(`\n🚀 Server started successfully!`);
       console.log(`📡 API listening on http://0.0.0.0:${PORT}`);
       console.log(`🌐 Client URL: ${CLIENT_URL}`);

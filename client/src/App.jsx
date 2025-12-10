@@ -109,35 +109,26 @@ const App = () => {
         try {
           // CASE 1: Mobile - Token in URL (Safari ITP fallback)
           if (urlToken) {
-            console.log('🟢 OAuth: Mobile mode - Token found in URL');
             localStorage.setItem('token', urlToken);
             await checkAuth();
-            console.log('✅ OAuth: Mobile auth successful');
             toast.success('Successfully signed in with Google!');
             window.history.replaceState({}, document.title, '/');
             return;
           }
 
           // CASE 2: Desktop - Cookie-only with retry logic
-          console.log('🟢 OAuth: Desktop mode - Using cookie');
           const retryCheckAuth = async (attempts = 3) => {
             for (let i = 0; i < attempts; i++) {
               try {
-                console.log(`🔵 OAuth: Attempt ${i + 1} - Calling checkAuth...`);
                 await checkAuth();
-                console.log('✅ OAuth: Desktop auth successful');
                 toast.success('Successfully signed in with Google!');
                 window.history.replaceState({}, document.title, '/');
                 return;
               } catch (err) {
-                console.error(`❌ OAuth: checkAuth attempt ${i + 1} failed:`, err);
-                
                 if (i < attempts - 1) {
                   const delay = 300 * Math.pow(2, i); // 300ms, 600ms, 1200ms
-                  console.log(`⏳ OAuth: Retrying in ${delay}ms...`);
                   await new Promise(resolve => setTimeout(resolve, delay));
                 } else {
-                  console.error('❌ OAuth: All checkAuth attempts failed');
                   toast.error('Authentication failed. Please try logging in manually.');
                   window.history.replaceState({}, document.title, '/login');
                 }
@@ -147,7 +138,6 @@ const App = () => {
           
           await retryCheckAuth();
         } catch (err) {
-          console.error('❌ OAuth: Unexpected error:', err);
           toast.error('Authentication failed. Please try logging in manually.');
           window.history.replaceState({}, document.title, '/login');
         }
