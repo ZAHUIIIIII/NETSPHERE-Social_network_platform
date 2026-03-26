@@ -22,9 +22,16 @@ export const useCallStore = create((set, get) => ({
   startCall: async (userToCall, type = 'video') => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: type === 'video', 
+        video: true, // Always request video to allow turning it on later
         audio: true 
       });
+      
+      // If it's an audio call, automatically turn off the video track immediately
+      if (type === 'audio') {
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack) videoTrack.enabled = false;
+      }
+
       set({ 
         localStream: stream, 
         isCalling: true, 
@@ -52,7 +59,8 @@ export const useCallStore = create((set, get) => ({
           signalData: data,
           from: authUser._id,
           name: authUser.username,
-          avatar: authUser.avatar || ""
+          avatar: authUser.avatar || "",
+          callType: type
         });
       });
 
@@ -98,18 +106,25 @@ export const useCallStore = create((set, get) => ({
 
   answerCall: async () => {
     try {
+      const { call } = get();
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
       callAudio.stopAll(); // Stop ringing
       
+      const isVideoEnabled = call.callType === 'video';
+
+      if (!isVideoEnabled) {
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack) videoTrack.enabled = false;
+      }
+
       set({ 
         localStream: stream, 
         callAccepted: true,
         callStartTime: Date.now(),
-        videoEnabled: true,
+        videoEnabled: isVideoEnabled,
         audioEnabled: true
       });
       
-      const { call } = get();
       const socket = useAuthStore.getState().socket;
 
       const peer = new SimplePeer({
@@ -244,9 +259,9 @@ export const useCallStore = create((set, get) => ({
     socket.off('callUser');
     socket.off('callEnded');
     
-    socket.on('callUser', ({ from, name, avatar, signal }) => {
+    socket.on('callUser', ({ from, name, avatar, signal, callType }) => {
       // By default receiving calls can assume it's a video/audio mix based on what they transmit
-      set({ call: { isReceivingCall: true, from, name, avatar, signal }, callEnded: false });
+      set({ call: { isReceivingCall: true, from, name, avatar, signal, callType: callType || 'video' }, callEnded: false });
       callAudio.startRinging(); // Start playing ringtone
       
       // OPTIONAL: Auto-timeout ringing after 30 seconds

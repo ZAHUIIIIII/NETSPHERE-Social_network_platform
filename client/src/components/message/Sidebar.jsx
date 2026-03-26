@@ -149,7 +149,9 @@ const Sidebar = () => {
                     <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">
                       {user.lastMessage.isFromMe ? "You: " : ""}
                       {user.lastMessage.image ? "📷 Photo" : 
-                        user.lastMessage.text.length > 30 ? 
+                        user.lastMessage.text?.startsWith('CALL_ENDED:') ?
+                          (user.lastMessage.text.includes(':video:') ? "📹 Cuộc gọi video" : "📞 Cuộc gọi thoại") :
+                        user.lastMessage.text?.length > 30 ? 
                         user.lastMessage.text.substring(0, 30) + "..." : 
                         user.lastMessage.text
                       }

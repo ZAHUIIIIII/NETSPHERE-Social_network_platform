@@ -154,7 +154,10 @@ const FloatingWidget = () => {
                       {u.lastMessage ? (
                         <span>
                           {u.lastMessage.isFromMe ? "You: " : ""}
-                          {u.lastMessage.text || "Sent an image"}
+                          {u.lastMessage.text?.startsWith('CALL_ENDED:') ?
+                            (u.lastMessage.text.includes(':video:') ? "📹 Cuộc gọi video" : "📞 Cuộc gọi thoại") :
+                           u.lastMessage.text || "Sent an image"
+                          }
                         </span>
                       ) : (
                         "Tap to message"
