@@ -28,6 +28,7 @@ import PortalDropdown from '../components/common/PortalDropdown';
 import AdminBadge from '../components/common/AdminBadge';
 import { isAdmin } from '../lib/isAdmin';
 import PlatformNewsWidget from '../components/common/PlatformNewsWidget';
+import FloatingWidget from '../components/message/FloatingWidget';
 
 
 // Enhanced Create Post Component
@@ -1956,6 +1957,9 @@ export default function HomePage() {
           onCollapse={() => setShowExpandedCreate(false)}
         />
       )}
+
+      {/* Floating Chat System - Only on Homepage */}
+      <FloatingWidget />
     </div>
   );
 }

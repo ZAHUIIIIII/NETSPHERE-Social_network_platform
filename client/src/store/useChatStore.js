@@ -7,6 +7,8 @@ export const useChatStore = create((set, get) => ({
   messages: [],
   users: [],
   selectedUser: null,
+  floatingWidgetState: 'collapsed', // 'collapsed' | 'list' | 'chat'
+  floatingChatUser: null, // User currently chatting within the floating widget
   isUsersLoading: false,
   isMessagesLoading: false,
   searchInConversation: null, // { query: string, currentMatchId: string }
@@ -59,26 +61,33 @@ export const useChatStore = create((set, get) => ({
   },
 
   
-  sendMessage: async (messageData) => {
+  sendMessage: async (messageData, targetUserId = null) => {
     const { selectedUser, messages, users } = get();
     const currentUserId = useAuthStore.getState().authUser?._id;
+    const recipientId = targetUserId || selectedUser?._id;
     
     try {
-      const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
+      const res = await axiosInstance.post(`/messages/send/${recipientId}`, messageData);
       const newMessage = res.data;
       
-      // Add message to current conversation
-      set({ messages: [...messages, newMessage] });
+      // Add message to current conversation ONLY if the recipient matches selectedUser
+      if (!targetUserId || targetUserId === selectedUser?._id) {
+        set({ messages: [...messages, newMessage] });
+      } else {
+        // If it's a floating chat sending a message, we should still push to messages array so the floating chat refetches/shows it, 
+        // OR we can just add it to messages. Floating chats filter the global messages array.
+        set({ messages: [...messages, newMessage] });
+      }
       
       // Check if this user already exists in the sidebar
-      const userExists = users.some(user => user._id.toString() === selectedUser._id.toString());
+      const userExists = users.some(user => user._id.toString() === recipientId.toString());
       
       let updatedUsers;
       
       if (userExists) {
         // Update existing user's last message
         updatedUsers = users.map(user => {
-          if (user._id.toString() === selectedUser._id.toString()) {
+          if (user._id.toString() === recipientId.toString()) {
             return {
               ...user,
               lastMessage: {
@@ -98,7 +107,7 @@ export const useChatStore = create((set, get) => ({
         // Add new user to the sidebar (first message to this person)
         updatedUsers = [
           {
-            ...selectedUser,
+            ...users.find(u => u._id === recipientId) || selectedUser || {},
             lastMessage: {
               _id: newMessage._id,
               text: newMessage.text || '',
@@ -256,6 +265,17 @@ export const useChatStore = create((set, get) => ({
     const socket = useAuthStore.getState().socket;
     socket.off("newMessage");
     socket.off("newMessageNotification");
+  },
+
+  setFloatingWidgetState: (state) => set({ floatingWidgetState: state }),
+
+  openFloatingChat: (user) => {
+    get().getMessages(user._id);
+    set({ floatingWidgetState: 'chat', floatingChatUser: user });
+  },
+
+  closeFloatingChat: () => {
+    set({ floatingWidgetState: 'list', floatingChatUser: null });
   },
 
   setSelectedUser: (selectedUser) => set({ selectedUser }),

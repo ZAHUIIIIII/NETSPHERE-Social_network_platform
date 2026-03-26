@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, MoreHorizontal, Edit, MapPin, Link as LinkIcon, Calendar, MessageCircle, UserX, UserCheck } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useChatStore } from '../../store/useChatStore';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import FollowButton from './FollowButton';
@@ -13,6 +14,7 @@ import { isAdmin } from '../../lib/isAdmin';
 
 const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowChange }) => {
   const { updateProfile, isUpdatingProfile } = useAuthStore();
+  const { openFloatingChat } = useChatStore();
   const navigate = useNavigate();
   const [selectedImg, setSelectedImg] = useState(null);
   const [showFollowersModal, setShowFollowersModal] = useState(false);
@@ -132,15 +134,11 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
   };
 
   const handleMessage = () => {
-    navigate('/messages', { 
-      state: { 
-        selectedUser: {
-          _id: user._id,
-          username: user.username,
-          name: user.name,
-          avatar: user.avatar
-        }
-      } 
+    openFloatingChat({
+      _id: user._id,
+      username: user.username,
+      name: user.name,
+      avatar: user.avatar
     });
   };
 
