@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { useAuthStore } from './useAuthStore';
+import { useChatStore } from './useChatStore';
 import SimplePeer from 'simple-peer/simplepeer.min.js';
 import toast from 'react-hot-toast';
+import { callAudio } from '../lib/audioUtils';
 
 export const useCallStore = create((set, get) => ({
   localStream: null,
@@ -11,22 +13,29 @@ export const useCallStore = create((set, get) => ({
   callEnded: false,
   isCalling: false, // Represents when current user is dialing out
   calledUser: null, // Track who we are dialing out to
+  callType: 'video', // 'video' | 'audio'
   callStartTime: null, // Track when the call was accepted
   connectionRef: null,
   videoEnabled: true,
   audioEnabled: true,
 
-  startCall: async (userToCall) => {
+  startCall: async (userToCall, type = 'video') => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: type === 'video', 
+        audio: true 
+      });
       set({ 
         localStream: stream, 
         isCalling: true, 
         callEnded: false, 
         calledUser: userToCall,
-        videoEnabled: true,
+        callType: type,
+        videoEnabled: type === 'video',
         audioEnabled: true
       });
+
+      callAudio.startDialing(); // Start playing dialing tone
 
       const socket = useAuthStore.getState().socket;
       const authUser = useAuthStore.getState().authUser;
@@ -56,11 +65,14 @@ export const useCallStore = create((set, get) => ({
       socket.off('callRejected');
 
       socket.on('callAccepted', (signal) => {
+        callAudio.stopAll(); // Stop dialing tone
         set({ callAccepted: true, isCalling: false, callStartTime: Date.now() });
         peer.signal(signal);
       });
 
       socket.on('callRejected', () => {
+        callAudio.stopAll();
+        callAudio.playCallEnd();
         set({ isCalling: false, callEnded: true, calledUser: null });
         toast.error('Call declined or unanswered');
         peer.destroy();
@@ -87,6 +99,8 @@ export const useCallStore = create((set, get) => ({
   answerCall: async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      callAudio.stopAll(); // Stop ringing
+      
       set({ 
         localStream: stream, 
         callAccepted: true,
@@ -139,8 +153,11 @@ export const useCallStore = create((set, get) => ({
   },
 
   endCallLocal: () => {
+    callAudio.stopAll();
+    callAudio.playCallEnd();
+
     get().stopMediaTracks();
-    const { connectionRef, callStartTime, isCalling, calledUser } = get();
+    const { connectionRef, callStartTime, isCalling, calledUser, callType } = get();
     
     // Calculate duration and send message if this was a connected call
     if (callStartTime && calledUser) {
@@ -149,12 +166,10 @@ export const useCallStore = create((set, get) => ({
       const s = durationSeconds % 60;
       const durationStr = m > 0 ? `${m}m ${s}s` : `${s}s`;
       
-      // Send chat message
-      import('./useChatStore').then(({ useChatStore }) => {
-        useChatStore.getState().sendMessage({
-          text: `CALL_ENDED:${durationStr}`
-        }, calledUser._id).catch(console.error);
-      });
+      // Send chat message synchronously
+      useChatStore.getState().sendMessage({
+        text: `CALL_ENDED:${callType}:${durationStr}`
+      }, calledUser._id).catch(console.error);
     } else if (callStartTime && !calledUser) {
       // For the receiver, just show a toast duration
       const durationSeconds = Math.floor((Date.now() - callStartTime) / 1000);
@@ -230,7 +245,9 @@ export const useCallStore = create((set, get) => ({
     socket.off('callEnded');
     
     socket.on('callUser', ({ from, name, avatar, signal }) => {
+      // By default receiving calls can assume it's a video/audio mix based on what they transmit
       set({ call: { isReceivingCall: true, from, name, avatar, signal }, callEnded: false });
+      callAudio.startRinging(); // Start playing ringtone
       
       // OPTIONAL: Auto-timeout ringing after 30 seconds
       setTimeout(() => {

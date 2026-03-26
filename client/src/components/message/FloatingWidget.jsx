@@ -207,8 +207,8 @@ const FloatingWidget = () => {
             </div>
           </div>
           <div className="flex items-center gap-0.5 text-[#0084ff] dark:text-[#b0b3b8]">
-            <button onClick={() => startCall(floatingChatUser)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] rounded-full transition-colors"><Phone className="w-[18px] h-[18px]" /></button>
-            <button onClick={() => startCall(floatingChatUser)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] rounded-full transition-colors"><Video className="w-[20px] h-[20px]" /></button>
+            <button onClick={() => startCall(floatingChatUser, 'audio')} className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] rounded-full transition-colors"><Phone className="w-[18px] h-[18px]" /></button>
+            <button onClick={() => startCall(floatingChatUser, 'video')} className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] rounded-full transition-colors"><Video className="w-[20px] h-[20px]" /></button>
             <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] rounded-full transition-colors" onClick={() => setFloatingWidgetState('collapsed')}><Minus className="w-[20px] h-[20px]" /></button>
             <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] rounded-full transition-colors" title="Back to list" onClick={() => closeFloatingChat()}><X className="w-[20px] h-[20px]" /></button>
           </div>
@@ -228,11 +228,13 @@ const FloatingWidget = () => {
                     {message.text && message.text.startsWith('CALL_ENDED:') ? (
                         <div className="flex items-center gap-3 py-1 pr-2">
                           <div className={`w-9 h-9 rounded-full ${isMyMessage ? 'bg-white/20' : 'bg-gray-200 dark:bg-gray-600'} flex items-center justify-center flex-shrink-0`}>
-                            <PhoneCall className="w-[18px] h-[18px]" />
+                            {message.text.includes(':video:') ? <Video className="w-[18px] h-[18px]" /> : <PhoneCall className="w-[18px] h-[18px]" />}
                           </div>
                           <div className="flex flex-col">
-                            <span className="font-semibold text-[14px]">Cuộc gọi thoại</span>
-                            <span className="text-[12px] opacity-80">{message.text.split(':')[1]}</span>
+                            <span className="font-semibold text-[14px]">
+                              {message.text.includes(':video:') ? 'Cuộc gọi video' : 'Cuộc gọi thoại'}
+                            </span>
+                            <span className="text-[12px] opacity-80">{message.text.split(':').pop()}</span>
                           </div>
                         </div>
                     ) : message.text ? (

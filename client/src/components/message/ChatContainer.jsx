@@ -6,7 +6,7 @@ import MessageInput from "./MessageInput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 import { useAuthStore } from "../../store/useAuthStore";
 import { formatMessageTime } from '../../lib/utils';
-import { PhoneCall } from 'lucide-react';
+import { PhoneCall, Video as VideoIcon } from 'lucide-react';
 
 
 const ChatContainer = () => {
@@ -170,11 +170,13 @@ const ChatContainer = () => {
                       {message.text && message.text.startsWith('CALL_ENDED:') ? (
                         <div className="flex items-center gap-3 py-1 pr-4">
                           <div className={`w-10 h-10 rounded-full ${isMyMessage ? 'bg-white/20' : 'bg-gray-200 dark:bg-gray-600'} flex items-center justify-center flex-shrink-0`}>
-                            <PhoneCall className="w-5 h-5" />
+                            {message.text.includes(':video:') ? <VideoIcon className="w-5 h-5" /> : <PhoneCall className="w-5 h-5" />}
                           </div>
                           <div className="flex flex-col">
-                            <span className="font-semibold text-[15px]">Cuộc gọi thoại</span>
-                            <span className="text-[13px] opacity-80">{message.text.split(':')[1]}</span>
+                            <span className="font-semibold text-[15px]">
+                              {message.text.includes(':video:') ? 'Cuộc gọi video' : 'Cuộc gọi thoại'}
+                            </span>
+                            <span className="text-[13px] opacity-80">{message.text.split(':').pop()}</span>
                           </div>
                         </div>
                       ) : message.text ? (

@@ -200,10 +200,10 @@ const ChatHeader = () => {
 
         {/* Action buttons */}
         <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
-          <button onClick={() => startCall(selectedUser)} className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200 group">
+          <button onClick={() => startCall(selectedUser, 'audio')} className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200 group">
             <Phone className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
           </button>
-          <button onClick={() => startCall(selectedUser)} className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200 group">
+          <button onClick={() => startCall(selectedUser, 'video')} className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200 group">
             <Video className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
           </button>
           
