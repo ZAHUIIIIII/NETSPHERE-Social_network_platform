@@ -664,20 +664,10 @@ export const googleCallback = (req, res, next) => {
             path: '/',
         });
 
-        // Mobile browser detection - fallback to token in URL for mobile Safari
-        // Desktop: Clean URL (cookie-only for better security)
-        // Mobile: Token in URL (fallback because Safari ITP blocks cross-site cookies)
-        const userAgent = req.headers['user-agent'] || '';
-        const isMobile = /Mobile|Android|iPhone|iPad|iPod/i.test(userAgent);
-        
-        let redirectUrl;
-        if (isMobile) {
-            // Mobile: Include token as fallback (Safari ITP issues)
-            redirectUrl = `${frontendUrl}/?login=success&token=${encodeURIComponent(token)}`;
-        } else {
-            // Desktop: Clean URL (cookie-only)
-            redirectUrl = `${frontendUrl}/?login=success`;
-        }
+        // Always include token in URL as a reliable cross-domain fallback
+        // Modern browsers block third-party cookies (SameSite=None) by default.
+        // The frontend App.jsx will intercept this, save to localStorage, and clean the URL.
+        const redirectUrl = `${frontendUrl}/?login=success&token=${encodeURIComponent(token)}`;
         
         res.redirect(redirectUrl);
     })(req, res, next);
