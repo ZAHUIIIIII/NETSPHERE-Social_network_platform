@@ -143,7 +143,7 @@ export const useCallStore = create((set, get) => ({
     const { connectionRef, callStartTime, isCalling, calledUser } = get();
     
     // Calculate duration and send message if this was a connected call
-    if (callStartTime && isCalling && calledUser) {
+    if (callStartTime && calledUser) {
       const durationSeconds = Math.floor((Date.now() - callStartTime) / 1000);
       const m = Math.floor(durationSeconds / 60);
       const s = durationSeconds % 60;
@@ -155,7 +155,7 @@ export const useCallStore = create((set, get) => ({
           text: `CALL_ENDED:${durationStr}`
         }, calledUser._id).catch(console.error);
       });
-    } else if (callStartTime && !isCalling) {
+    } else if (callStartTime && !calledUser) {
       // For the receiver, just show a toast duration
       const durationSeconds = Math.floor((Date.now() - callStartTime) / 1000);
       const m = Math.floor(durationSeconds / 60);
