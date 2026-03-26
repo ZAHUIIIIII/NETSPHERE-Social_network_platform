@@ -152,7 +152,7 @@ export const useCallStore = create((set, get) => ({
       // Send chat message
       import('./useChatStore').then(({ useChatStore }) => {
         useChatStore.getState().sendMessage({
-          text: `📞 Video call ended • ${durationStr}`
+          text: `CALL_ENDED:${durationStr}`
         }, calledUser._id).catch(console.error);
       });
     } else if (callStartTime && !isCalling) {

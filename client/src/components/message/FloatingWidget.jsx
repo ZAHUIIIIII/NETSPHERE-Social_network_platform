@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useCallStore } from '../../store/useCallStore';
-import { MessageCircle, X, Maximize2, Edit, Phone, Video, Minus, Image as ImageIcon, Smile, Send } from 'lucide-react';
+import { MessageCircle, X, Maximize2, Edit, Phone, Video, Minus, Image as ImageIcon, Smile, Send, PhoneCall } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
@@ -225,7 +225,19 @@ const FloatingWidget = () => {
                 <div key={message._id} className={`flex ${isMyMessage ? "justify-end" : "justify-start"}`}>
                   <div className={`max-w-[75%] rounded-[20px] px-3.5 py-2 text-[15px] leading-[1.35] shadow-sm ${isMyMessage ? "bg-[#0084ff] text-white" : "bg-[#f0f2f5] dark:bg-[#3E4042] text-gray-900 dark:text-[#e4e6eb]"}`}>
                     {message.image && <img src={message.image} alt="Attachment" className="max-w-full rounded-xl mb-1 object-cover" />}
-                    {message.text && <p className="break-words font-normal">{message.text}</p>}
+                    {message.text && message.text.startsWith('CALL_ENDED:') ? (
+                        <div className="flex items-center gap-3 py-1 pr-2">
+                          <div className={`w-9 h-9 rounded-full ${isMyMessage ? 'bg-white/20' : 'bg-gray-200 dark:bg-gray-600'} flex items-center justify-center flex-shrink-0`}>
+                            <PhoneCall className="w-[18px] h-[18px]" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-[14px]">Cuộc gọi thoại</span>
+                            <span className="text-[12px] opacity-80">{message.text.split(':')[1]}</span>
+                          </div>
+                        </div>
+                    ) : message.text ? (
+                       <p className="break-words font-normal">{message.text}</p>
+                    ) : null}
                   </div>
                 </div>
               );
