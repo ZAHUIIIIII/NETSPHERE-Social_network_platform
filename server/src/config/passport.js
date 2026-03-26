@@ -24,7 +24,7 @@ function ensureGoogleStrategy() {
                     callbackURL: process.env.GOOGLE_REDIRECT_URI || 'https://netsphere-901z.onrender.com/api/auth/google/callback',
                     scope: ['profile', 'email']
                 },
-                async ( profile, done) => {
+                async (accessToken, refreshToken, profile, done) => {
                     try {
                         const email = profile.emails[0].value;
                         const googleAvatar = profile.photos && profile.photos[0] && profile.photos[0].value;
