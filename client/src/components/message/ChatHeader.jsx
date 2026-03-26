@@ -2,6 +2,7 @@ import { X, Phone, Video, MoreVertical, Search, BellOff, Bell, Trash2, UserX, Ar
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useChatStore } from "../../store/useChatStore";
+import { useCallStore } from "../../store/useCallStore";
 import { useState, useEffect } from "react";
 import { blockUser, checkBlockStatus, toggleMuteConversation, checkConversationMuteStatus, deleteConversation } from "../../services/api";
 import toast from "react-hot-toast";
@@ -10,6 +11,7 @@ import PortalDropdown from "../common/PortalDropdown";
 const ChatHeader = () => {
   const navigate = useNavigate();
   const { selectedUser, setSelectedUser, messages, getUsers, searchInConversation, setSearchInConversation } = useChatStore();
+  const { startCall } = useCallStore();
   const { onlineUsers } = useAuthStore();
   
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
@@ -198,10 +200,10 @@ const ChatHeader = () => {
 
         {/* Action buttons */}
         <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
-          <button className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200 group">
+          <button onClick={() => startCall(selectedUser)} className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200 group">
             <Phone className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
           </button>
-          <button className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200 group">
+          <button onClick={() => startCall(selectedUser)} className="hidden sm:flex p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors duration-200 group">
             <Video className="w-4 h-4 lg:w-5 lg:h-5 text-gray-600 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" />
           </button>
           

@@ -22,6 +22,8 @@ import toast from 'react-hot-toast';
 
 import {Loader} from 'lucide-react';
 import {Toaster} from 'react-hot-toast';
+import IncomingCallModal from './components/message/IncomingCallModal';
+import VideoCallRoom from './components/message/VideoCallRoom';
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore();
@@ -206,6 +208,8 @@ const App = () => {
           </Routes>
       </div>
       <Toaster />
+      <IncomingCallModal />
+      <VideoCallRoom />
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { useNotificationStore } from '../store/useNotificationStore';
 import { useChatStore } from '../store/useChatStore';
+import { useCallStore } from '../store/useCallStore';
 import CreatePostModal from './CreatePostModal';
 import ThemeToggle from './common/ThemeToggle';
 import { X } from 'lucide-react';
@@ -44,9 +45,11 @@ const Navbar = ({ isCollapsed, setIsCollapsed, hideBottomNav = false, hideTopBar
       fetchNotifications(false);
       getUsers(); // Fetch users list for message count
       subscribeToMessages(); // Subscribe to real-time message updates
+      useCallStore.getState().subscribeToCalls(); // Subscribe to incoming WebRTC calls
       
       return () => {
         unsubscribeFromMessages(); // Cleanup on unmount
+        useCallStore.getState().unsubscribeFromCalls();
       };
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

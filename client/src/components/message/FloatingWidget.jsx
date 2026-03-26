@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useCallStore } from '../../store/useCallStore';
 import { MessageCircle, X, Maximize2, Edit, Phone, Video, Minus, Image as ImageIcon, Smile, Send } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -11,6 +12,7 @@ const FloatingWidget = () => {
     closeFloatingChat, openFloatingChat, users, getUsers,
     messages, sendMessage 
   } = useChatStore();
+  const { startCall } = useCallStore();
   const { authUser, onlineUsers } = useAuthStore();
   const navigate = useNavigate();
 
@@ -205,8 +207,8 @@ const FloatingWidget = () => {
             </div>
           </div>
           <div className="flex items-center gap-0.5 text-[#0084ff] dark:text-[#b0b3b8]">
-            <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] rounded-full transition-colors"><Phone className="w-[18px] h-[18px]" /></button>
-            <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] rounded-full transition-colors"><Video className="w-[20px] h-[20px]" /></button>
+            <button onClick={() => startCall(floatingChatUser)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] rounded-full transition-colors"><Phone className="w-[18px] h-[18px]" /></button>
+            <button onClick={() => startCall(floatingChatUser)} className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] rounded-full transition-colors"><Video className="w-[20px] h-[20px]" /></button>
             <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] rounded-full transition-colors" onClick={() => setFloatingWidgetState('collapsed')}><Minus className="w-[20px] h-[20px]" /></button>
             <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#3A3B3C] rounded-full transition-colors" title="Back to list" onClick={() => closeFloatingChat()}><X className="w-[20px] h-[20px]" /></button>
           </div>
