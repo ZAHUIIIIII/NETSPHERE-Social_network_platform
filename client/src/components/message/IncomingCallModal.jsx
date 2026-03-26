@@ -12,9 +12,10 @@ const IncomingCallModal = () => {
       <div className="bg-white dark:bg-[#242526] p-8 rounded-2xl shadow-2xl flex flex-col items-center w-80 transform transition-all scale-100">
         <div className="w-24 h-24 mb-4 rounded-full overflow-hidden border-4 border-[#0084ff] shadow-[0_0_20px_rgba(0,132,255,0.4)] relative">
           <img 
-            src={call.avatar || "/avatar.png"} 
+            src={!call.avatar || call.avatar === "/avatar.png" ? "/assets/avatars/default-avatar.svg" : call.avatar} 
             alt={call.name} 
             className="w-full h-full object-cover relative z-10"
+            onError={(e) => { e.target.src = "/assets/avatars/default-avatar.svg"; }}
           />
         </div>
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-1">{call.name}</h2>

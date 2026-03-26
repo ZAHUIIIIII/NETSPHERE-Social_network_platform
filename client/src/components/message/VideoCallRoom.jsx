@@ -34,6 +34,9 @@ const VideoCallRoom = () => {
 
   // Determine the name to show
   const displayName = call?.name || calledUser?.name || calledUser?.username || 'Unknown User';
+  const displayAvatar = calledUser?.avatar && calledUser?.avatar !== "/avatar.png" 
+    ? calledUser.avatar 
+    : "/assets/avatars/default-avatar.svg";
 
   // Render Mini Player (Picture-in-Picture mode)
   if (isMinimized) {
@@ -97,19 +100,16 @@ const VideoCallRoom = () => {
           />
         ) : (
            <div className="flex flex-col items-center justify-center text-white z-10">
-             {calledUser?.avatar ? (
-                <div className="relative mb-8">
-                  <img src={calledUser.avatar} alt="Avatar" className="w-40 h-40 rounded-full border-[6px] border-[#0084ff] shadow-[0_0_50px_rgba(0,132,255,0.6)] object-cover relative z-10" />
-                  <div className="absolute inset-0 border-[6px] border-[#0084ff] rounded-full animate-ping opacity-50"></div>
-                </div>
-             ) : (
-                <div className="relative mb-8">
-                  <div className="w-40 h-40 rounded-full bg-[#0084ff] flex items-center justify-center text-6xl font-bold border-4 border-white relative z-10 shadow-[0_0_50px_rgba(0,132,255,0.6)]">
-                    {displayName.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="absolute inset-0 border-4 border-white rounded-full animate-ping opacity-50"></div>
-                </div>
-             )}
+             <div className="relative mb-8">
+               <img 
+                 src={displayAvatar} 
+                 alt="Avatar" 
+                 className="w-40 h-40 rounded-full border-[6px] border-[#0084ff] shadow-[0_0_50px_rgba(0,132,255,0.6)] object-cover relative z-10" 
+                 onError={(e) => { e.target.src = "/assets/avatars/default-avatar.svg"; }}
+               />
+               <div className="absolute inset-0 border-[6px] border-[#0084ff] rounded-full animate-ping opacity-50"></div>
+             </div>
+             
              <p className="text-3xl font-light mb-3 tracking-wide">{isCalling ? 'Dialing...' : 'Connecting...'}</p>
              <p className="text-gray-400 text-lg">{displayName}</p>
              <div className="mt-8 flex gap-2">
