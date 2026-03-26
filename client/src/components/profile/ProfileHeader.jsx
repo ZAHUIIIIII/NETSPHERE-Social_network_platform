@@ -14,7 +14,7 @@ import { isAdmin } from '../../lib/isAdmin';
 
 const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowChange }) => {
   const { updateProfile, isUpdatingProfile } = useAuthStore();
-  const { openFloatingChat } = useChatStore();
+  const { setSelectedUser } = useChatStore();
   const navigate = useNavigate();
   const [selectedImg, setSelectedImg] = useState(null);
   const [showFollowersModal, setShowFollowersModal] = useState(false);
@@ -134,12 +134,13 @@ const ProfileHeader = ({ user, isOwnProfile, onEditClick, posts = [], onFollowCh
   };
 
   const handleMessage = () => {
-    openFloatingChat({
+    setSelectedUser({
       _id: user._id,
       username: user.username,
       name: user.name,
       avatar: user.avatar
     });
+    navigate('/messages');
   };
 
   const handleBlock = async () => {
