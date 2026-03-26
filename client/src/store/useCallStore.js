@@ -11,6 +11,7 @@ export const useCallStore = create((set, get) => ({
   callEnded: false,
   isCalling: false, // Represents when current user is dialing out
   calledUser: null, // Track who we are dialing out to
+  callStartTime: null, // Track when the call was accepted
   connectionRef: null,
   videoEnabled: true,
   audioEnabled: true,
@@ -55,7 +56,7 @@ export const useCallStore = create((set, get) => ({
       socket.off('callRejected');
 
       socket.on('callAccepted', (signal) => {
-        set({ callAccepted: true, isCalling: false });
+        set({ callAccepted: true, isCalling: false, callStartTime: Date.now() });
         peer.signal(signal);
       });
 
@@ -89,6 +90,7 @@ export const useCallStore = create((set, get) => ({
       set({ 
         localStream: stream, 
         callAccepted: true,
+        callStartTime: Date.now(),
         videoEnabled: true,
         audioEnabled: true
       });
@@ -138,7 +140,30 @@ export const useCallStore = create((set, get) => ({
 
   endCallLocal: () => {
     get().stopMediaTracks();
-    const { connectionRef } = get();
+    const { connectionRef, callStartTime, isCalling, calledUser } = get();
+    
+    // Calculate duration and send message if this was a connected call
+    if (callStartTime && isCalling && calledUser) {
+      const durationSeconds = Math.floor((Date.now() - callStartTime) / 1000);
+      const m = Math.floor(durationSeconds / 60);
+      const s = durationSeconds % 60;
+      const durationStr = m > 0 ? `${m}m ${s}s` : `${s}s`;
+      
+      // Send chat message
+      import('./useChatStore').then(({ useChatStore }) => {
+        useChatStore.getState().sendMessage({
+          text: `📞 Video call ended • ${durationStr}`
+        }, calledUser._id).catch(console.error);
+      });
+    } else if (callStartTime && !isCalling) {
+      // For the receiver, just show a toast duration
+      const durationSeconds = Math.floor((Date.now() - callStartTime) / 1000);
+      const m = Math.floor(durationSeconds / 60);
+      const s = durationSeconds % 60;
+      const durationStr = m > 0 ? `${m}m ${s}s` : `${s}s`;
+      toast(`Call ended • ${durationStr}`);
+    }
+
     if (connectionRef) {
       connectionRef.destroy();
     }
@@ -150,7 +175,8 @@ export const useCallStore = create((set, get) => ({
       callEnded: true,
       isCalling: false,
       connectionRef: null,
-      calledUser: null
+      calledUser: null,
+      callStartTime: null
     });
   },
 
